@@ -1,0 +1,19 @@
+{
+  "name": "@myapp/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@myapp/shared": "^1.0.0",
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0"
+  }
+}
