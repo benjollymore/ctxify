@@ -1,13 +1,11 @@
 import type { Renderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
-export const topologyYamlRenderer: Renderer = {
-  outputPath: '.ctx/topology.yaml',
+export const shardTopologyRenderer: Renderer = {
+  outputPath: '.ctx/topology/graph.yaml',
 
   render(ctx) {
-    const topology = {
-      generated_by: 'ctxify',
-      last_scanned: ctx.metadata.generatedAt,
+    const data = {
       repos: ctx.repos.map((r) => ({
         name: r.name,
         path: r.path,
@@ -23,6 +21,6 @@ export const topologyYamlRenderer: Renderer = {
       })),
     };
 
-    return dumpYaml(topology);
+    return dumpYaml(data);
   },
 };

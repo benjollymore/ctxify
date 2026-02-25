@@ -1,6 +1,6 @@
 {
   "name": "ctxify",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Multi-repo context compiler for AI coding agents",
   "type": "module",
   "bin": {
@@ -34,7 +34,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "glob": "^11.0.0",
     "js-yaml": "^4.1.0"

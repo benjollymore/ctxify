@@ -19,6 +19,35 @@ export class PassRegistry {
     return Array.from(this.passes.values());
   }
 
+  /**
+   * Returns passes grouped into levels for parallel execution.
+   * Passes within the same level have no dependencies on each other
+   * and can run concurrently.
+   */
+  getLevels(): AnalysisPass[][] {
+    const ordered = this.getOrdered();
+    const levels: AnalysisPass[][] = [];
+    const assigned = new Map<string, number>();
+
+    for (const pass of ordered) {
+      let level = 0;
+      for (const dep of pass.dependencies) {
+        const depLevel = assigned.get(dep);
+        if (depLevel !== undefined) {
+          level = Math.max(level, depLevel + 1);
+        }
+      }
+      assigned.set(pass.name, level);
+
+      while (levels.length <= level) {
+        levels.push([]);
+      }
+      levels[level].push(pass);
+    }
+
+    return levels;
+  }
+
   getOrdered(): AnalysisPass[] {
     const ordered: AnalysisPass[] = [];
     const visited = new Set<string>();

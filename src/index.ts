@@ -18,8 +18,9 @@ export type {
 } from './core/context.js';
 
 export type { AnalysisPass } from './passes/types.js';
-export type { Renderer } from './renderers/types.js';
+export type { Renderer, MultiRenderer } from './renderers/types.js';
 
 export { createWorkspaceContext } from './core/context.js';
 export { loadConfig } from './core/config.js';
-export { runPipeline } from './core/pipeline.js';
+export { runPipeline, runPipelineParallel } from './core/pipeline.js';
+export { writeShards } from './core/shard-writer.js';
