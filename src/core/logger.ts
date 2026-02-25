@@ -1,5 +1,3 @@
-import chalk from 'chalk';
-
 export type LogLevel = 'silent' | 'error' | 'warn' | 'info' | 'debug';
 
 const LOG_PRIORITY: Record<LogLevel, number> = {
@@ -29,22 +27,22 @@ export function createLogger(level: LogLevel = 'info', prefix = ''): Logger {
   return {
     error(msg: string, ...args: unknown[]) {
       if (shouldLog('error')) {
-        console.error(chalk.red(`${tag}ERROR: ${msg}`), ...args);
+        console.error(`${tag}ERROR: ${msg}`, ...args);
       }
     },
     warn(msg: string, ...args: unknown[]) {
       if (shouldLog('warn')) {
-        console.error(chalk.yellow(`${tag}WARN: ${msg}`), ...args);
+        console.error(`${tag}WARN: ${msg}`, ...args);
       }
     },
     info(msg: string, ...args: unknown[]) {
       if (shouldLog('info')) {
-        console.error(chalk.blue(`${tag}${msg}`), ...args);
+        console.error(`${tag}${msg}`, ...args);
       }
     },
     debug(msg: string, ...args: unknown[]) {
       if (shouldLog('debug')) {
-        console.error(chalk.gray(`${tag}DEBUG: ${msg}`), ...args);
+        console.error(`${tag}DEBUG: ${msg}`, ...args);
       }
     },
     child(childPrefix: string): Logger {
