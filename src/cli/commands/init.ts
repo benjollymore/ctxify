@@ -19,6 +19,141 @@ import { generateSchemasTemplate } from '../../templates/schemas.js';
 import { generateQuestionsTemplate } from '../../templates/questions.js';
 import { generateAnalysisChecklist } from '../../templates/analysis.js';
 
+export type AgentType = 'claude';
+
+export interface ScaffoldOptions {
+  workspaceRoot: string;
+  mode: OperatingMode;
+  repos: RepoEntry[];
+  monoRepoOptions?: MonoRepoOptions;
+  force?: boolean;
+  agent?: AgentType;
+}
+
+export interface ScaffoldResult {
+  status: 'initialized';
+  mode: OperatingMode;
+  config: string;
+  repos: string[];
+  shards_written: boolean;
+  skill_installed?: string;
+}
+
+export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<ScaffoldResult> {
+  const { workspaceRoot, mode, repos, monoRepoOptions } = options;
+  const configPath = join(workspaceRoot, 'ctx.yaml');
+
+  // Generate and write ctx.yaml
+  const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions);
+  writeFileSync(configPath, serializeConfig(config), 'utf-8');
+
+  // Parse manifests for each repo
+  const outputDir = config.options.outputDir || '.ctxify';
+  const repoTemplateDataList: RepoTemplateData[] = repos.map((entry) => {
+    const repoAbsPath = resolve(workspaceRoot, entry.path);
+    const manifest = parseRepoManifest(repoAbsPath);
+    return {
+      name: entry.name,
+      path: entry.path,
+      ...manifest,
+    };
+  });
+
+  // Get git SHAs (best-effort)
+  const shas: Record<string, string> = {};
+  for (const entry of repos) {
+    try {
+      const repoAbsPath = resolve(workspaceRoot, entry.path);
+      shas[entry.name] = await getHeadSha(repoAbsPath);
+    } catch {
+      // Not all repos may have git
+    }
+  }
+
+  // Generate all templates and write to .ctxify/
+  const outputRoot = join(workspaceRoot, outputDir);
+  mkdirSync(outputRoot, { recursive: true });
+  mkdirSync(join(outputRoot, 'repos'), { recursive: true });
+  mkdirSync(join(outputRoot, 'endpoints'), { recursive: true });
+  mkdirSync(join(outputRoot, 'types'), { recursive: true });
+  mkdirSync(join(outputRoot, 'env'), { recursive: true });
+  mkdirSync(join(outputRoot, 'topology'), { recursive: true });
+  mkdirSync(join(outputRoot, 'schemas'), { recursive: true });
+  mkdirSync(join(outputRoot, 'questions'), { recursive: true });
+
+  // index.md
+  writeFileSync(
+    join(outputRoot, 'index.md'),
+    generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode),
+    'utf-8',
+  );
+
+  // Per-repo shards
+  for (const repo of repoTemplateDataList) {
+    writeFileSync(
+      join(outputRoot, 'repos', `${repo.name}.md`),
+      generateRepoTemplate(repo),
+      'utf-8',
+    );
+    writeFileSync(
+      join(outputRoot, 'endpoints', `${repo.name}.md`),
+      generateEndpointsTemplate(repo.name),
+      'utf-8',
+    );
+    writeFileSync(
+      join(outputRoot, 'schemas', `${repo.name}.md`),
+      generateSchemasTemplate(repo.name),
+      'utf-8',
+    );
+  }
+
+  // Single-file shards
+  writeFileSync(
+    join(outputRoot, 'types', 'shared.md'),
+    generateTypesTemplate(mode),
+    'utf-8',
+  );
+  writeFileSync(
+    join(outputRoot, 'env', 'all.md'),
+    generateEnvTemplate(),
+    'utf-8',
+  );
+  writeFileSync(
+    join(outputRoot, 'topology', 'graph.md'),
+    generateTopologyTemplate(repoTemplateDataList),
+    'utf-8',
+  );
+  writeFileSync(
+    join(outputRoot, 'questions', 'pending.md'),
+    generateQuestionsTemplate(),
+    'utf-8',
+  );
+  writeFileSync(
+    join(outputRoot, '_analysis.md'),
+    generateAnalysisChecklist(repoTemplateDataList),
+    'utf-8',
+  );
+
+  // Ensure .ctxify/ is in .gitignore
+  ensureGitignore(workspaceRoot, outputDir);
+
+  // If agent specified, install skill (will be implemented by installSkill() in Task 3)
+  let skill_installed: string | undefined;
+  if (options.agent) {
+    // Will be implemented by installSkill() in Task 3
+    // For now, skip - just include the field
+  }
+
+  return {
+    status: 'initialized',
+    mode,
+    config: configPath,
+    repos: repos.map((r) => r.name),
+    shards_written: true,
+    ...(skill_installed ? { skill_installed } : {}),
+  };
+}
+
 export function registerInitCommand(program: Command): void {
   program
     .command('init [dir]')
@@ -90,109 +225,17 @@ export function registerInitCommand(program: Command): void {
         }
       }
 
-      // 3. Generate and write ctx.yaml
-      const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions);
-      writeFileSync(configPath, serializeConfig(config), 'utf-8');
-
-      // 4. For each repo: parseRepoManifest
-      const outputDir = config.options.outputDir || '.ctxify';
-      const repoTemplateDataList: RepoTemplateData[] = repos.map((entry) => {
-        const repoAbsPath = resolve(workspaceRoot, entry.path);
-        const manifest = parseRepoManifest(repoAbsPath);
-        return {
-          name: entry.name,
-          path: entry.path,
-          ...manifest,
-        };
+      // 3. Scaffold workspace
+      const result = await scaffoldWorkspace({
+        workspaceRoot,
+        mode,
+        repos,
+        monoRepoOptions,
+        force: options?.force,
       });
 
-      // 5. Get git SHAs (best-effort)
-      const shas: Record<string, string> = {};
-      for (const entry of repos) {
-        try {
-          const repoAbsPath = resolve(workspaceRoot, entry.path);
-          shas[entry.name] = await getHeadSha(repoAbsPath);
-        } catch {
-          // Not all repos may have git
-        }
-      }
-
-      // 6. Generate all templates and write to .ctxify/
-      const outputRoot = join(workspaceRoot, outputDir);
-      mkdirSync(outputRoot, { recursive: true });
-      mkdirSync(join(outputRoot, 'repos'), { recursive: true });
-      mkdirSync(join(outputRoot, 'endpoints'), { recursive: true });
-      mkdirSync(join(outputRoot, 'types'), { recursive: true });
-      mkdirSync(join(outputRoot, 'env'), { recursive: true });
-      mkdirSync(join(outputRoot, 'topology'), { recursive: true });
-      mkdirSync(join(outputRoot, 'schemas'), { recursive: true });
-      mkdirSync(join(outputRoot, 'questions'), { recursive: true });
-
-      // index.md
-      writeFileSync(
-        join(outputRoot, 'index.md'),
-        generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode),
-        'utf-8',
-      );
-
-      // Per-repo shards
-      for (const repo of repoTemplateDataList) {
-        writeFileSync(
-          join(outputRoot, 'repos', `${repo.name}.md`),
-          generateRepoTemplate(repo),
-          'utf-8',
-        );
-        writeFileSync(
-          join(outputRoot, 'endpoints', `${repo.name}.md`),
-          generateEndpointsTemplate(repo.name),
-          'utf-8',
-        );
-        writeFileSync(
-          join(outputRoot, 'schemas', `${repo.name}.md`),
-          generateSchemasTemplate(repo.name),
-          'utf-8',
-        );
-      }
-
-      // Single-file shards
-      writeFileSync(
-        join(outputRoot, 'types', 'shared.md'),
-        generateTypesTemplate(mode),
-        'utf-8',
-      );
-      writeFileSync(
-        join(outputRoot, 'env', 'all.md'),
-        generateEnvTemplate(),
-        'utf-8',
-      );
-      writeFileSync(
-        join(outputRoot, 'topology', 'graph.md'),
-        generateTopologyTemplate(repoTemplateDataList),
-        'utf-8',
-      );
-      writeFileSync(
-        join(outputRoot, 'questions', 'pending.md'),
-        generateQuestionsTemplate(),
-        'utf-8',
-      );
-      writeFileSync(
-        join(outputRoot, '_analysis.md'),
-        generateAnalysisChecklist(repoTemplateDataList),
-        'utf-8',
-      );
-
-      // 7. Ensure .ctxify/ is in .gitignore
-      ensureGitignore(workspaceRoot, outputDir);
-
-      // 8. Output JSON summary
-      const summary = {
-        status: 'initialized',
-        mode,
-        config: configPath,
-        repos: repos.map((r) => r.name),
-        shards_written: true,
-      };
-      console.log(JSON.stringify(summary, null, 2));
+      // 4. Output JSON summary
+      console.log(JSON.stringify(result, null, 2));
     });
 }
 
