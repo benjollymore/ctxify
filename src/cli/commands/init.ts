@@ -18,6 +18,8 @@ import { generateTopologyTemplate } from '../../templates/topology.js';
 import { generateSchemasTemplate } from '../../templates/schemas.js';
 import { generateQuestionsTemplate } from '../../templates/questions.js';
 import { generateAnalysisChecklist } from '../../templates/analysis.js';
+import { installSkill } from '../install-skill.js';
+import { runInteractiveFlow } from './init-interactive.js';
 
 export type AgentType = 'claude';
 
@@ -137,11 +139,10 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   // Ensure .ctxify/ is in .gitignore
   ensureGitignore(workspaceRoot, outputDir);
 
-  // If agent specified, install skill (will be implemented by installSkill() in Task 3)
+  // If agent specified, install skill
   let skill_installed: string | undefined;
   if (options.agent) {
-    // Will be implemented by installSkill() in Task 3
-    // For now, skip - just include the field
+    skill_installed = installSkill(workspaceRoot, options.agent);
   }
 
   return {
@@ -171,40 +172,30 @@ export function registerInitCommand(program: Command): void {
         process.exit(1);
       }
 
-      // 2. Determine mode
-      let mode: OperatingMode;
-      let repos: RepoEntry[];
-      let monoRepoOptions: MonoRepoOptions | undefined;
+      // 2. Interactive vs flag-driven path
+      const hasFlags = (options?.repos && options.repos.length > 0) || options?.mono;
+      const isInteractive = !hasFlags && process.stdin.isTTY;
 
-      if (options?.repos && options.repos.length > 0) {
-        // --repos -> multi-repo
-        mode = 'multi-repo';
-        repos = options.repos.map((repoPath) => {
-          const absPath = resolve(workspaceRoot, repoPath);
-          const name = basename(absPath);
-          const relPath = relative(workspaceRoot, absPath) || '.';
-          return { path: relPath, name };
-        });
-      } else if (options?.mono) {
-        // --mono -> mono-repo
-        mode = 'mono-repo';
-        const monoDetection = detectMonoRepo(workspaceRoot);
-        monoRepoOptions = {
-          manager: monoDetection.manager || undefined,
-          packageGlobs: monoDetection.packageGlobs,
-        };
-        repos = monoDetection.packages.map((pkg) => ({
-          path: pkg.relativePath,
-          name: pkg.name,
-          language: pkg.language,
-          description: pkg.description,
-        }));
+      let scaffoldOptions: ScaffoldOptions;
+
+      if (isInteractive) {
+        scaffoldOptions = await runInteractiveFlow(workspaceRoot);
       } else {
-        // Auto-detect
-        const detection = autoDetectMode(workspaceRoot);
-        mode = detection.mode;
+        // Flag-driven path
+        let mode: OperatingMode;
+        let repos: RepoEntry[];
+        let monoRepoOptions: MonoRepoOptions | undefined;
 
-        if (mode === 'mono-repo') {
+        if (options?.repos && options.repos.length > 0) {
+          mode = 'multi-repo';
+          repos = options.repos.map((repoPath) => {
+            const absPath = resolve(workspaceRoot, repoPath);
+            const name = basename(absPath);
+            const relPath = relative(workspaceRoot, absPath) || '.';
+            return { path: relPath, name };
+          });
+        } else if (options?.mono) {
+          mode = 'mono-repo';
           const monoDetection = detectMonoRepo(workspaceRoot);
           monoRepoOptions = {
             manager: monoDetection.manager || undefined,
@@ -216,23 +207,35 @@ export function registerInitCommand(program: Command): void {
             language: pkg.language,
             description: pkg.description,
           }));
-        } else if (mode === 'single-repo') {
-          const name = basename(workspaceRoot);
-          repos = [{ path: '.', name }];
         } else {
-          // multi-repo: find git roots
-          repos = buildMultiRepoEntries(workspaceRoot);
+          const detection = autoDetectMode(workspaceRoot);
+          mode = detection.mode;
+
+          if (mode === 'mono-repo') {
+            const monoDetection = detectMonoRepo(workspaceRoot);
+            monoRepoOptions = {
+              manager: monoDetection.manager || undefined,
+              packageGlobs: monoDetection.packageGlobs,
+            };
+            repos = monoDetection.packages.map((pkg) => ({
+              path: pkg.relativePath,
+              name: pkg.name,
+              language: pkg.language,
+              description: pkg.description,
+            }));
+          } else if (mode === 'single-repo') {
+            const name = basename(workspaceRoot);
+            repos = [{ path: '.', name }];
+          } else {
+            repos = buildMultiRepoEntries(workspaceRoot);
+          }
         }
+
+        scaffoldOptions = { workspaceRoot, mode, repos, monoRepoOptions, force: options?.force };
       }
 
       // 3. Scaffold workspace
-      const result = await scaffoldWorkspace({
-        workspaceRoot,
-        mode,
-        repos,
-        monoRepoOptions,
-        force: options?.force,
-      });
+      const result = await scaffoldWorkspace(scaffoldOptions);
 
       // 4. Output JSON summary
       console.log(JSON.stringify(result, null, 2));
