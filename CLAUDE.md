@@ -208,6 +208,7 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 
 ## Current state
 
+- **v0.3.0** — domain registration (`ctxify domain add/list`), npm publish readiness
 - **v0.2.0** — multi-agent support (claude, copilot, cursor, codex), interactive init with multi-select
 - **Supported manifests**: package.json (JS/TS), go.mod (Go), pyproject.toml (Python), requirements.txt (Python fallback)
 - **Supported modes**: single-repo, multi-repo, mono-repo (npm/yarn/pnpm/turborepo workspaces)
