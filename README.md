@@ -17,17 +17,17 @@ Two roles: **ctxify scaffolds**, **your agent fills**.
 ### Quick start
 
 ```bash
-# Clone and build
-git clone https://github.com/benjollymore/ctxify.git
-cd ctxify
-npm install && npm run build
-npm link
+# Install globally
+npm install -g ctxify
 
+# Or run directly
+npx ctxify init
+```
+
+```bash
 # Scaffold context in your workspace
 cd your-workspace
 ctxify init
-
-# Next step: open Claude Code and run /ctxify to fill the context
 ```
 
 After init, open Claude Code in the workspace and type `/ctxify`. The skill guides the agent through reading your code and filling in architecture, patterns, and domain knowledge.
@@ -112,6 +112,12 @@ For Claude Code: after init, type `/ctxify` and the agent takes it from there. O
 ## Development
 
 Requires Node >= 18. ESM-only.
+
+```bash
+git clone https://github.com/benjollymore/ctxify.git
+cd ctxify
+npm install && npm run build
+```
 
 ```bash
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
