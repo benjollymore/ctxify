@@ -1,8 +1,8 @@
 import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
 import { existsSync, writeFileSync } from 'node:fs';
-import { loadConfig, generateDefaultConfig, serializeConfig } from '../../core/config.js';
-import type { RepoEntry } from '../../core/config.js';
+import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
+import type { RepoEntry, OperatingMode, MonoRepoOptions } from '../../core/config.js';
 import { createWorkspaceContext } from '../../core/context.js';
 import { createLogger } from '../../core/logger.js';
 import { PassRegistry } from '../../core/pass-registry.js';
@@ -10,8 +10,10 @@ import { runPipelineParallel } from '../../core/pipeline.js';
 import { saveCache, createCacheStore } from '../../core/cache.js';
 import { buildCacheEntry } from '../../core/differ.js';
 import { findGitRoots } from '../../utils/git.js';
+import { detectMonoRepo } from '../../utils/monorepo.js';
 import { readJsonFile } from '../../utils/fs.js';
 import { writeShards } from '../../core/shard-writer.js';
+import { promptMode, promptSingleRepo, promptMultiRepo, promptMonoRepo, autoDetectMode } from '../prompts.js';
 
 import { repoDetectionPass } from '../../passes/01-repo-detection.js';
 import { manifestParsingPass } from '../../passes/02-manifest-parsing.js';
@@ -27,7 +29,8 @@ export function registerInitCommand(program: Command): void {
     .command('init [dir]')
     .description('Auto-detect repos, create ctx.yaml, run first scan')
     .option('-f, --force', 'Overwrite existing ctx.yaml')
-    .action(async (dir?: string, options?: { force?: boolean }) => {
+    .option('--non-interactive', 'Auto-detect mode without prompts')
+    .action(async (dir?: string, options?: { force?: boolean; nonInteractive?: boolean }) => {
       const logger = createLogger('error');
       const workspaceRoot = resolve(dir || '.');
 
@@ -37,29 +40,95 @@ export function registerInitCommand(program: Command): void {
         process.exit(1);
       }
 
-      // Find git repos
-      const gitRoots = findGitRoots(workspaceRoot, 3);
-      const workspaceAbs = resolve(workspaceRoot);
-      const subRepos = gitRoots.filter((root) => resolve(root) !== workspaceAbs);
-      const repoRoots = subRepos.length > 0 ? subRepos : gitRoots;
+      let mode: OperatingMode;
+      let repos: RepoEntry[];
+      let monoRepoOptions: MonoRepoOptions | undefined;
 
-      // Build repo entries
-      const repos: RepoEntry[] = repoRoots.map((root) => {
-        const name = basename(root);
-        const relPath = relative(workspaceRoot, root) || '.';
-        const entry: RepoEntry = { path: relPath, name };
+      if (options?.nonInteractive) {
+        // Auto-detect mode
+        const detection = autoDetectMode(workspaceRoot);
+        mode = detection.mode;
 
-        const pkg = readJsonFile<{ description?: string; dependencies?: Record<string, string> }>(join(root, 'package.json'));
-        if (pkg) {
-          entry.language = 'typescript';
-          entry.description = pkg.description;
+        if (mode === 'mono-repo') {
+          const monoDetection = detectMonoRepo(workspaceRoot);
+          monoRepoOptions = {
+            manager: monoDetection.manager || undefined,
+            packageGlobs: monoDetection.packageGlobs,
+          };
+          repos = monoDetection.packages.map((pkg) => ({
+            path: pkg.relativePath,
+            name: pkg.name,
+            language: pkg.language,
+            description: pkg.description,
+          }));
+        } else if (mode === 'single-repo') {
+          const name = basename(workspaceRoot);
+          const entry: RepoEntry = { path: '.', name };
+          const pkg = readJsonFile<{ description?: string }>(join(workspaceRoot, 'package.json'));
+          if (pkg) {
+            entry.language = 'typescript';
+            entry.description = pkg.description;
+          }
+          repos = [entry];
+        } else {
+          // multi-repo: existing behavior
+          repos = buildMultiRepoEntries(workspaceRoot);
         }
+      } else {
+        // Interactive mode
+        mode = await promptMode();
 
-        return entry;
-      });
+        switch (mode) {
+          case 'single-repo': {
+            const result = await promptSingleRepo(workspaceRoot);
+            const name = basename(result.dir);
+            const relPath = relative(workspaceRoot, result.dir) || '.';
+            const entry: RepoEntry = { path: relPath, name };
+            const pkg = readJsonFile<{ description?: string }>(join(result.dir, 'package.json'));
+            if (pkg) {
+              entry.language = 'typescript';
+              entry.description = pkg.description;
+            }
+            repos = [entry];
+            break;
+          }
+
+          case 'multi-repo': {
+            const result = await promptMultiRepo(workspaceRoot);
+            repos = result.repoPaths.map((root) => {
+              const name = basename(root);
+              const relPath = relative(workspaceRoot, root) || '.';
+              const entry: RepoEntry = { path: relPath, name };
+              const pkg = readJsonFile<{ description?: string }>(join(root, 'package.json'));
+              if (pkg) {
+                entry.language = 'typescript';
+                entry.description = pkg.description;
+              }
+              return entry;
+            });
+            break;
+          }
+
+          case 'mono-repo': {
+            const result = await promptMonoRepo(workspaceRoot);
+            monoRepoOptions = {
+              manager: result.manager || undefined,
+              packageGlobs: result.packageGlobs,
+            };
+            const monoDetection = detectMonoRepo(result.dir);
+            repos = monoDetection.packages.map((pkg) => ({
+              path: pkg.relativePath,
+              name: pkg.name,
+              language: pkg.language,
+              description: pkg.description,
+            }));
+            break;
+          }
+        }
+      }
 
       // Generate and write config
-      const config = generateDefaultConfig(workspaceRoot, repos);
+      const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions);
       writeFileSync(configPath, serializeConfig(config), 'utf-8');
 
       // Run full pipeline
@@ -94,10 +163,32 @@ export function registerInitCommand(program: Command): void {
       // JSON output
       const summary = {
         status: 'initialized',
+        mode,
         config: configPath,
         repos: repos.map((r) => r.name),
         shards_written: true,
       };
       console.log(JSON.stringify(summary, null, 2));
     });
+}
+
+function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
+  const gitRoots = findGitRoots(workspaceRoot, 3);
+  const workspaceAbs = resolve(workspaceRoot);
+  const subRepos = gitRoots.filter((root) => resolve(root) !== workspaceAbs);
+  const repoRoots = subRepos.length > 0 ? subRepos : gitRoots;
+
+  return repoRoots.map((root) => {
+    const name = basename(root);
+    const relPath = relative(workspaceRoot, root) || '.';
+    const entry: RepoEntry = { path: relPath, name };
+
+    const pkg = readJsonFile<{ description?: string; dependencies?: Record<string, string> }>(join(root, 'package.json'));
+    if (pkg) {
+      entry.language = 'typescript';
+      entry.description = pkg.description;
+    }
+
+    return entry;
+  });
 }
