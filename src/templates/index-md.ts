@@ -23,45 +23,25 @@ export function generateIndexTemplate(
   // ── Frontmatter ──
   const fm = dumpYaml({
     ctxify: '2.0',
-    scanned_at: scannedAt,
-    workspace: workspacePath,
     mode,
-    totals: {
-      repos: repos.length,
-      endpoints: 0,
-      shared_types: 0,
-      env_vars: 0,
-    },
+    repos: repos.map((r) => r.name),
+    scanned_at: scannedAt,
   });
 
   // ── Repo table ──
-  const tableHeader = '| Repo | Language | Framework | Files | Entry points |';
-  const tableSep = '|------|----------|-----------|-------|--------------|';
+  const tableHeader = '| Repo | Language | Framework | Role |';
+  const tableSep = '|------|----------|-----------|------|';
   const tableRows = repos.map((r) => {
-    const entries = r.entryPoints.map((e) => `\`${e}\``).join(', ') || '--';
-    return `| ${r.name} | ${r.language || '--'} | ${r.framework || '--'} | ${r.fileCount} | ${entries} |`;
+    return `| [${r.name}](repos/${r.name}/overview.md) | ${r.language || '--'} | ${r.framework || '--'} | <!-- TODO: role --> |`;
   });
-
-  // ── Shard links ──
-  const shardLinks: string[] = [];
-  for (const r of repos) {
-    shardLinks.push(`- [${r.name}](repos/${r.name}.md)`);
-    shardLinks.push(`- [${r.name} endpoints](endpoints/${r.name}.md)`);
-    shardLinks.push(`- [${r.name} schemas](schemas/${r.name}.md)`);
-  }
-  shardLinks.push('- [Shared types](types/shared.md)');
-  shardLinks.push('- [Environment variables](env/all.md)');
-  shardLinks.push('- [Topology](topology/graph.md)');
-  shardLinks.push('- [Pending questions](questions/pending.md)');
-  shardLinks.push('- [Analysis checklist](_analysis.md)');
 
   return `---
 ${fm.trimEnd()}
 ---
 
-# Workspace: ${dirName}
+# ${dirName}
 
-<!-- TODO: Agent — write a 2-3 sentence overview of what this workspace does, who it serves, and how the repos relate. -->
+<!-- TODO: Agent — 2-3 sentences: what this workspace does, who it serves, how the repos relate. -->
 
 ## Repos
 
@@ -71,10 +51,17 @@ ${tableRows.join('\n')}
 
 ## Relationships
 
-<!-- TODO: Agent — describe how these repos depend on each other (API calls, shared DB, event bus, shared types). -->
+<!-- TODO: Agent — how do these repos connect? Shared DB, API calls, shared types, auth, event bus. 5-10 lines. -->
 
-## What's available
+## Commands
 
-${shardLinks.join('\n')}
+<!-- TODO: Agent — essential commands per repo (build, test, dev). 1-2 lines each. -->
+
+## Workflows
+
+<!-- TODO: Agent — Document 2-5 common cross-repo tasks as step-by-step guides.
+Format: task name, then which files to touch in each repo (with paths).
+Example: "Adding a new rapid test field" → backend: validation schema, model type, threshold config; frontend: component list, Yup schemas, standards schema.
+These are the highest-value context pieces — the tasks that trip up someone new to the codebase. -->
 `;
 }

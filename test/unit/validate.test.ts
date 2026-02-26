@@ -19,53 +19,23 @@ describe('validateShards', () => {
     const ctxDir = join(tmpDir, '.ctxify');
     mkdirSync(ctxDir, { recursive: true });
 
-    // Valid index.md with good frontmatter
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
 ctxify: "2.0"
-scanned_at: "2025-01-15T10:00:00.000Z"
-workspace: /workspace
 mode: multi-repo
-totals:
-  repos: 1
-  endpoints: 1
-  shared_types: 0
-  env_vars: 0
+repos:
+  - api-server
+scanned_at: "2025-01-15T10:00:00.000Z"
 ---
 
-# Workspace: my-project
+# my-project
 
 ## Repos
 
-| Repo | Language | Framework | Files | Entry points |
-|------|----------|-----------|-------|--------------|
-| api-server | typescript | hono | 42 | \`src/index.ts\` |
-`,
-      'utf-8',
-    );
-
-    // A repo shard
-    writeFileSync(
-      join(ctxDir, 'repo-api-server.md'),
-      `# api-server
-
-## Structure
-- src/
-- src/routes/
-`,
-      'utf-8',
-    );
-
-    // An endpoints shard with matched markers
-    writeFileSync(
-      join(ctxDir, 'endpoints-api-server.md'),
-      `# api-server — Endpoints
-
-<!-- endpoint:GET:/users -->
-**GET /users** — \`src/routes/users.ts:12\` (getUsers)
-Returns all users.
-<!-- /endpoint -->
+| Repo | Language | Framework | Role |
+|------|----------|-----------|------|
+| api-server | typescript | hono | API |
 `,
       'utf-8',
     );
@@ -78,21 +48,16 @@ Returns all users.
 
   it('fails for unmatched segment markers', () => {
     const ctxDir = join(tmpDir, '.ctxify');
-    mkdirSync(ctxDir, { recursive: true });
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
 
-    // Valid index.md
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
 ctxify: "2.0"
-scanned_at: "2025-01-15T10:00:00.000Z"
-workspace: /workspace
 mode: single-repo
-totals:
-  repos: 1
-  endpoints: 0
-  shared_types: 0
-  env_vars: 0
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
 ---
 
 # Workspace
@@ -100,14 +65,20 @@ totals:
       'utf-8',
     );
 
-    // Endpoints shard with opening marker but no closing marker
+    // Domain file with opening marker but no closing marker
     writeFileSync(
-      join(ctxDir, 'endpoints-api-server.md'),
-      `# api-server — Endpoints
+      join(ctxDir, 'repos', 'api', 'payments.md'),
+      `---
+repo: api
+type: domain
+domain: payments
+---
 
-<!-- endpoint:GET:/users -->
-**GET /users** — \`src/routes/users.ts:12\` (getUsers)
-Returns all users.
+# Payments
+
+<!-- endpoint:GET:/payments -->
+**GET /payments** — \`src/routes/payments.ts:12\`
+Returns all payments.
 `,
       'utf-8',
     );
@@ -122,7 +93,6 @@ Returns all users.
     const ctxDir = join(tmpDir, '.ctxify');
     mkdirSync(ctxDir, { recursive: true });
 
-    // index.md with invalid YAML in frontmatter
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
@@ -149,14 +119,10 @@ ctxify: "2.0
       join(ctxDir, 'index.md'),
       `---
 ctxify: "2.0"
-scanned_at: "2025-01-15T10:00:00.000Z"
-workspace: /workspace
 mode: single-repo
-totals:
-  repos: 1
-  endpoints: 0
-  shared_types: 0
-  env_vars: 0
+repos:
+  - my-app
+scanned_at: "2025-01-15T10:00:00.000Z"
 ---
 
 # Workspace
@@ -173,20 +139,16 @@ totals:
 
   it('ignores segment markers inside TODO comment blocks', () => {
     const ctxDir = join(tmpDir, '.ctxify');
-    mkdirSync(join(ctxDir, 'endpoints'), { recursive: true });
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
 
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
 ctxify: "2.0"
-scanned_at: "2025-01-15T10:00:00.000Z"
-workspace: /workspace
 mode: single-repo
-totals:
-  repos: 1
-  endpoints: 0
-  shared_types: 0
-  env_vars: 0
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
 ---
 
 # Workspace
@@ -194,12 +156,17 @@ totals:
       'utf-8',
     );
 
-    // Endpoints template with example markers inside a TODO block
+    // Overview with example markers inside a TODO block
     writeFileSync(
-      join(ctxDir, 'endpoints', 'api.md'),
-      `# api — Endpoints
+      join(ctxDir, 'repos', 'api', 'overview.md'),
+      `---
+repo: api
+type: overview
+---
 
-<!-- TODO: Agent — document endpoints using this format:
+# api
+
+<!-- TODO: Agent — document patterns using this format:
 
 <!-- endpoint:METHOD:/path -->
 **METHOD /path** — \`file:line\` (handlerName)
@@ -212,14 +179,10 @@ totals:
 
     const result = validateShards(tmpDir);
 
-    // Should not produce errors (example markers are balanced but inside TODO)
     expect(result.errors).toHaveLength(0);
-    // Should not warn about totals mismatch (0 declared, 0 real)
-    expect(result.warnings.some((w) => w.includes('totals.endpoints mismatch'))).toBe(false);
   });
 
   it('fails when index.md is missing', () => {
-    // No .ctxify directory at all
     const result = validateShards(tmpDir);
 
     expect(result.valid).toBe(false);

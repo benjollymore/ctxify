@@ -39,7 +39,7 @@ describe('scaffoldWorkspace', () => {
     expect(result.mode).toBe('single-repo');
     expect(existsSync(join(dir, 'ctx.yaml'))).toBe(true);
     expect(existsSync(join(dir, '.ctxify', 'index.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'my-app.md'))).toBe(true);
+    expect(existsSync(join(dir, '.ctxify', 'repos', 'my-app', 'overview.md'))).toBe(true);
   });
 
   it('scaffolds multi-repo workspace', async () => {
@@ -61,8 +61,8 @@ describe('scaffoldWorkspace', () => {
     expect(result.status).toBe('initialized');
     expect(result.mode).toBe('multi-repo');
     expect(result.repos).toEqual(['api', 'web']);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'api.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'web.md'))).toBe(true);
+    expect(existsSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'))).toBe(true);
+    expect(existsSync(join(dir, '.ctxify', 'repos', 'web', 'overview.md'))).toBe(true);
   });
 
   it('does not include skill_installed when no agent specified', async () => {
@@ -79,7 +79,7 @@ describe('scaffoldWorkspace', () => {
     expect(result.skill_installed).toBeUndefined();
   });
 
-  it('writes all expected shard directories', async () => {
+  it('only creates repos/{name}/overview.md (no old shard dirs)', async () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
     createPackageJson(dir, 'my-app');
@@ -90,13 +90,17 @@ describe('scaffoldWorkspace', () => {
       repos: [{ path: '.', name: 'my-app' }],
     });
 
-    expect(existsSync(join(dir, '.ctxify', 'endpoints', 'my-app.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'schemas', 'my-app.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'types', 'shared.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'env', 'all.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'topology', 'graph.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'questions', 'pending.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', '_analysis.md'))).toBe(true);
+    // New structure
+    expect(existsSync(join(dir, '.ctxify', 'repos', 'my-app', 'overview.md'))).toBe(true);
+
+    // Old structure should NOT exist
+    expect(existsSync(join(dir, '.ctxify', 'endpoints'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'schemas'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'types'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'env'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'topology'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'questions'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', '_analysis.md'))).toBe(false);
   });
 
   it('ensures .ctxify/ is in .gitignore', async () => {
