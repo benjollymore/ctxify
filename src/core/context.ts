@@ -1,5 +1,3 @@
-import type { CtxConfig } from './config.js';
-
 export interface RepoInfo {
   name: string;
   path: string;
@@ -28,7 +26,7 @@ export interface ApiEndpoint {
 
 export interface SharedType {
   name: string;
-  kind: 'interface' | 'type' | 'enum' | 'class';
+  kind: 'interface' | 'type' | 'enum' | 'class' | 'function' | 'const';
   definedIn: string;
   file: string;
   usedBy: string[];
@@ -76,42 +74,3 @@ export interface Question {
   confidence: number;
 }
 
-export interface WorkspaceContext {
-  config: CtxConfig;
-  workspaceRoot: string;
-  repos: RepoInfo[];
-  apiEndpoints: ApiEndpoint[];
-  sharedTypes: SharedType[];
-  envVars: EnvVar[];
-  relationships: InferredRelationship[];
-  conventions: Convention[];
-  dbSchemas: DbSchema[];
-  questions: Question[];
-  answers: Record<string, string>;
-  metadata: {
-    generatedAt: string;
-    ctxifyVersion: string;
-    gitRevisions: Record<string, string>;
-  };
-}
-
-export function createWorkspaceContext(config: CtxConfig, workspaceRoot: string): WorkspaceContext {
-  return {
-    config,
-    workspaceRoot,
-    repos: [],
-    apiEndpoints: [],
-    sharedTypes: [],
-    envVars: [],
-    relationships: [],
-    conventions: [],
-    dbSchemas: [],
-    questions: [],
-    answers: {},
-    metadata: {
-      generatedAt: new Date().toISOString(),
-      ctxifyVersion: '0.1.0',
-      gitRevisions: {},
-    },
-  };
-}

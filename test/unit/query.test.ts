@@ -1,266 +1,136 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { dumpYaml } from '../../src/utils/yaml.js';
+import { describe, it, expect } from 'vitest';
+import { extractSegments } from '../../src/utils/segments.js';
+import { parseFrontmatter } from '../../src/utils/frontmatter.js';
 
-// Query command reads files from .ctxify/ directory. We'll set up a fake shard directory
-// and test the filtering logic by simulating what the command does internally.
+// Test shard files are now markdown with segment markers.
 
-function createTestShards(baseDir: string): void {
-  const ctxDir = join(baseDir, '.ctxify');
+describe('segment extraction: endpoints', () => {
+  const content = `# api — Endpoints
 
-  // index.yaml
-  mkdirSync(ctxDir, { recursive: true });
-  writeFileSync(join(ctxDir, 'index.yaml'), dumpYaml({
-    ctxify: '2.0',
-    scanned_at: '2026-02-25T10:00:00Z',
-    workspace: baseDir,
-    repos: [
-      { name: 'api', language: 'typescript', framework: 'hono', path: './api', endpoints: 3 },
-      { name: 'web', language: 'typescript', framework: 'react', path: './web' },
-    ],
-    totals: { repos: 2, endpoints: 3, shared_types: 2, env_vars: 3 },
-  }));
+<!-- endpoint:GET:/users -->
+**GET /users** — \`src/routes/users.ts:5\` (getUsers)
+<!-- /endpoint -->
 
-  // repos/
-  mkdirSync(join(ctxDir, 'repos'), { recursive: true });
-  writeFileSync(join(ctxDir, 'repos', 'api.yaml'), dumpYaml({
-    name: 'api', language: 'typescript', framework: 'hono',
-    scripts: { dev: 'tsx watch' }, dependencies: { hono: '4.0.0' },
-  }));
-  writeFileSync(join(ctxDir, 'repos', 'web.yaml'), dumpYaml({
-    name: 'web', language: 'typescript', framework: 'react',
-    scripts: { dev: 'vite' }, dependencies: { react: '18.2.0' },
-  }));
+<!-- endpoint:POST:/users -->
+**POST /users** — \`src/routes/users.ts:20\` (createUser)
+<!-- /endpoint -->
 
-  // endpoints/
-  mkdirSync(join(ctxDir, 'endpoints'), { recursive: true });
-  writeFileSync(join(ctxDir, 'endpoints', 'api.yaml'), dumpYaml({
-    repo: 'api',
-    endpoints: [
-      { method: 'GET', path: '/users', file: 'src/routes/users.ts', handler: 'getUsers', line: 5 },
-      { method: 'POST', path: '/users', file: 'src/routes/users.ts', handler: 'createUser', line: 20 },
-      { method: 'GET', path: '/health', file: 'src/index.ts', handler: null, line: 10 },
-    ],
-  }));
+<!-- endpoint:GET:/health -->
+**GET /health** — \`src/index.ts:10\`
+<!-- /endpoint -->
 
-  // types/
-  mkdirSync(join(ctxDir, 'types'), { recursive: true });
-  writeFileSync(join(ctxDir, 'types', 'shared.yaml'), dumpYaml({
-    shared_types: [
-      { name: 'UserProfile', kind: 'interface', defined_in: 'api', file: 'src/types.ts', used_by: ['web'], properties: ['id', 'name'] },
-      { name: 'ApiResponse', kind: 'type', defined_in: 'api', file: 'src/types.ts', used_by: ['web'] },
-    ],
-  }));
+<!-- endpoint:DELETE:/users/:id -->
+**DELETE /users/:id** — \`src/routes/users.ts:30\`
+<!-- /endpoint -->
+`;
 
-  // env/
-  mkdirSync(join(ctxDir, 'env'), { recursive: true });
-  writeFileSync(join(ctxDir, 'env', 'all.yaml'), dumpYaml({
-    env_vars: [
-      { name: 'PORT', repos: ['api'], sources: [{ repo: 'api', file: '.env', type: 'env-file' }] },
-      { name: 'API_URL', repos: ['web'], sources: [{ repo: 'web', file: 'src/config.ts', type: 'code-reference' }] },
-      { name: 'DATABASE_URL', repos: ['api', 'web'], sources: [{ repo: 'api', file: '.env', type: 'env-file' }] },
-    ],
-  }));
-
-  // topology/
-  mkdirSync(join(ctxDir, 'topology'), { recursive: true });
-  writeFileSync(join(ctxDir, 'topology', 'graph.yaml'), dumpYaml({
-    repos: [{ name: 'api' }, { name: 'web' }],
-    edges: [{ from: 'web', to: 'api', type: 'api-consumer', confidence: 0.9 }],
-  }));
-
-  // questions/
-  mkdirSync(join(ctxDir, 'questions'), { recursive: true });
-  writeFileSync(join(ctxDir, 'questions', 'pending.yaml'), dumpYaml({
-    pending: 1,
-    questions: [{ id: 'q1', question: 'Does web call api directly?', category: 'relationship' }],
-  }));
-}
-
-// Helper to simulate query filtering logic (extracted from the command)
-function filterEndpoints(
-  data: { endpoints?: Array<Record<string, unknown>> },
-  method?: string,
-  pathContains?: string,
-): { endpoints: Array<Record<string, unknown>> } {
-  let endpoints = data.endpoints || [];
-  if (method) {
-    endpoints = endpoints.filter(
-      (ep) => typeof ep.method === 'string' && ep.method.toUpperCase() === method.toUpperCase(),
-    );
-  }
-  if (pathContains) {
-    endpoints = endpoints.filter(
-      (ep) => typeof ep.path === 'string' && (ep.path as string).includes(pathContains),
-    );
-  }
-  return { ...data, endpoints };
-}
-
-function filterTypes(
-  data: { shared_types?: Array<Record<string, unknown>> },
-  name?: string,
-): { shared_types: Array<Record<string, unknown>> } {
-  if (!name) return data as { shared_types: Array<Record<string, unknown>> };
-  const types = (data.shared_types || []).filter(
-    (t) => typeof t.name === 'string' && t.name === name,
-  );
-  return { ...data, shared_types: types };
-}
-
-function filterEnvByRepo(
-  data: { env_vars?: Array<{ name: string; repos: string[] }> },
-  repo: string,
-): { env_vars: Array<{ name: string; repos: string[] }> } {
-  const filtered = (data.env_vars || []).filter((e) => e.repos.includes(repo));
-  return { env_vars: filtered };
-}
-
-describe('query filtering: endpoints', () => {
-  const testData = {
-    endpoints: [
-      { method: 'GET', path: '/users', handler: 'getUsers' },
-      { method: 'POST', path: '/users', handler: 'createUser' },
-      { method: 'GET', path: '/health', handler: null },
-      { method: 'DELETE', path: '/users/:id', handler: 'deleteUser' },
-    ],
-  };
-
-  it('filters by method', () => {
-    const result = filterEndpoints(testData, 'GET');
-    expect(result.endpoints).toHaveLength(2);
-    expect(result.endpoints.every((e) => e.method === 'GET')).toBe(true);
+  it('extracts all segments when no filter', () => {
+    const segments = extractSegments(content, 'endpoint');
+    expect(segments).toHaveLength(4);
   });
 
-  it('filters by method case-insensitively', () => {
-    const result = filterEndpoints(testData, 'post');
-    expect(result.endpoints).toHaveLength(1);
-    expect(result.endpoints[0].method).toBe('POST');
+  it('filters by method (attr index 0, exact)', () => {
+    const segments = extractSegments(content, 'endpoint', { index: 0, value: 'GET', exact: true });
+    expect(segments).toHaveLength(2);
+    expect(segments[0]).toContain('GET /users');
+    expect(segments[1]).toContain('GET /health');
   });
 
-  it('filters by path-contains', () => {
-    const result = filterEndpoints(testData, undefined, 'users');
-    expect(result.endpoints).toHaveLength(3);
+  it('filters by path substring (attr index 1)', () => {
+    const segments = extractSegments(content, 'endpoint', { index: 1, value: 'users' });
+    expect(segments).toHaveLength(3);
   });
 
-  it('filters by method AND path-contains', () => {
-    const result = filterEndpoints(testData, 'GET', 'users');
-    expect(result.endpoints).toHaveLength(1);
-    expect(result.endpoints[0].path).toBe('/users');
-  });
-
-  it('returns all when no filters', () => {
-    const result = filterEndpoints(testData);
-    expect(result.endpoints).toHaveLength(4);
-  });
-
-  it('returns empty when no matches', () => {
-    const result = filterEndpoints(testData, 'PATCH');
-    expect(result.endpoints).toHaveLength(0);
+  it('returns empty when no match', () => {
+    const segments = extractSegments(content, 'endpoint', { index: 0, value: 'PATCH', exact: true });
+    expect(segments).toHaveLength(0);
   });
 });
 
-describe('query filtering: types', () => {
-  const testData = {
-    shared_types: [
-      { name: 'UserProfile', kind: 'interface' },
-      { name: 'ApiResponse', kind: 'type' },
-      { name: 'Config', kind: 'interface' },
-    ],
-  };
+describe('segment extraction: types', () => {
+  const content = `# Shared Types
 
-  it('filters by exact name', () => {
-    const result = filterTypes(testData, 'UserProfile');
-    expect(result.shared_types).toHaveLength(1);
-    expect(result.shared_types[0].name).toBe('UserProfile');
+<!-- type:UserProfile:interface -->
+### UserProfile
+Defined in **api**, used by **web**.
+<!-- /type -->
+
+<!-- type:ApiResponse:type -->
+### ApiResponse
+Defined in **api**, used by **web**.
+<!-- /type -->
+
+<!-- type:Config:interface -->
+### Config
+Internal config type.
+<!-- /type -->
+`;
+
+  it('filters by exact name (attr index 0)', () => {
+    const segments = extractSegments(content, 'type', { index: 0, value: 'UserProfile', exact: true });
+    expect(segments).toHaveLength(1);
+    expect(segments[0]).toContain('UserProfile');
   });
 
-  it('returns all when no name filter', () => {
-    const result = filterTypes(testData);
-    expect(result.shared_types).toHaveLength(3);
+  it('returns all when no filter', () => {
+    const segments = extractSegments(content, 'type');
+    expect(segments).toHaveLength(3);
   });
 
   it('returns empty when name not found', () => {
-    const result = filterTypes(testData, 'NonExistent');
-    expect(result.shared_types).toHaveLength(0);
+    const segments = extractSegments(content, 'type', { index: 0, value: 'NonExistent', exact: true });
+    expect(segments).toHaveLength(0);
   });
 });
 
-describe('query filtering: env by repo', () => {
-  const testData = {
-    env_vars: [
-      { name: 'PORT', repos: ['api'] },
-      { name: 'API_URL', repos: ['web'] },
-      { name: 'DATABASE_URL', repos: ['api', 'web'] },
-    ],
-  };
+describe('segment extraction: env', () => {
+  const content = `# Environment Variables
 
-  it('filters env vars by repo', () => {
-    const result = filterEnvByRepo(testData, 'api');
-    expect(result.env_vars).toHaveLength(2);
-    expect(result.env_vars.map((e) => e.name).sort()).toEqual(['DATABASE_URL', 'PORT']);
+<!-- env:DATABASE_URL -->
+**DATABASE_URL** — shared
+<!-- /env -->
+
+<!-- env:PORT -->
+**PORT** — api only
+<!-- /env -->
+
+<!-- env:API_URL -->
+**API_URL** — web only
+<!-- /env -->
+`;
+
+  it('extracts by exact name', () => {
+    const segments = extractSegments(content, 'env', { index: 0, value: 'PORT', exact: true });
+    expect(segments).toHaveLength(1);
+    expect(segments[0]).toContain('PORT');
   });
 
-  it('returns only web-specific env vars', () => {
-    const result = filterEnvByRepo(testData, 'web');
-    expect(result.env_vars).toHaveLength(2);
-    expect(result.env_vars.map((e) => e.name).sort()).toEqual(['API_URL', 'DATABASE_URL']);
-  });
-
-  it('returns empty for unknown repo', () => {
-    const result = filterEnvByRepo(testData, 'unknown');
-    expect(result.env_vars).toHaveLength(0);
+  it('extracts all env segments', () => {
+    const segments = extractSegments(content, 'env');
+    expect(segments).toHaveLength(3);
   });
 });
 
-describe('query: shard file reading', () => {
-  let tmpDir: string;
+describe('frontmatter parsing', () => {
+  it('parses YAML frontmatter from index', () => {
+    const content = `---
+ctxify: "2.0"
+mode: multi-repo
+totals:
+  repos: 2
+---
 
-  beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'ctxify-query-'));
-    createTestShards(tmpDir);
+# Workspace
+`;
+    const fm = parseFrontmatter(content);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify).toBe('2.0');
+    expect(fm!.mode).toBe('multi-repo');
+    expect((fm!.totals as Record<string, number>).repos).toBe(2);
   });
 
-  afterAll(() => {
-    if (tmpDir) rmSync(tmpDir, { recursive: true, force: true });
-  });
-
-  it('can read and parse index.yaml', () => {
-    const content = readFileSync(join(tmpDir, '.ctxify', 'index.yaml'), 'utf-8');
-    const parsed = JSON.parse(JSON.stringify(require('js-yaml').load(content)));
-    expect(parsed.ctxify).toBe('2.0');
-    expect(parsed.repos).toHaveLength(2);
-  });
-
-  it('can read repo shard', () => {
-    const content = readFileSync(join(tmpDir, '.ctxify', 'repos', 'api.yaml'), 'utf-8');
-    const parsed = JSON.parse(JSON.stringify(require('js-yaml').load(content)));
-    expect(parsed.name).toBe('api');
-    expect(parsed.framework).toBe('hono');
-  });
-
-  it('can read and filter endpoints shard', () => {
-    const content = readFileSync(join(tmpDir, '.ctxify', 'endpoints', 'api.yaml'), 'utf-8');
-    const parsed = require('js-yaml').load(content) as { endpoints: Array<Record<string, unknown>> };
-    const filtered = filterEndpoints(parsed, 'POST');
-    expect(filtered.endpoints).toHaveLength(1);
-    expect(filtered.endpoints[0].path).toBe('/users');
-  });
-
-  it('can read and filter types shard by name', () => {
-    const content = readFileSync(join(tmpDir, '.ctxify', 'types', 'shared.yaml'), 'utf-8');
-    const parsed = require('js-yaml').load(content) as { shared_types: Array<Record<string, unknown>> };
-    const filtered = filterTypes(parsed, 'UserProfile');
-    expect(filtered.shared_types).toHaveLength(1);
-    expect(filtered.shared_types[0].name).toBe('UserProfile');
-  });
-
-  it('can read and filter env shard by repo', () => {
-    const content = readFileSync(join(tmpDir, '.ctxify', 'env', 'all.yaml'), 'utf-8');
-    const parsed = require('js-yaml').load(content) as { env_vars: Array<{ name: string; repos: string[] }> };
-    const filtered = filterEnvByRepo(parsed, 'api');
-    expect(filtered.env_vars).toHaveLength(2);
+  it('returns null for content without frontmatter', () => {
+    const fm = parseFrontmatter('# Just a heading\n\nSome text.');
+    expect(fm).toBeNull();
   });
 });

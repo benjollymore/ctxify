@@ -1,78 +1,104 @@
 import { describe, it, expect } from 'vitest';
-import { createWorkspaceContext } from '../../src/core/context.js';
-import type { CtxConfig } from '../../src/core/config.js';
+import type {
+  RepoInfo,
+  ApiEndpoint,
+  SharedType,
+  EnvVar,
+  InferredRelationship,
+  Convention,
+  DbSchema,
+  Question,
+} from '../../src/core/context.js';
 
-describe('context', () => {
-  function makeConfig(): CtxConfig {
-    return {
-      version: '1',
-      workspace: '/tmp/test-workspace',
-      repos: [],
-      relationships: [],
-      options: {
-        outputDir: '.ctxify',
-        maxFileSize: 100_000,
-        maxDepth: 5,
-        includePatterns: [],
-        excludePatterns: ['node_modules', '.git'],
-      },
+describe('context types', () => {
+  it('RepoInfo type can be used as a value shape', () => {
+    const repo: RepoInfo = {
+      name: 'test',
+      path: '.',
+      language: 'typescript',
+      framework: 'hono',
+      description: 'test repo',
+      entryPoints: ['src/index.ts'],
+      keyDirs: ['src'],
+      fileCount: 10,
+      dependencies: {},
+      devDependencies: {},
+      scripts: {},
+      manifestType: 'package.json',
     };
-  }
+    expect(repo.name).toBe('test');
+  });
 
-  describe('createWorkspaceContext', () => {
-    it('should return a context with empty arrays', () => {
-      const config = makeConfig();
-      const ctx = createWorkspaceContext(config, '/tmp/test-workspace');
+  it('ApiEndpoint type can be used as a value shape', () => {
+    const endpoint: ApiEndpoint = {
+      repo: 'api',
+      method: 'GET',
+      path: '/users',
+      file: 'src/routes/users.ts',
+    };
+    expect(endpoint.method).toBe('GET');
+  });
 
-      expect(ctx.repos).toEqual([]);
-      expect(ctx.apiEndpoints).toEqual([]);
-      expect(ctx.sharedTypes).toEqual([]);
-      expect(ctx.envVars).toEqual([]);
-      expect(ctx.relationships).toEqual([]);
-      expect(ctx.conventions).toEqual([]);
-      expect(ctx.dbSchemas).toEqual([]);
-      expect(ctx.questions).toEqual([]);
-      expect(ctx.answers).toEqual({});
-    });
+  it('SharedType type can be used as a value shape', () => {
+    const shared: SharedType = {
+      name: 'User',
+      kind: 'interface',
+      definedIn: 'api',
+      file: 'src/types.ts',
+      usedBy: ['web'],
+    };
+    expect(shared.kind).toBe('interface');
+  });
 
-    it('should store the config reference', () => {
-      const config = makeConfig();
-      const ctx = createWorkspaceContext(config, '/tmp/test-workspace');
+  it('EnvVar type can be used as a value shape', () => {
+    const env: EnvVar = {
+      name: 'DATABASE_URL',
+      repos: ['api'],
+      sources: [{ repo: 'api', file: '.env', type: 'env-file' }],
+    };
+    expect(env.name).toBe('DATABASE_URL');
+  });
 
-      expect(ctx.config).toBe(config);
-    });
+  it('InferredRelationship type can be used as a value shape', () => {
+    const rel: InferredRelationship = {
+      from: 'web',
+      to: 'api',
+      type: 'api-consumer',
+      evidence: 'fetch calls',
+      confidence: 0.9,
+    };
+    expect(rel.type).toBe('api-consumer');
+  });
 
-    it('should store the workspace root', () => {
-      const config = makeConfig();
-      const ctx = createWorkspaceContext(config, '/my/workspace');
+  it('Convention type can be used as a value shape', () => {
+    const conv: Convention = {
+      repo: 'api',
+      category: 'naming',
+      pattern: 'camelCase',
+      description: 'Uses camelCase for variables',
+    };
+    expect(conv.category).toBe('naming');
+  });
 
-      expect(ctx.workspaceRoot).toBe('/my/workspace');
-    });
+  it('DbSchema type can be used as a value shape', () => {
+    const schema: DbSchema = {
+      repo: 'api',
+      orm: 'prisma',
+      file: 'prisma/schema.prisma',
+      models: [{ name: 'User', fields: [{ name: 'id', type: 'Int' }] }],
+    };
+    expect(schema.orm).toBe('prisma');
+  });
 
-    it('should have metadata with correct version', () => {
-      const config = makeConfig();
-      const ctx = createWorkspaceContext(config, '/tmp/test-workspace');
-
-      expect(ctx.metadata.ctxifyVersion).toBe('0.1.0');
-    });
-
-    it('should have metadata with generatedAt as ISO string', () => {
-      const before = new Date().toISOString();
-      const config = makeConfig();
-      const ctx = createWorkspaceContext(config, '/tmp/test-workspace');
-      const after = new Date().toISOString();
-
-      expect(ctx.metadata.generatedAt).toBeTruthy();
-      // generatedAt should be between before and after timestamps
-      expect(ctx.metadata.generatedAt >= before).toBe(true);
-      expect(ctx.metadata.generatedAt <= after).toBe(true);
-    });
-
-    it('should have empty gitRevisions in metadata', () => {
-      const config = makeConfig();
-      const ctx = createWorkspaceContext(config, '/tmp/test-workspace');
-
-      expect(ctx.metadata.gitRevisions).toEqual({});
-    });
+  it('Question type can be used as a value shape', () => {
+    const q: Question = {
+      id: 'q1',
+      pass: 'relationship',
+      category: 'relationship',
+      question: 'Does web call api directly?',
+      context: 'Found fetch calls',
+      confidence: 0.6,
+    };
+    expect(q.category).toBe('relationship');
   });
 });

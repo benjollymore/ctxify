@@ -1,65 +1,80 @@
 import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { createWorkspaceContext } from '../../core/context.js';
-import { createLogger } from '../../core/logger.js';
-import { PassRegistry } from '../../core/pass-registry.js';
-import { runPipelineParallel } from '../../core/pipeline.js';
-import { loadCache } from '../../core/cache.js';
-import { computeStaleness } from '../../core/differ.js';
-import { repoDetectionPass } from '../../passes/01-repo-detection.js';
 
 export function registerStatusCommand(program: Command): void {
   program
     .command('status')
-    .description('JSON staleness report for workspace context')
+    .description('JSON status report for workspace context shards')
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .action(async (options: { dir?: string }) => {
-      const logger = createLogger('error');
       const workspaceRoot = resolve(options.dir || '.');
 
       const configPath = join(workspaceRoot, 'ctx.yaml');
       if (!existsSync(configPath)) {
-        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" or "ctxify scan" first.', has_cache: false }));
+        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.', has_config: false }));
         return;
       }
 
       const config = loadConfig(configPath);
       const outputDir = config.options.outputDir || '.ctxify';
-      const ctx = createWorkspaceContext(config, workspaceRoot);
+      const outputRoot = join(workspaceRoot, outputDir);
 
-      // Run repo detection
-      const registry = new PassRegistry();
-      registry.register(repoDetectionPass);
-      await runPipelineParallel(ctx, registry, logger);
+      const indexExists = existsSync(join(outputRoot, 'index.md'));
 
-      // Load cache and compute staleness
-      const cache = loadCache(workspaceRoot, outputDir);
-      const staleness = await computeStaleness(ctx, cache);
-
-      // Check shard directory structure
+      // Check which shard directories exist
       const shardDirs = ['repos', 'endpoints', 'types', 'env', 'topology', 'schemas', 'questions'];
-      const shardStatus = shardDirs.map((dir) => ({
-        shard: dir,
-        exists: existsSync(join(workspaceRoot, outputDir, dir)),
-      }));
+      const shards = shardDirs.filter((dir) => existsSync(join(outputRoot, dir)));
 
-      const indexExists = existsSync(join(workspaceRoot, outputDir, 'index.yaml'));
+      // Count <!-- TODO: markers across all .md files
+      let todoCount = 0;
+      if (existsSync(outputRoot)) {
+        const mdFiles = collectMdFiles(outputRoot);
+        for (const filePath of mdFiles) {
+          const content = readFileSync(filePath, 'utf-8');
+          const matches = content.match(/<!--\s*TODO:/g);
+          if (matches) todoCount += matches.length;
+        }
+      }
 
       const result = {
-        stale: staleness.staleRepos,
-        fresh: staleness.freshRepos,
-        is_fully_fresh: staleness.isFullyFresh,
-        has_cache: cache !== null,
         index_exists: indexExists,
-        repos: ctx.repos.map((r) => ({
-          name: r.name,
-          stale: staleness.staleRepos.includes(r.name),
-        })),
-        shards: shardStatus,
+        repos: config.repos.map((r) => r.name),
+        shards,
+        todo_count: todoCount,
+        has_config: true,
       };
 
       console.log(JSON.stringify(result, null, 2));
     });
+}
+
+function collectMdFiles(dir: string): string[] {
+  const files: string[] = [];
+
+  function walk(currentDir: string): void {
+    let entries: string[];
+    try {
+      entries = readdirSync(currentDir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = join(currentDir, entry);
+      try {
+        const stat = statSync(fullPath);
+        if (stat.isDirectory()) {
+          walk(fullPath);
+        } else if (stat.isFile() && entry.endsWith('.md')) {
+          files.push(fullPath);
+        }
+      } catch {
+        // skip inaccessible
+      }
+    }
+  }
+
+  walk(dir);
+  return files;
 }

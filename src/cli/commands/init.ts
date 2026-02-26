@@ -5,7 +5,7 @@ import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
 import type { RepoEntry, OperatingMode, MonoRepoOptions } from '../../core/config.js';
 import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
-import { autoDetectMode } from '../prompts.js';
+import { autoDetectMode } from '../../core/detect.js';
 import { findGitRoots, getHeadSha } from '../../utils/git.js';
 import { readJsonFile } from '../../utils/fs.js';
 import type { RepoTemplateData } from '../../templates/index-md.js';
