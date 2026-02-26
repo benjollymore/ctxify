@@ -80,18 +80,17 @@ describe('integration: ctxify init', () => {
     // .ctxify shards created
     expect(existsSync(join(dir, '.ctxify', 'index.md'))).toBe(true);
 
-    // Repo name is the directory basename
+    // Repo overview in new structure
     const repoName = output.repos[0];
-    expect(existsSync(join(dir, '.ctxify', 'repos', `${repoName}.md`))).toBe(true);
+    expect(existsSync(join(dir, '.ctxify', 'repos', repoName, 'overview.md'))).toBe(true);
 
-    // _analysis.md exists
-    expect(existsSync(join(dir, '.ctxify', '_analysis.md'))).toBe(true);
-
-    // Other shards
-    expect(existsSync(join(dir, '.ctxify', 'types', 'shared.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'env', 'all.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'topology', 'graph.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'questions', 'pending.md'))).toBe(true);
+    // Old shard dirs should NOT exist
+    expect(existsSync(join(dir, '.ctxify', '_analysis.md'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'endpoints'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'types'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'env'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'topology'))).toBe(false);
+    expect(existsSync(join(dir, '.ctxify', 'questions'))).toBe(false);
   });
 
   it('multi-repo with --repos: creates shards for each repo', () => {
@@ -123,16 +122,12 @@ describe('integration: ctxify init', () => {
     expect(ctxYaml).toContain('api');
     expect(ctxYaml).toContain('web');
 
-    // Per-repo shards
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'api.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'web.md'))).toBe(true);
+    // Per-repo overviews in new structure
+    expect(existsSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'))).toBe(true);
+    expect(existsSync(join(dir, '.ctxify', 'repos', 'web', 'overview.md'))).toBe(true);
 
-    // Per-repo endpoint shards
-    expect(existsSync(join(dir, '.ctxify', 'endpoints', 'api.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'endpoints', 'web.md'))).toBe(true);
-
-    // Shared shards
-    expect(existsSync(join(dir, '.ctxify', 'types', 'shared.md'))).toBe(true);
+    // Old structure should NOT exist
+    expect(existsSync(join(dir, '.ctxify', 'endpoints'))).toBe(false);
   });
 
   it('refuses without --force when ctx.yaml exists', () => {

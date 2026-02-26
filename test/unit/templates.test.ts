@@ -2,13 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseFrontmatter } from '../../src/utils/frontmatter.js';
 import { generateIndexTemplate, type RepoTemplateData } from '../../src/templates/index-md.js';
 import { generateRepoTemplate } from '../../src/templates/repo.js';
-import { generateEndpointsTemplate } from '../../src/templates/endpoints.js';
-import { generateTypesTemplate } from '../../src/templates/types.js';
-import { generateEnvTemplate } from '../../src/templates/env.js';
-import { generateTopologyTemplate } from '../../src/templates/topology.js';
-import { generateSchemasTemplate } from '../../src/templates/schemas.js';
-import { generateQuestionsTemplate } from '../../src/templates/questions.js';
-import { generateAnalysisChecklist } from '../../src/templates/analysis.js';
+import { filterEssentialScripts } from '../../src/templates/repo.js';
 
 // ── Test fixtures ────────────────────────────────────────────────────────
 
@@ -21,10 +15,18 @@ function makeRepo(overrides: Partial<RepoTemplateData> = {}): RepoTemplateData {
     description: 'The main API',
     dependencies: { hono: '4.0.0', zod: '3.22.0' },
     devDependencies: { typescript: '5.6.0', vitest: '2.1.0' },
-    scripts: { dev: 'tsx watch src/index.ts', build: 'tsc', test: 'vitest run' },
+    scripts: {
+      dev: 'tsx watch src/index.ts',
+      build: 'tsc',
+      test: 'vitest run',
+      lint: 'eslint .',
+      'pre-commit': 'lint-staged',
+      'docker:up': 'docker compose up',
+      'migrate:run': 'prisma migrate deploy',
+    },
     manifestType: 'package.json',
     entryPoints: ['src/index.ts', 'bin/cli.ts'],
-    keyDirs: ['src', 'src/routes', 'src/middleware'],
+    keyDirs: ['src', 'src/routes', 'src/middleware', 'src/services/dropoff', 'patches/legacy', 'tests/unit'],
     fileCount: 42,
     ...overrides,
   };
@@ -63,45 +65,48 @@ describe('index template', () => {
     expect(fm!.mode).toBe('multi-repo');
   });
 
-  it('frontmatter has scanned_at and workspace', () => {
+  it('frontmatter has repos list and scanned_at', () => {
     const fm = parseFrontmatter(output);
     expect(fm!.scanned_at).toBe('2025-01-15T10:00:00.000Z');
-    expect(fm!.workspace).toBe('/workspace');
+    expect(fm!.repos).toEqual(['api-server', 'web-ui']);
   });
 
-  it('totals show 0 for agent-filled sections', () => {
+  it('frontmatter does NOT have workspace or totals', () => {
     const fm = parseFrontmatter(output);
-    const totals = fm!.totals as Record<string, number>;
-    expect(totals.repos).toBe(2);
-    expect(totals.endpoints).toBe(0);
-    expect(totals.shared_types).toBe(0);
-    expect(totals.env_vars).toBe(0);
+    expect(fm!.workspace).toBeUndefined();
+    expect(fm!.totals).toBeUndefined();
   });
 
-  it('repo table has mechanical data', () => {
+  it('repo table has language and framework', () => {
     expect(output).toContain('api-server');
     expect(output).toContain('web-ui');
     expect(output).toContain('typescript');
     expect(output).toContain('hono');
     expect(output).toContain('react');
-    // Check table structure
     expect(output).toContain('| Repo');
-    expect(output).toContain('| Language');
   });
 
-  it('TODO markers are present', () => {
+  it('repo table links to repos/{name}/overview.md', () => {
+    expect(output).toContain('repos/api-server/overview.md');
+    expect(output).toContain('repos/web-ui/overview.md');
+  });
+
+  it('has TODO markers', () => {
     expect(output).toContain('<!-- TODO:');
   });
 
-  it('shard pointers are present', () => {
-    expect(output).toContain('repos/api-server.md');
-    expect(output).toContain('repos/web-ui.md');
-    expect(output).toContain('endpoints/');
-    expect(output).toContain('topology/graph.md');
-    expect(output).toContain('types/shared.md');
-    expect(output).toContain('env/all.md');
-    expect(output).toContain('questions/pending.md');
-    expect(output).toContain('_analysis.md');
+  it('does NOT have old shard links', () => {
+    expect(output).not.toContain('endpoints/');
+    expect(output).not.toContain('topology/');
+    expect(output).not.toContain('types/shared.md');
+    expect(output).not.toContain('env/all.md');
+    expect(output).not.toContain('_analysis.md');
+  });
+
+  it('has Relationships, Commands, and Workflows sections', () => {
+    expect(output).toContain('## Relationships');
+    expect(output).toContain('## Commands');
+    expect(output).toContain('## Workflows');
   });
 });
 
@@ -111,32 +116,19 @@ describe('repo template', () => {
   const repo = makeRepo();
   const output = generateRepoTemplate(repo);
 
+  it('has YAML frontmatter with repo metadata', () => {
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.repo).toBe('api-server');
+    expect(fm!.type).toBe('overview');
+    expect(fm!.language).toBe('typescript');
+    expect(fm!.framework).toBe('hono');
+    expect(fm!.entry_points).toEqual(['src/index.ts', 'bin/cli.ts']);
+    expect(fm!.file_count).toBe(42);
+  });
+
   it('has name heading', () => {
     expect(output).toMatch(/^# api-server/m);
-  });
-
-  it('has dependencies listed', () => {
-    expect(output).toContain('hono');
-    expect(output).toContain('4.0.0');
-    expect(output).toContain('zod');
-  });
-
-  it('has dev dependencies listed', () => {
-    expect(output).toContain('typescript');
-    expect(output).toContain('5.6.0');
-  });
-
-  it('has scripts listed', () => {
-    expect(output).toContain('dev');
-    expect(output).toContain('tsx watch src/index.ts');
-    expect(output).toContain('build');
-    expect(output).toContain('tsc');
-  });
-
-  it('has structure with key dirs', () => {
-    expect(output).toContain('## Structure');
-    expect(output).toContain('src/');
-    expect(output).toContain('src/routes/');
   });
 
   it('has entry points', () => {
@@ -144,153 +136,93 @@ describe('repo template', () => {
     expect(output).toContain('bin/cli.ts');
   });
 
+  it('filters key dirs to ≤2 segments and excludes noise', () => {
+    // Kept: src, src/routes, src/middleware (≤2 segments, not noise)
+    expect(output).toContain('`src/`');
+    expect(output).toContain('`src/routes/`');
+    expect(output).toContain('`src/middleware/`');
+    // Filtered: src/services/dropoff (3 segments)
+    expect(output).not.toContain('src/services/dropoff');
+    // Filtered: patches/legacy (noise pattern)
+    expect(output).not.toContain('patches/');
+    // Filtered: tests/unit (noise pattern)
+    expect(output).not.toContain('tests/unit');
+  });
+
+  it('shows only essential scripts', () => {
+    expect(output).toContain('dev');
+    expect(output).toContain('build');
+    expect(output).toContain('test');
+    expect(output).toContain('lint');
+    // Excluded: pre-commit, docker:up, migrate:run
+    expect(output).not.toContain('pre-commit');
+    expect(output).not.toContain('docker:up');
+    expect(output).not.toContain('migrate:run');
+  });
+
+  it('does NOT list dependencies', () => {
+    expect(output).not.toContain('hono 4.0.0');
+    expect(output).not.toContain('zod 3.22.0');
+    expect(output).not.toContain('## Dependencies');
+    expect(output).not.toContain('## Dev Dependencies');
+  });
+
+  it('has Architecture, Commands, and Context sections', () => {
+    expect(output).toContain('## Architecture');
+    expect(output).toContain('## Commands');
+    expect(output).toContain('## Context');
+  });
+
+  it('does NOT have inline Patterns or Domains sections', () => {
+    expect(output).not.toContain('## Patterns');
+    expect(output).not.toContain('## Domains');
+  });
+
+  it('Context section references patterns.md', () => {
+    expect(output).toContain('`patterns.md`');
+  });
+
+  it('Context section includes domain file guidance', () => {
+    expect(output).toContain('`{domain}.md`');
+    expect(output).toContain('Domain files');
+  });
+
   it('has TODO markers', () => {
     expect(output).toContain('<!-- TODO:');
   });
 });
 
-// ── Endpoints template ───────────────────────────────────────────────────
+// ── filterEssentialScripts ───────────────────────────────────────────────
 
-describe('endpoints template', () => {
-  const output = generateEndpointsTemplate('api-server');
-
-  it('has repo name', () => {
-    expect(output).toContain('api-server');
+describe('filterEssentialScripts', () => {
+  it('keeps test, build, start, dev, lint, typecheck', () => {
+    const scripts = {
+      test: 'vitest',
+      build: 'tsc',
+      start: 'node dist/index.js',
+      dev: 'tsx watch',
+      lint: 'eslint .',
+      typecheck: 'tsc --noEmit',
+    };
+    const result = filterEssentialScripts(scripts);
+    expect(Object.keys(result)).toEqual(['test', 'build', 'start', 'dev', 'lint', 'typecheck']);
   });
 
-  it('has "Endpoints" in heading', () => {
-    expect(output).toMatch(/# .+Endpoints/);
+  it('keeps test:* variants', () => {
+    const scripts = { 'test:unit': 'vitest run unit', 'test:e2e': 'playwright test' };
+    const result = filterEssentialScripts(scripts);
+    expect(Object.keys(result)).toEqual(['test:unit', 'test:e2e']);
   });
 
-  it('has TODO with segment marker example', () => {
-    expect(output).toContain('<!-- TODO:');
-    expect(output).toContain('<!-- endpoint:');
-  });
-});
-
-// ── Types template ───────────────────────────────────────────────────────
-
-describe('types template', () => {
-  it('"Shared Types" for multi-repo', () => {
-    const output = generateTypesTemplate('multi-repo');
-    expect(output).toContain('# Shared Types');
-  });
-
-  it('"Shared Types" for mono-repo', () => {
-    const output = generateTypesTemplate('mono-repo');
-    expect(output).toContain('# Shared Types');
-  });
-
-  it('"Exported Types" for single-repo', () => {
-    const output = generateTypesTemplate('single-repo');
-    expect(output).toContain('# Exported Types');
-  });
-
-  it('has TODO with segment marker', () => {
-    const output = generateTypesTemplate('multi-repo');
-    expect(output).toContain('<!-- TODO:');
-    expect(output).toContain('<!-- type:');
-  });
-});
-
-// ── Env template ─────────────────────────────────────────────────────────
-
-describe('env template', () => {
-  const output = generateEnvTemplate();
-
-  it('has header', () => {
-    expect(output).toContain('# Environment Variables');
-  });
-
-  it('has segment marker example', () => {
-    expect(output).toContain('<!-- env:');
-  });
-});
-
-// ── Topology template ────────────────────────────────────────────────────
-
-describe('topology template', () => {
-  const repos = [makeRepo(), makeRepoB()];
-  const output = generateTopologyTemplate(repos);
-
-  it('has repo list with tech stack', () => {
-    expect(output).toContain('api-server');
-    expect(output).toContain('typescript');
-    expect(output).toContain('hono');
-    expect(output).toContain('web-ui');
-    expect(output).toContain('react');
-  });
-
-  it('has TODO for connections', () => {
-    expect(output).toContain('<!-- TODO:');
-  });
-});
-
-// ── Schemas template ─────────────────────────────────────────────────────
-
-describe('schemas template', () => {
-  const output = generateSchemasTemplate('api-server');
-
-  it('has repo name', () => {
-    expect(output).toContain('api-server');
-  });
-
-  it('has TODO with segment marker', () => {
-    expect(output).toContain('<!-- TODO:');
-    expect(output).toContain('<!-- model:');
-  });
-});
-
-// ── Questions template ───────────────────────────────────────────────────
-
-describe('questions template', () => {
-  const output = generateQuestionsTemplate();
-
-  it('has header', () => {
-    expect(output).toContain('# Pending Questions');
-  });
-
-  it('has TODO', () => {
-    expect(output).toContain('<!-- TODO:');
-  });
-});
-
-// ── Analysis checklist ───────────────────────────────────────────────────
-
-describe('analysis checklist', () => {
-  const repos = [makeRepo(), makeRepoB()];
-  const output = generateAnalysisChecklist(repos);
-
-  it('frontmatter has status=pending', () => {
-    const fm = parseFrontmatter(output);
-    expect(fm).not.toBeNull();
-    expect(fm!.status).toBe('pending');
-  });
-
-  it('frontmatter lists repo names', () => {
-    const fm = parseFrontmatter(output);
-    const repoNames = fm!.repos as string[];
-    expect(repoNames).toContain('api-server');
-    expect(repoNames).toContain('web-ui');
-  });
-
-  it('lists repos with language/framework and file count', () => {
-    expect(output).toContain('api-server');
-    expect(output).toContain('typescript');
-    expect(output).toContain('hono');
-    expect(output).toContain('42');
-    expect(output).toContain('web-ui');
-    expect(output).toContain('react');
-    expect(output).toContain('120');
-  });
-
-  it('has per-shard checklist items', () => {
-    // Should have unchecked checkbox items
-    expect(output).toContain('- [ ]');
-    // Should reference shard types
-    expect(output).toContain('endpoint');
-    expect(output).toContain('type');
-    expect(output).toContain('env');
-    expect(output).toContain('schema');
+  it('filters out CI, docker, migration, precommit scripts', () => {
+    const scripts = {
+      'pre-commit': 'lint-staged',
+      'docker:up': 'docker compose up',
+      'migrate:run': 'prisma migrate deploy',
+      'ci:test': 'vitest --coverage',
+      postinstall: 'patch-package',
+    };
+    const result = filterEssentialScripts(scripts);
+    expect(Object.keys(result)).toEqual([]);
   });
 });

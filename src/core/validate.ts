@@ -54,11 +54,6 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
     checkTodoMarkers(content, relativePath, warnings);
   }
 
-  // 5. Totals consistency (warning only)
-  if (frontmatter !== null) {
-    checkTotalsConsistency(frontmatter, mdFiles, ctxifyPath, warnings);
-  }
-
   return {
     valid: errors.length === 0,
     errors,
@@ -139,33 +134,3 @@ function checkTodoMarkers(content: string, relativePath: string, warnings: strin
   }
 }
 
-function checkTotalsConsistency(
-  frontmatter: Record<string, unknown>,
-  mdFiles: string[],
-  ctxifyPath: string,
-  warnings: string[],
-): void {
-  const totals = frontmatter.totals as Record<string, number> | undefined;
-  if (!totals || typeof totals.endpoints !== 'number') return;
-
-  const declaredEndpoints = totals.endpoints;
-
-  // Count actual <!-- endpoint: segments across all endpoint files
-  let actualEndpoints = 0;
-  for (const filePath of mdFiles) {
-    const relativePath = filePath.slice(ctxifyPath.length + 1);
-    if (!relativePath.startsWith('endpoints')) continue;
-
-    const content = stripTodoBlocks(readFileSync(filePath, 'utf-8'));
-    const matches = content.match(/<!--\s*endpoint:/g);
-    if (matches) {
-      actualEndpoints += matches.length;
-    }
-  }
-
-  if (declaredEndpoints !== actualEndpoints) {
-    warnings.push(
-      `totals.endpoints mismatch: frontmatter says ${declaredEndpoints}, found ${actualEndpoints} endpoint segments`,
-    );
-  }
-}

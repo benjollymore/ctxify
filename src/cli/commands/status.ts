@@ -25,7 +25,7 @@ export function registerStatusCommand(program: Command): void {
       const indexExists = existsSync(join(outputRoot, 'index.md'));
 
       // Check which shard directories exist
-      const shardDirs = ['repos', 'endpoints', 'types', 'env', 'topology', 'schemas', 'questions'];
+      const shardDirs = ['repos'];
       const shards = shardDirs.filter((dir) => existsSync(join(outputRoot, dir)));
 
       // Count <!-- TODO: markers across all .md files

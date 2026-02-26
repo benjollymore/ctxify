@@ -11,13 +11,6 @@ import type { RepoTemplateData } from '../../templates/index-md.js';
 
 import { generateIndexTemplate } from '../../templates/index-md.js';
 import { generateRepoTemplate } from '../../templates/repo.js';
-import { generateEndpointsTemplate } from '../../templates/endpoints.js';
-import { generateTypesTemplate } from '../../templates/types.js';
-import { generateEnvTemplate } from '../../templates/env.js';
-import { generateTopologyTemplate } from '../../templates/topology.js';
-import { generateSchemasTemplate } from '../../templates/schemas.js';
-import { generateQuestionsTemplate } from '../../templates/questions.js';
-import { generateAnalysisChecklist } from '../../templates/analysis.js';
 import { installSkill } from '../install-skill.js';
 import { runInteractiveFlow } from './init-interactive.js';
 
@@ -75,13 +68,6 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   // Generate all templates and write to .ctxify/
   const outputRoot = join(workspaceRoot, outputDir);
   mkdirSync(outputRoot, { recursive: true });
-  mkdirSync(join(outputRoot, 'repos'), { recursive: true });
-  mkdirSync(join(outputRoot, 'endpoints'), { recursive: true });
-  mkdirSync(join(outputRoot, 'types'), { recursive: true });
-  mkdirSync(join(outputRoot, 'env'), { recursive: true });
-  mkdirSync(join(outputRoot, 'topology'), { recursive: true });
-  mkdirSync(join(outputRoot, 'schemas'), { recursive: true });
-  mkdirSync(join(outputRoot, 'questions'), { recursive: true });
 
   // index.md
   writeFileSync(
@@ -90,51 +76,16 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     'utf-8',
   );
 
-  // Per-repo shards
+  // Per-repo overview files: repos/{name}/overview.md
   for (const repo of repoTemplateDataList) {
+    const repoDir = join(outputRoot, 'repos', repo.name);
+    mkdirSync(repoDir, { recursive: true });
     writeFileSync(
-      join(outputRoot, 'repos', `${repo.name}.md`),
+      join(repoDir, 'overview.md'),
       generateRepoTemplate(repo),
       'utf-8',
     );
-    writeFileSync(
-      join(outputRoot, 'endpoints', `${repo.name}.md`),
-      generateEndpointsTemplate(repo.name),
-      'utf-8',
-    );
-    writeFileSync(
-      join(outputRoot, 'schemas', `${repo.name}.md`),
-      generateSchemasTemplate(repo.name),
-      'utf-8',
-    );
   }
-
-  // Single-file shards
-  writeFileSync(
-    join(outputRoot, 'types', 'shared.md'),
-    generateTypesTemplate(mode),
-    'utf-8',
-  );
-  writeFileSync(
-    join(outputRoot, 'env', 'all.md'),
-    generateEnvTemplate(),
-    'utf-8',
-  );
-  writeFileSync(
-    join(outputRoot, 'topology', 'graph.md'),
-    generateTopologyTemplate(repoTemplateDataList),
-    'utf-8',
-  );
-  writeFileSync(
-    join(outputRoot, 'questions', 'pending.md'),
-    generateQuestionsTemplate(),
-    'utf-8',
-  );
-  writeFileSync(
-    join(outputRoot, '_analysis.md'),
-    generateAnalysisChecklist(repoTemplateDataList),
-    'utf-8',
-  );
 
   // Ensure .ctxify/ is in .gitignore
   ensureGitignore(workspaceRoot, outputDir);
