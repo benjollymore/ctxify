@@ -1,3 +1,6 @@
+import { readFileSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { registerInitCommand } from '../src/cli/commands/init.js';
 import { registerStatusCommand } from '../src/cli/commands/status.js';
@@ -5,12 +8,25 @@ import { registerValidateCommand } from '../src/cli/commands/validate.js';
 import { registerBranchCommand } from '../src/cli/commands/branch.js';
 import { registerCommitCommand } from '../src/cli/commands/commit.js';
 
+function findPackageJson(): { version: string } {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 5; i++) {
+    const candidate = join(dir, 'package.json');
+    if (existsSync(candidate)) {
+      return JSON.parse(readFileSync(candidate, 'utf-8'));
+    }
+    dir = dirname(dir);
+  }
+  return { version: '0.0.0' };
+}
+
+const pkg = findPackageJson();
 const program = new Command();
 
 program
   .name('ctxify')
   .description('Context layer for AI coding agents — a turbocharged CLAUDE.md for multi-repo workspaces')
-  .version('2.0.0');
+  .version(pkg.version);
 
 registerInitCommand(program);
 registerStatusCommand(program);
