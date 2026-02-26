@@ -45,7 +45,6 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `manifest.ts` | Parse repo manifests (package.json → go.mod → pyproject.toml → requirements.txt). Extract language, framework, deps, entry points, key dirs, file count. Exports `ManifestData`, `parseRepoManifest()` |
 | `validate.ts` | Check shard structural integrity: valid frontmatter, balanced segment markers, TODO detection. Exports `validateShards()`, `collectMdFiles()` |
 | `detect.ts` | Auto-detect operating mode from workspace structure. Exports `autoDetectMode()` |
-| `context.ts` | Type definitions for semantic data (ApiEndpoint, SharedType, EnvVar, etc.). Reference documentation — agents write this data directly to markdown, not through code |
 | `errors.ts` | Error hierarchy: `CtxifyError` → `ConfigError` / `GitError` |
 
 ### `src/cli/commands/` — CLI handlers
@@ -97,7 +96,6 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/templates.test.ts` | Index + repo template generators: frontmatter, curated dirs, essential scripts, filterEssentialScripts |
 | `unit/validate.test.ts` | Frontmatter, segment markers, TODOs, TODO block stripping |
 | `unit/query.test.ts` | Segment extraction and frontmatter parsing utilities |
-| `unit/context.test.ts` | Type shape validation for all context interfaces |
 | `unit/monorepo-detection.test.ts` | Workspace detection across package managers |
 | `unit/git-mutate.test.ts` | Branch creation, change detection, commit |
 | `unit/init-scaffold.test.ts` | scaffoldWorkspace function: single/multi-repo, skill install, gitignore |
