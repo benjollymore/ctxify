@@ -17,8 +17,11 @@ Two roles: **ctxify scaffolds**, **your agent fills**.
 ### Quick start
 
 ```bash
-# Install
-npm install -g ctxify
+# Clone and build
+git clone https://github.com/benjollymore/ctxify.git
+cd ctxify
+npm install && npm run build
+npm link
 
 # Scaffold context in your workspace
 cd your-workspace
