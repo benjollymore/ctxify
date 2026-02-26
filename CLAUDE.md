@@ -52,7 +52,8 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 
 | File | Purpose |
 |------|---------|
-| `init.ts` | Non-interactive scaffolder. Detects repos, parses manifests, generates all templates, writes `.ctxify/`. Flags: `--repos`, `--mono`, `--force` |
+| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates all templates, writes `.ctxify/`, optionally installs agent skill. Flags: `--repos`, `--mono`, `--force` |
+| `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Asks agent type, confirms mode, confirms repos. Returns `ScaffoldOptions` |
 | `status.ts` | JSON status report: index exists, repo list, shard dirs, TODO count |
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
 | `branch.ts` | Create branch across all repos (multi-repo only) |
@@ -86,6 +87,12 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `frontmatter.ts` | `parseFrontmatter()` — extract YAML between `---` delimiters at file start |
 | `segments.ts` | `extractSegments()` — extract content between `<!-- tag:attrs -->...<!-- /tag -->` markers, with optional attribute filtering |
 
+### `src/cli/` — CLI utilities
+
+| File | Purpose |
+|------|---------|
+| `install-skill.ts` | `installSkill()` — copies SKILL.md with version header to target workspace agent skill directory. `getSkillSourcePath()` resolves bundled SKILL.md |
+
 ### `test/`
 
 | File | What it tests |
@@ -98,6 +105,9 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/context.test.ts` | Type shape validation for all context interfaces |
 | `unit/monorepo-detection.test.ts` | Workspace detection across package managers |
 | `unit/git-mutate.test.ts` | Branch creation, change detection, commit |
+| `unit/init-scaffold.test.ts` | scaffoldWorkspace function: single/multi-repo, skill install, gitignore |
+| `unit/install-skill.test.ts` | Skill installer: copy, version header, directory creation, overwrite |
+| `unit/init-interactive.test.ts` | resolveInteractiveOptions: mode mapping, agent pass-through |
 | `integration/init.test.ts` | Full init flow: single/multi/mono-repo scaffolding |
 | `integration/git-commands.test.ts` | Multi-repo branch and commit coordination |
 
@@ -111,9 +121,13 @@ Every command writes JSON to stdout. This makes output parseable by agents. Erro
 console.log(JSON.stringify(result, null, 2));
 ```
 
-### CLI commands are non-interactive
+### Interactive init (default)
 
-No prompts, no stdin reads. All configuration through flags (`--repos`, `--mono`, `--force`, `--dir`). This is deliberate — agents can't interact with prompts.
+When `ctxify init` is run without `--repos` or `--mono` flags and stdin is a TTY, it enters interactive mode using `@inquirer/prompts`: asks for agent type (Claude Code), confirms detected workspace mode, and lets the user select repos. The interactive flow calls the same `scaffoldWorkspace()` function as the flag-driven path.
+
+Flags (`--repos`, `--mono`) bypass interactivity for agent/CI use. Non-TTY stdin also falls through to the auto-detect path.
+
+The skill installer (`src/cli/install-skill.ts`) copies `.claude/skills/ctxify/SKILL.md` with a version comment header (`<!-- ctxify v0.1.0 ... -->`) to the target workspace. Version is read from package.json at runtime.
 
 ### Template generators are pure functions
 
@@ -165,7 +179,7 @@ These reflect deliberate choices. Don't reverse without understanding why they w
 
 **HTML comment segment markers.** `<!-- tag:attrs -->...<!-- /tag -->` enables targeted extraction without reading entire files. Invisible to markdown renderers. Proven to work well as LLM context optimization — agents can request specific segments instead of consuming entire shards.
 
-**Non-interactive CLI.** All commands are flag-driven with JSON output. Agents can't interact with prompts. `ctxify init --repos ./a ./b` is agent-friendly; an interactive wizard is not.
+**Interactive by default, flags for agents.** `ctxify init` is interactive when run from a TTY (prompts for agent, mode, repos). Flags (`--repos`, `--mono`) bypass interactivity for agent/CI use. Both paths call the same `scaffoldWorkspace()` function.
 
 **All repos must be subdirectories of workspace root.** This constraint simplifies path resolution and makes the mental model clear. ctxify always runs from the root.
 
@@ -194,8 +208,8 @@ The SKILL file at `.claude/skills/ctxify/SKILL.md` is the agent playbook for wor
 
 ## Current state
 
-- **v2.0.0** — agent-native architecture, fully implemented and tested
-- **107 tests** across 10 files (8 unit, 2 integration)
+- **v0.1.0** — agent-native architecture, interactive init with skill installation
+- **126 tests** across 13 files (11 unit, 2 integration)
 - **Supported manifests**: package.json (JS/TS), go.mod (Go), pyproject.toml (Python), requirements.txt (Python fallback)
 - **Supported modes**: single-repo, multi-repo, mono-repo (npm/yarn/pnpm/turborepo workspaces)
 - **Target agent**: Claude Code (via SKILL.md playbook). Other agents not yet supported but the markdown output is agent-agnostic
