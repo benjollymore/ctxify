@@ -1,10 +1,11 @@
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { existsSync } from 'node:fs';
-import { resolve, join } from 'node:path';
-import type { OperatingMode } from '../core/config.js';
+import { resolve, join, basename, relative } from 'node:path';
+import type { OperatingMode, Relationship, MonoRepoOptions } from '../core/config.js';
 import { detectMonoRepo } from '../utils/monorepo.js';
 import { findGitRoots } from '../utils/git.js';
+import { readJsonFile } from '../utils/fs.js';
 
 async function ask(question: string): Promise<string> {
   const rl = createInterface({ input: stdin, output: stdout });
@@ -13,25 +14,6 @@ async function ask(question: string): Promise<string> {
     return answer.trim();
   } finally {
     rl.close();
-  }
-}
-
-export async function promptMode(): Promise<OperatingMode> {
-  console.log('\nWhat kind of workspace is this?');
-  console.log('  [1] single-repo  — one repository');
-  console.log('  [2] multi-repo   — multiple independent repositories');
-  console.log('  [3] mono-repo    — monorepo with workspace packages');
-  console.log('');
-
-  const answer = await ask('Select mode [1/2/3]: ');
-
-  switch (answer) {
-    case '1': return 'single-repo';
-    case '2': return 'multi-repo';
-    case '3': return 'mono-repo';
-    default:
-      console.log(`Invalid selection "${answer}", defaulting to multi-repo`);
-      return 'multi-repo';
   }
 }
 
@@ -165,4 +147,170 @@ export function autoDetectMode(dir: string): ModeDetectionResult {
 
   // 3. Fallback: single-repo
   return { mode: 'single-repo' };
+}
+
+export interface InterviewResult {
+  mode: OperatingMode;
+  repos: { path: string; name: string; language?: string; description?: string }[];
+  relationships: Relationship[];
+  monoRepoOptions?: MonoRepoOptions;
+}
+
+export async function runInteractiveInterview(workspaceRoot: string): Promise<InterviewResult> {
+  console.log('\nctxify — context compiler for AI coding agents.\n');
+
+  // Step 1: Auto-detect what's here
+  const detection = autoDetectMode(workspaceRoot);
+  const relationships: Relationship[] = [];
+
+  // Step 2: Show detection result and branch
+  if (detection.mode === 'mono-repo') {
+    const monoDetection = detectMonoRepo(workspaceRoot);
+    console.log(`Detected ${monoDetection.manager || 'unknown'} monorepo with ${monoDetection.packages.length} packages:`);
+    for (const pkg of monoDetection.packages) {
+      console.log(`  - ${pkg.name} (${pkg.relativePath})`);
+    }
+
+    const confirm = await ask('\nUse detected configuration? [Y/n]: ');
+    if (!confirm || confirm.toLowerCase() === 'y') {
+      return {
+        mode: 'mono-repo',
+        repos: monoDetection.packages.map((pkg) => ({
+          path: pkg.relativePath,
+          name: pkg.name,
+          language: pkg.language,
+          description: pkg.description,
+        })),
+        relationships: [],
+        monoRepoOptions: {
+          manager: monoDetection.manager || undefined,
+          packageGlobs: monoDetection.packageGlobs,
+        },
+      };
+    }
+
+    // User declined auto-detected monorepo — fall through to manual monorepo setup
+    const result = await promptMonoRepo(workspaceRoot);
+    return {
+      mode: 'mono-repo',
+      repos: monoDetection.packages.map((pkg) => ({
+        path: pkg.relativePath,
+        name: pkg.name,
+        language: pkg.language,
+        description: pkg.description,
+      })),
+      relationships: [],
+      monoRepoOptions: {
+        manager: result.manager || undefined,
+        packageGlobs: result.packageGlobs,
+      },
+    };
+  }
+
+  // Git repos detected or nothing found
+  const gitRoots = findGitRoots(workspaceRoot, 3);
+  const dirAbs = resolve(workspaceRoot);
+  const subRepos = gitRoots.filter((root) => resolve(root) !== dirAbs);
+  const repoRoots = subRepos.length > 0 ? subRepos : gitRoots;
+
+  if (repoRoots.length >= 2) {
+    console.log(`Detected ${repoRoots.length} repos:`);
+    for (const r of repoRoots) {
+      console.log(`  - ${basename(r)}/`);
+    }
+
+    const confirm = await ask('\nUse detected repos? [Y/n]: ');
+    if (!confirm || confirm.toLowerCase() === 'y') {
+      // Ask about relationships
+      const rels = await askRelationships(repoRoots.map((r) => basename(r)));
+      relationships.push(...rels);
+
+      printRecommendedStructure(repoRoots.map((r) => basename(r)));
+
+      return {
+        mode: 'multi-repo',
+        repos: buildRepoEntries(workspaceRoot, repoRoots),
+        relationships,
+      };
+    }
+  } else if (repoRoots.length === 0) {
+    console.log('No repos detected. Let\'s set up your workspace.\n');
+  }
+
+  // Manual repo collection
+  const result = await promptMultiRepo(workspaceRoot);
+  const repoNames = result.repoPaths.map((r) => basename(r));
+
+  // Ask about relationships
+  const rels = await askRelationships(repoNames);
+  relationships.push(...rels);
+
+  printRecommendedStructure(repoNames);
+
+  return {
+    mode: 'multi-repo',
+    repos: buildRepoEntries(workspaceRoot, result.repoPaths),
+    relationships,
+  };
+}
+
+async function askRelationships(repoNames: string[]): Promise<Relationship[]> {
+  if (repoNames.length < 2) return [];
+
+  const answer = await ask('\nDo any of these repos call each other\'s APIs? [Y/n]: ');
+  if (answer && answer.toLowerCase() !== 'y') return [];
+
+  const relationships: Relationship[] = [];
+  console.log('Enter API relationships (empty line to finish):');
+  console.log(`  Repos: ${repoNames.join(', ')}`);
+
+  while (true) {
+    const from = await ask('  Consumer repo (or empty to finish): ');
+    if (!from) break;
+    if (!repoNames.includes(from)) {
+      console.log(`  Unknown repo "${from}", choose from: ${repoNames.join(', ')}`);
+      continue;
+    }
+    const to = await ask('  Provider repo: ');
+    if (!repoNames.includes(to)) {
+      console.log(`  Unknown repo "${to}", choose from: ${repoNames.join(', ')}`);
+      continue;
+    }
+    if (from === to) {
+      console.log('  Consumer and provider must be different repos');
+      continue;
+    }
+    relationships.push({ from, to, type: 'api-consumer' });
+    console.log(`  Added: ${from} → ${to} (api-consumer)`);
+  }
+
+  return relationships;
+}
+
+function printRecommendedStructure(repoNames: string[]): void {
+  console.log('\nRecommended workspace structure:\n');
+  console.log('  workspace/');
+  console.log('  ├── ctx.yaml            ← ctxify config (just created)');
+  console.log('  ├── .ctx/               ← generated context (gitignore this)');
+  for (let i = 0; i < repoNames.length; i++) {
+    const prefix = i === repoNames.length - 1 ? '└──' : '├──';
+    const padding = ' '.repeat(Math.max(0, 20 - repoNames[i].length));
+    console.log(`  ${prefix} ${repoNames[i]}/${padding}← repo`);
+  }
+  console.log('\n  Tip: keep repos as siblings under one workspace root.');
+  console.log('  Use `ctxify add-repo <path>` to add repos later.\n');
+}
+
+function buildRepoEntries(workspaceRoot: string, repoPaths: string[]) {
+  return repoPaths.map((root) => {
+    const name = basename(root);
+    const relPath = relative(workspaceRoot, root) || '.';
+    const entry: { path: string; name: string; language?: string; description?: string } = { path: relPath, name };
+    const pkg = readJsonFile<{ description?: string }>(join(root, 'package.json'));
+    if (pkg) {
+      entry.language = 'typescript';
+      entry.description = pkg.description;
+    }
+    return entry;
+  });
 }

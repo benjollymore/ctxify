@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
 import { existsSync, writeFileSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
-import type { RepoEntry, OperatingMode, MonoRepoOptions } from '../../core/config.js';
+import type { RepoEntry, OperatingMode, MonoRepoOptions, Relationship } from '../../core/config.js';
 import { createWorkspaceContext } from '../../core/context.js';
 import { createLogger } from '../../core/logger.js';
 import { PassRegistry } from '../../core/pass-registry.js';
@@ -13,7 +13,7 @@ import { findGitRoots } from '../../utils/git.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { readJsonFile } from '../../utils/fs.js';
 import { writeShards } from '../../core/shard-writer.js';
-import { promptMode, promptSingleRepo, promptMultiRepo, promptMonoRepo, autoDetectMode } from '../prompts.js';
+import { runInteractiveInterview, autoDetectMode } from '../prompts.js';
 
 import { repoDetectionPass } from '../../passes/01-repo-detection.js';
 import { manifestParsingPass } from '../../passes/02-manifest-parsing.js';
@@ -29,8 +29,8 @@ export function registerInitCommand(program: Command): void {
     .command('init [dir]')
     .description('Auto-detect repos, create ctx.yaml, run first scan')
     .option('-f, --force', 'Overwrite existing ctx.yaml')
-    .option('--non-interactive', 'Auto-detect mode without prompts')
-    .action(async (dir?: string, options?: { force?: boolean; nonInteractive?: boolean }) => {
+    .option('-i, --interactive', 'Guided interview for multi-repo setup')
+    .action(async (dir?: string, options?: { force?: boolean; interactive?: boolean }) => {
       const logger = createLogger('error');
       const workspaceRoot = resolve(dir || '.');
 
@@ -43,9 +43,17 @@ export function registerInitCommand(program: Command): void {
       let mode: OperatingMode;
       let repos: RepoEntry[];
       let monoRepoOptions: MonoRepoOptions | undefined;
+      let relationships: Relationship[] = [];
 
-      if (options?.nonInteractive) {
-        // Auto-detect mode
+      if (options?.interactive) {
+        // Guided interview for multi-repo setup
+        const result = await runInteractiveInterview(workspaceRoot);
+        mode = result.mode;
+        repos = result.repos;
+        relationships = result.relationships;
+        monoRepoOptions = result.monoRepoOptions;
+      } else {
+        // Silent auto-detect (default — no prompts)
         const detection = autoDetectMode(workspaceRoot);
         mode = detection.mode;
 
@@ -74,61 +82,10 @@ export function registerInitCommand(program: Command): void {
           // multi-repo: existing behavior
           repos = buildMultiRepoEntries(workspaceRoot);
         }
-      } else {
-        // Interactive mode
-        mode = await promptMode();
-
-        switch (mode) {
-          case 'single-repo': {
-            const result = await promptSingleRepo(workspaceRoot);
-            const name = basename(result.dir);
-            const relPath = relative(workspaceRoot, result.dir) || '.';
-            const entry: RepoEntry = { path: relPath, name };
-            const pkg = readJsonFile<{ description?: string }>(join(result.dir, 'package.json'));
-            if (pkg) {
-              entry.language = 'typescript';
-              entry.description = pkg.description;
-            }
-            repos = [entry];
-            break;
-          }
-
-          case 'multi-repo': {
-            const result = await promptMultiRepo(workspaceRoot);
-            repos = result.repoPaths.map((root) => {
-              const name = basename(root);
-              const relPath = relative(workspaceRoot, root) || '.';
-              const entry: RepoEntry = { path: relPath, name };
-              const pkg = readJsonFile<{ description?: string }>(join(root, 'package.json'));
-              if (pkg) {
-                entry.language = 'typescript';
-                entry.description = pkg.description;
-              }
-              return entry;
-            });
-            break;
-          }
-
-          case 'mono-repo': {
-            const result = await promptMonoRepo(workspaceRoot);
-            monoRepoOptions = {
-              manager: result.manager || undefined,
-              packageGlobs: result.packageGlobs,
-            };
-            const monoDetection = detectMonoRepo(result.dir);
-            repos = monoDetection.packages.map((pkg) => ({
-              path: pkg.relativePath,
-              name: pkg.name,
-              language: pkg.language,
-              description: pkg.description,
-            }));
-            break;
-          }
-        }
       }
 
       // Generate and write config
-      const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions);
+      const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions, relationships);
       writeFileSync(configPath, serializeConfig(config), 'utf-8');
 
       // Run full pipeline
