@@ -1,6 +1,7 @@
 import { basename, resolve } from 'node:path';
 import type { AnalysisPass } from './types.js';
 import { findGitRoots } from '../utils/git.js';
+import { detectMonoRepo } from '../utils/monorepo.js';
 import type { RepoInfo } from '../core/context.js';
 
 export const repoDetectionPass: AnalysisPass = {
@@ -22,23 +23,51 @@ export const repoDetectionPass: AnalysisPass = {
       return;
     }
 
-    // Auto-detect repos by finding .git/ directories
-    const gitRoots = findGitRoots(ctx.workspaceRoot, ctx.config.options.maxDepth ?? 3);
+    // Auto-detect based on mode
+    const mode = ctx.config.mode || 'multi-repo';
 
-    // Filter out the workspace root itself if it's a git repo (we want sub-repos)
-    const workspaceAbs = resolve(ctx.workspaceRoot);
-    const subRepos = gitRoots.filter((root) => resolve(root) !== workspaceAbs);
+    switch (mode) {
+      case 'single-repo': {
+        const name = basename(resolve(ctx.workspaceRoot));
+        logger.debug(`Single-repo mode: using workspace root as repo: ${name}`);
+        ctx.repos.push(createRepoStub(name, resolve(ctx.workspaceRoot)));
+        break;
+      }
 
-    // If no sub-repos found but workspace itself is a git repo, treat it as a single repo
-    const repoRoots = subRepos.length > 0 ? subRepos : gitRoots;
+      case 'mono-repo': {
+        const detection = detectMonoRepo(ctx.workspaceRoot);
+        if (detection.detected) {
+          for (const pkg of detection.packages) {
+            logger.debug(`Detected monorepo package: ${pkg.name} at ${pkg.path}`);
+            ctx.repos.push(createRepoStub(pkg.name, pkg.path));
+          }
+        } else {
+          // Fallback: treat as single repo
+          const name = basename(resolve(ctx.workspaceRoot));
+          logger.warn(`Mono-repo mode but no packages detected, falling back to single repo`);
+          ctx.repos.push(createRepoStub(name, resolve(ctx.workspaceRoot)));
+        }
+        break;
+      }
 
-    for (const root of repoRoots) {
-      const name = basename(root);
-      logger.debug(`Detected repo: ${name} at ${root}`);
-      ctx.repos.push(createRepoStub(name, root));
+      case 'multi-repo':
+      default: {
+        // Existing behavior: find .git/ directories
+        const gitRoots = findGitRoots(ctx.workspaceRoot, ctx.config.options.maxDepth ?? 3);
+        const workspaceAbs = resolve(ctx.workspaceRoot);
+        const subRepos = gitRoots.filter((root) => resolve(root) !== workspaceAbs);
+        const repoRoots = subRepos.length > 0 ? subRepos : gitRoots;
+
+        for (const root of repoRoots) {
+          const name = basename(root);
+          logger.debug(`Detected repo: ${name} at ${root}`);
+          ctx.repos.push(createRepoStub(name, root));
+        }
+        break;
+      }
     }
 
-    logger.info(`Detected ${ctx.repos.length} repos`);
+    logger.info(`Detected ${ctx.repos.length} repos (mode: ${mode})`);
   },
 };
 

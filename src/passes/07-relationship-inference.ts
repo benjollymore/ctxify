@@ -16,6 +16,22 @@ export const relationshipInferencePass: AnalysisPass = {
   configKeys: [],
 
   async execute(ctx, logger) {
+    // In single-repo mode, skip all cross-repo inference (only 1 repo)
+    if (ctx.config.mode === 'single-repo') {
+      // Just merge manual declarations
+      for (const rel of ctx.config.relationships) {
+        ctx.relationships.push({
+          from: rel.from,
+          to: rel.to,
+          type: rel.type,
+          evidence: `Declared in ctx.yaml: ${rel.description || ''}`,
+          confidence: 1.0,
+        });
+      }
+      logger.info(`Single-repo mode: skipped cross-repo inference, ${ctx.relationships.length} manual relationships`);
+      return;
+    }
+
     inferWorkspaceDeps(ctx.repos, ctx.relationships, ctx.workspaceRoot);
     inferPackageDeps(ctx.repos, ctx.relationships);
     inferApiConsumers(ctx.repos, ctx.apiEndpoints, ctx.relationships, ctx.questions, ctx.config.options);

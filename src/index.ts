@@ -3,6 +3,8 @@ export type {
   RepoEntry,
   Relationship,
   ContextOptions,
+  OperatingMode,
+  MonoRepoOptions,
 } from './core/config.js';
 
 export type {
