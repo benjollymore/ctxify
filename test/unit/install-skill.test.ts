@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { installSkill, getSkillSourcePath } from '../../src/cli/install-skill.js';
+import { installSkill, getPlaybookSourcePath, AGENT_CONFIGS } from '../../src/cli/install-skill.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'ctxify-skill-'));
@@ -16,7 +16,7 @@ describe('installSkill', () => {
     tmpDirs.length = 0;
   });
 
-  it('copies SKILL.md to .claude/skills/ctxify/', () => {
+  it('installs claude skill to .claude/skills/ctxify/', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
@@ -26,13 +26,58 @@ describe('installSkill', () => {
     const destPath = join(dir, relativePath);
     expect(existsSync(destPath)).toBe(true);
 
-    // Verify skill content is present (version comment is inserted into the source)
     const installedContent = readFileSync(destPath, 'utf-8');
     expect(installedContent).toContain('# ctxify');
     expect(installedContent).toContain('<!-- ctxify v');
   });
 
-  it('inserts version comment after frontmatter, not before', () => {
+  it('installs copilot instructions to .github/instructions/', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const relativePath = installSkill(dir, 'copilot');
+
+    expect(relativePath).toBe('.github/instructions/ctxify.instructions.md');
+    const destPath = join(dir, relativePath);
+    expect(existsSync(destPath)).toBe(true);
+
+    const installedContent = readFileSync(destPath, 'utf-8');
+    expect(installedContent).toContain('# ctxify');
+    expect(installedContent).toContain('applyTo: "**"');
+  });
+
+  it('installs cursor rules to .cursor/rules/', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const relativePath = installSkill(dir, 'cursor');
+
+    expect(relativePath).toBe('.cursor/rules/ctxify.md');
+    const destPath = join(dir, relativePath);
+    expect(existsSync(destPath)).toBe(true);
+
+    const installedContent = readFileSync(destPath, 'utf-8');
+    expect(installedContent).toContain('# ctxify');
+    expect(installedContent).toContain('alwaysApply: true');
+  });
+
+  it('installs codex to AGENTS.md without frontmatter', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const relativePath = installSkill(dir, 'codex');
+
+    expect(relativePath).toBe('AGENTS.md');
+    const destPath = join(dir, relativePath);
+    expect(existsSync(destPath)).toBe(true);
+
+    const installedContent = readFileSync(destPath, 'utf-8');
+    expect(installedContent).toContain('# ctxify');
+    // No YAML frontmatter wrapping — file starts with version comment, not ---
+    expect(installedContent.startsWith('---')).toBe(false);
+  });
+
+  it('claude skill has frontmatter starting at line 1', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
@@ -40,9 +85,7 @@ describe('installSkill', () => {
 
     const destPath = join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md');
     const content = readFileSync(destPath, 'utf-8');
-    // Frontmatter must start on line 1 for Claude Code skill discovery
     expect(content.startsWith('---')).toBe(true);
-    // Version comment appears after the closing ---
     expect(content).toMatch(/---\n<!-- ctxify v\d+\.\d+\.\d+ — do not edit manually, managed by ctxify init -->/);
   });
 
@@ -50,7 +93,6 @@ describe('installSkill', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
-    // Ensure no .claude directory exists beforehand
     expect(existsSync(join(dir, '.claude'))).toBe(false);
 
     installSkill(dir, 'claude');
@@ -63,7 +105,6 @@ describe('installSkill', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
-    // Pre-create with old content
     const skillDir = join(dir, '.claude', 'skills', 'ctxify');
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(join(skillDir, 'SKILL.md'), 'old content', 'utf-8');
@@ -82,17 +123,29 @@ describe('installSkill', () => {
 
     expect(() => installSkill(dir, 'unsupported-agent')).toThrow('Unsupported agent: unsupported-agent');
   });
+
+  it('all agents produce content with version comment', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    for (const agent of Object.keys(AGENT_CONFIGS)) {
+      const dest = installSkill(dir, agent);
+      const content = readFileSync(join(dir, dest), 'utf-8');
+      expect(content).toContain('<!-- ctxify v');
+      expect(content).toContain('# ctxify');
+    }
+  });
 });
 
-describe('getSkillSourcePath', () => {
-  it('resolves to an existing SKILL.md', () => {
-    const sourcePath = getSkillSourcePath();
+describe('getPlaybookSourcePath', () => {
+  it('resolves to an existing PLAYBOOK.md', () => {
+    const sourcePath = getPlaybookSourcePath();
     expect(existsSync(sourcePath)).toBe(true);
-    expect(sourcePath).toMatch(/SKILL\.md$/);
+    expect(sourcePath).toMatch(/PLAYBOOK\.md$/);
   });
 
-  it('points to a file containing the skill content', () => {
-    const sourcePath = getSkillSourcePath();
+  it('points to a file containing the playbook content', () => {
+    const sourcePath = getPlaybookSourcePath();
     const content = readFileSync(sourcePath, 'utf-8');
     expect(content).toContain('# ctxify');
     expect(content).toContain('Agent Playbook');

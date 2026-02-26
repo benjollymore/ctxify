@@ -52,8 +52,8 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 
 | File | Purpose |
 |------|---------|
-| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent skill. Flags: `--repos`, `--mono`, `--force` |
-| `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Asks agent type, confirms mode, confirms repos. Returns `ScaffoldOptions` |
+| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent playbooks. Types: `AgentType` (`'claude' \| 'copilot' \| 'cursor' \| 'codex'`), `ScaffoldOptions` (with `agents?: AgentType[]`), `ScaffoldResult` (with `skills_installed?: string[]`). Flags: `--repos`, `--mono`, `--agent <agents...>`, `--force` |
+| `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Multi-select agent checkbox, confirms mode, confirms repos. Returns `ScaffoldOptions` |
 | `status.ts` | JSON status report: index exists, repo list, shard dirs, TODO count |
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
 | `branch.ts` | Create branch across all repos (multi-repo only) |
@@ -84,7 +84,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 
 | File | Purpose |
 |------|---------|
-| `install-skill.ts` | `installSkill()` — copies SKILL.md with version header to target workspace agent skill directory. `getSkillSourcePath()` resolves bundled SKILL.md |
+| `install-skill.ts` | `AgentConfig` interface, `AGENT_CONFIGS` registry (claude, copilot, cursor, codex), `installSkill()` — reads `skills/PLAYBOOK.md`, prepends agent-specific frontmatter, writes to agent destination. `getPlaybookSourcePath()` resolves bundled playbook |
 
 ### `test/`
 
@@ -116,11 +116,11 @@ console.log(JSON.stringify(result, null, 2));
 
 ### Interactive init (default)
 
-When `ctxify init` is run without `--repos` or `--mono` flags and stdin is a TTY, it enters interactive mode using `@inquirer/prompts`: asks for agent type (Claude Code), confirms detected workspace mode, and lets the user select repos. The interactive flow calls the same `scaffoldWorkspace()` function as the flag-driven path.
+When `ctxify init` is run without `--repos` or `--mono` flags and stdin is a TTY, it enters interactive mode using `@inquirer/prompts`: multi-select checkbox for agents (claude, copilot, cursor, codex), confirms detected workspace mode, and lets the user select repos. The interactive flow calls the same `scaffoldWorkspace()` function as the flag-driven path.
 
-Flags (`--repos`, `--mono`) bypass interactivity for agent/CI use. Non-TTY stdin also falls through to the auto-detect path.
+Flags (`--repos`, `--mono`, `--agent`) bypass interactivity for agent/CI use. Non-TTY stdin also falls through to the auto-detect path.
 
-The skill installer (`src/cli/install-skill.ts`) copies `.claude/skills/ctxify/SKILL.md` with a version comment header (`<!-- ctxify v0.1.0 ... -->`) to the target workspace. Version is read from package.json at runtime.
+The skill installer (`src/cli/install-skill.ts`) reads `skills/PLAYBOOK.md` (canonical playbook body, no frontmatter), prepends agent-specific frontmatter from `AGENT_CONFIGS`, inserts a version comment header (`<!-- ctxify v0.2.0 ... -->`), and writes to the agent's destination path. Version is read from package.json at runtime.
 
 ### Template generators are pure functions
 
@@ -205,11 +205,10 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 
 ## Current state
 
-- **v0.1.0** — agent-native architecture, interactive init with skill installation
-- **126 tests** across 13 files (11 unit, 2 integration)
+- **v0.2.0** — multi-agent support (claude, copilot, cursor, codex), interactive init with multi-select
 - **Supported manifests**: package.json (JS/TS), go.mod (Go), pyproject.toml (Python), requirements.txt (Python fallback)
 - **Supported modes**: single-repo, multi-repo, mono-repo (npm/yarn/pnpm/turborepo workspaces)
-- **Target agent**: Claude Code (via SKILL.md playbook). Other agents not yet supported but the markdown output is agent-agnostic
+- **Supported agents**: Claude Code, GitHub Copilot, Cursor, OpenAI Codex — same playbook, different destination paths and frontmatter
 
 ## Known gaps and future work
 
@@ -219,7 +218,6 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 - No `ctxify update` / `ctxify refresh` command to re-scaffold without losing agent-filled content
 - No support for Cargo.toml (Rust) manifest parsing — only framework detection via deps
 - `git add -A` in `stageAndCommit` stages everything including potentially unrelated files
-- No way for agents other than Claude Code to discover the SKILL.md playbook
 
 ## Commit conventions
 
