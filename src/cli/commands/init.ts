@@ -190,6 +190,9 @@ export function registerInitCommand(program: Command): void {
 
       // 4. Output JSON summary
       console.log(JSON.stringify(result, null, 2));
+
+      // 5. Next step hint (stderr so it doesn't pollute JSON output)
+      console.error('\n✓ Context scaffolded. Next step: open Claude Code and run /ctxify');
     });
 }
 
