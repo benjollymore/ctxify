@@ -12,17 +12,6 @@ export class ConfigError extends CtxifyError {
   }
 }
 
-export class PassError extends CtxifyError {
-  constructor(
-    message: string,
-    public readonly passName: string,
-    cause?: Error,
-  ) {
-    super(message, cause);
-    this.name = 'PassError';
-  }
-}
-
 export class GitError extends CtxifyError {
   constructor(message: string, cause?: Error) {
     super(message, cause);

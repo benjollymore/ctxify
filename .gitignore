@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .ctxify/
+ctx.yaml
 coverage/
 .DS_Store
 *.log

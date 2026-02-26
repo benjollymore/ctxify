@@ -1,7 +1,7 @@
 {
   "name": "ctxify",
   "version": "2.0.0",
-  "description": "Multi-repo context compiler for AI coding agents",
+  "description": "Context layer for AI coding agents — a turbocharged CLAUDE.md for multi-repo workspaces",
   "type": "module",
   "bin": {
     "ctxify": "./dist/bin/ctxify.js"

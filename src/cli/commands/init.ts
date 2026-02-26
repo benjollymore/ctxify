@@ -1,59 +1,71 @@
 import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
-import { existsSync, writeFileSync, readFileSync, appendFileSync } from 'node:fs';
+import { existsSync, writeFileSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
-import type { RepoEntry, OperatingMode, MonoRepoOptions, Relationship } from '../../core/config.js';
-import { createWorkspaceContext } from '../../core/context.js';
-import { createLogger } from '../../core/logger.js';
-import { PassRegistry } from '../../core/pass-registry.js';
-import { runPipelineParallel } from '../../core/pipeline.js';
-import { saveCache, createCacheStore } from '../../core/cache.js';
-import { buildCacheEntry } from '../../core/differ.js';
-import { findGitRoots } from '../../utils/git.js';
+import type { RepoEntry, OperatingMode, MonoRepoOptions } from '../../core/config.js';
+import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
-import { readJsonFile } from '../../utils/fs.js';
-import { writeShards } from '../../core/shard-writer.js';
-import { runInteractiveInterview, autoDetectMode } from '../prompts.js';
+import { autoDetectMode } from '../../core/detect.js';
+import { findGitRoots, getHeadSha } from '../../utils/git.js';
+import type { RepoTemplateData } from '../../templates/index-md.js';
 
-import { repoDetectionPass } from '../../passes/01-repo-detection.js';
-import { manifestParsingPass } from '../../passes/02-manifest-parsing.js';
-import { structureMappingPass } from '../../passes/03-structure-mapping.js';
-import { apiDiscoveryPass } from '../../passes/04-api-discovery.js';
-import { typeExtractionPass } from '../../passes/05-type-extraction.js';
-import { envScanningPass } from '../../passes/06-env-scanning.js';
-import { relationshipInferencePass } from '../../passes/07-relationship-inference.js';
-import { conventionDetectionPass } from '../../passes/08-convention-detection.js';
+import { generateIndexTemplate } from '../../templates/index-md.js';
+import { generateRepoTemplate } from '../../templates/repo.js';
+import { generateEndpointsTemplate } from '../../templates/endpoints.js';
+import { generateTypesTemplate } from '../../templates/types.js';
+import { generateEnvTemplate } from '../../templates/env.js';
+import { generateTopologyTemplate } from '../../templates/topology.js';
+import { generateSchemasTemplate } from '../../templates/schemas.js';
+import { generateQuestionsTemplate } from '../../templates/questions.js';
+import { generateAnalysisChecklist } from '../../templates/analysis.js';
 
 export function registerInitCommand(program: Command): void {
   program
     .command('init [dir]')
-    .description('Auto-detect repos, create ctx.yaml, run first scan')
-    .option('-f, --force', 'Overwrite existing ctx.yaml')
-    .option('-i, --interactive', 'Guided interview for multi-repo setup')
-    .action(async (dir?: string, options?: { force?: boolean; interactive?: boolean }) => {
-      const logger = createLogger('error');
+    .description('Scaffold ctx.yaml and .ctxify/ context shards')
+    .option('--repos <paths...>', 'Multi-repo: specify repo subdirectories')
+    .option('--mono', 'Mono-repo: detect packages from workspace config')
+    .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
+    .action(async (dir?: string, options?: { repos?: string[]; mono?: boolean; force?: boolean }) => {
       const workspaceRoot = resolve(dir || '.');
-
       const configPath = join(workspaceRoot, 'ctx.yaml');
+
+      // 1. If ctx.yaml exists and --force not set -> error + exit
       if (existsSync(configPath) && !options?.force) {
         console.log(JSON.stringify({ error: `ctx.yaml already exists in ${workspaceRoot}. Use --force to overwrite.` }));
         process.exit(1);
       }
 
+      // 2. Determine mode
       let mode: OperatingMode;
       let repos: RepoEntry[];
       let monoRepoOptions: MonoRepoOptions | undefined;
-      let relationships: Relationship[] = [];
 
-      if (options?.interactive) {
-        // Guided interview for multi-repo setup
-        const result = await runInteractiveInterview(workspaceRoot);
-        mode = result.mode;
-        repos = result.repos;
-        relationships = result.relationships;
-        monoRepoOptions = result.monoRepoOptions;
+      if (options?.repos && options.repos.length > 0) {
+        // --repos -> multi-repo
+        mode = 'multi-repo';
+        repos = options.repos.map((repoPath) => {
+          const absPath = resolve(workspaceRoot, repoPath);
+          const name = basename(absPath);
+          const relPath = relative(workspaceRoot, absPath) || '.';
+          return { path: relPath, name };
+        });
+      } else if (options?.mono) {
+        // --mono -> mono-repo
+        mode = 'mono-repo';
+        const monoDetection = detectMonoRepo(workspaceRoot);
+        monoRepoOptions = {
+          manager: monoDetection.manager || undefined,
+          packageGlobs: monoDetection.packageGlobs,
+        };
+        repos = monoDetection.packages.map((pkg) => ({
+          path: pkg.relativePath,
+          name: pkg.name,
+          language: pkg.language,
+          description: pkg.description,
+        }));
       } else {
-        // Silent auto-detect (default — no prompts)
+        // Auto-detect
         const detection = autoDetectMode(workspaceRoot);
         mode = detection.mode;
 
@@ -71,56 +83,108 @@ export function registerInitCommand(program: Command): void {
           }));
         } else if (mode === 'single-repo') {
           const name = basename(workspaceRoot);
-          const entry: RepoEntry = { path: '.', name };
-          const pkg = readJsonFile<{ description?: string }>(join(workspaceRoot, 'package.json'));
-          if (pkg) {
-            entry.language = 'typescript';
-            entry.description = pkg.description;
-          }
-          repos = [entry];
+          repos = [{ path: '.', name }];
         } else {
-          // multi-repo: existing behavior
+          // multi-repo: find git roots
           repos = buildMultiRepoEntries(workspaceRoot);
         }
       }
 
-      // Generate and write config
-      const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions, relationships);
+      // 3. Generate and write ctx.yaml
+      const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions);
       writeFileSync(configPath, serializeConfig(config), 'utf-8');
 
-      // Run full pipeline
-      const ctx = createWorkspaceContext(config, workspaceRoot);
-      const registry = new PassRegistry();
-      registry.register(repoDetectionPass);
-      registry.register(manifestParsingPass);
-      registry.register(structureMappingPass);
-      registry.register(apiDiscoveryPass);
-      registry.register(typeExtractionPass);
-      registry.register(envScanningPass);
-      registry.register(relationshipInferencePass);
-      registry.register(conventionDetectionPass);
-
-      await runPipelineParallel(ctx, registry, logger);
-
-      // Write shards
+      // 4. For each repo: parseRepoManifest
       const outputDir = config.options.outputDir || '.ctxify';
-      writeShards(ctx, workspaceRoot, outputDir);
+      const repoTemplateDataList: RepoTemplateData[] = repos.map((entry) => {
+        const repoAbsPath = resolve(workspaceRoot, entry.path);
+        const manifest = parseRepoManifest(repoAbsPath);
+        return {
+          name: entry.name,
+          path: entry.path,
+          ...manifest,
+        };
+      });
 
-      // Ensure output dir is gitignored
-      ensureGitignore(workspaceRoot, outputDir);
-
-      // Save cache
-      const cache = createCacheStore();
-      for (const repo of ctx.repos) {
+      // 5. Get git SHAs (best-effort)
+      const shas: Record<string, string> = {};
+      for (const entry of repos) {
         try {
-          cache.repos[repo.name] = await buildCacheEntry(repo.path);
+          const repoAbsPath = resolve(workspaceRoot, entry.path);
+          shas[entry.name] = await getHeadSha(repoAbsPath);
         } catch {
-          // Skip cache for repos without git
+          // Not all repos may have git
         }
       }
-      saveCache(workspaceRoot, outputDir, cache);
 
-      // JSON output
+      // 6. Generate all templates and write to .ctxify/
+      const outputRoot = join(workspaceRoot, outputDir);
+      mkdirSync(outputRoot, { recursive: true });
+      mkdirSync(join(outputRoot, 'repos'), { recursive: true });
+      mkdirSync(join(outputRoot, 'endpoints'), { recursive: true });
+      mkdirSync(join(outputRoot, 'types'), { recursive: true });
+      mkdirSync(join(outputRoot, 'env'), { recursive: true });
+      mkdirSync(join(outputRoot, 'topology'), { recursive: true });
+      mkdirSync(join(outputRoot, 'schemas'), { recursive: true });
+      mkdirSync(join(outputRoot, 'questions'), { recursive: true });
+
+      // index.md
+      writeFileSync(
+        join(outputRoot, 'index.md'),
+        generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode),
+        'utf-8',
+      );
+
+      // Per-repo shards
+      for (const repo of repoTemplateDataList) {
+        writeFileSync(
+          join(outputRoot, 'repos', `${repo.name}.md`),
+          generateRepoTemplate(repo),
+          'utf-8',
+        );
+        writeFileSync(
+          join(outputRoot, 'endpoints', `${repo.name}.md`),
+          generateEndpointsTemplate(repo.name),
+          'utf-8',
+        );
+        writeFileSync(
+          join(outputRoot, 'schemas', `${repo.name}.md`),
+          generateSchemasTemplate(repo.name),
+          'utf-8',
+        );
+      }
+
+      // Single-file shards
+      writeFileSync(
+        join(outputRoot, 'types', 'shared.md'),
+        generateTypesTemplate(mode),
+        'utf-8',
+      );
+      writeFileSync(
+        join(outputRoot, 'env', 'all.md'),
+        generateEnvTemplate(),
+        'utf-8',
+      );
+      writeFileSync(
+        join(outputRoot, 'topology', 'graph.md'),
+        generateTopologyTemplate(repoTemplateDataList),
+        'utf-8',
+      );
+      writeFileSync(
+        join(outputRoot, 'questions', 'pending.md'),
+        generateQuestionsTemplate(),
+        'utf-8',
+      );
+      writeFileSync(
+        join(outputRoot, '_analysis.md'),
+        generateAnalysisChecklist(repoTemplateDataList),
+        'utf-8',
+      );
+
+      // 7. Ensure .ctxify/ is in .gitignore
+      ensureGitignore(workspaceRoot, outputDir);
+
+      // 8. Output JSON summary
       const summary = {
         status: 'initialized',
         mode,
@@ -157,14 +221,6 @@ function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
   return repoRoots.map((root) => {
     const name = basename(root);
     const relPath = relative(workspaceRoot, root) || '.';
-    const entry: RepoEntry = { path: relPath, name };
-
-    const pkg = readJsonFile<{ description?: string; dependencies?: Record<string, string> }>(join(root, 'package.json'));
-    if (pkg) {
-      entry.language = 'typescript';
-      entry.description = pkg.description;
-    }
-
-    return entry;
+    return { path: relPath, name };
   });
 }

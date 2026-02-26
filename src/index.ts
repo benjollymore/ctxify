@@ -1,28 +1,27 @@
+// Config
 export type {
-  CtxConfig,
-  RepoEntry,
-  Relationship,
-  ContextOptions,
-  OperatingMode,
-  MonoRepoOptions,
+  CtxConfig, RepoEntry, Relationship, ContextOptions, OperatingMode, MonoRepoOptions,
 } from './core/config.js';
+export { loadConfig, generateDefaultConfig, serializeConfig } from './core/config.js';
 
+// Context types (reference documentation for agents)
 export type {
-  WorkspaceContext,
-  RepoInfo,
-  ApiEndpoint,
-  SharedType,
-  EnvVar,
-  InferredRelationship,
-  Convention,
-  DbSchema,
-  Question,
+  RepoInfo, ApiEndpoint, SharedType, EnvVar, InferredRelationship,
+  Convention, DbSchema, Question,
 } from './core/context.js';
 
-export type { AnalysisPass } from './passes/types.js';
-export type { Renderer, MultiRenderer } from './renderers/types.js';
+// Manifest parsing
+export type { ManifestData } from './core/manifest.js';
+export { parseRepoManifest } from './core/manifest.js';
 
-export { createWorkspaceContext } from './core/context.js';
-export { loadConfig } from './core/config.js';
-export { runPipeline, runPipelineParallel } from './core/pipeline.js';
-export { writeShards } from './core/shard-writer.js';
+// Validation
+export type { ValidationResult } from './core/validate.js';
+export { validateShards } from './core/validate.js';
+
+// Detection
+export type { ModeDetectionResult } from './core/detect.js';
+export { autoDetectMode } from './core/detect.js';
+
+// Utilities
+export { parseFrontmatter } from './utils/frontmatter.js';
+export { extractSegments } from './utils/segments.js';
