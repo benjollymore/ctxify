@@ -2,7 +2,7 @@ import type { Renderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
 export const shardQuestionsRenderer: Renderer = {
-  outputPath: '.ctx/questions/pending.yaml',
+  outputPath: '.ctxify/questions/pending.yaml',
 
   render(ctx) {
     const unanswered = ctx.questions.filter((q) => !ctx.answers[q.id]);

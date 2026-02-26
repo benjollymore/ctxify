@@ -2,7 +2,7 @@ import type { MultiRenderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
 export const shardEndpointsRenderer: MultiRenderer = {
-  outputPathTemplate: '.ctx/endpoints/{name}.yaml',
+  outputPathTemplate: '.ctxify/endpoints/{name}.yaml',
 
   renderAll(ctx) {
     const result = new Map<string, string>();
@@ -27,7 +27,7 @@ export const shardEndpointsRenderer: MultiRenderer = {
         })),
       };
 
-      result.set(`.ctx/endpoints/${repoName}.yaml`, dumpYaml(data));
+      result.set(`.ctxify/endpoints/${repoName}.yaml`, dumpYaml(data));
     }
 
     return result;

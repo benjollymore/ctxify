@@ -72,13 +72,13 @@ export function registerQueryCommand(program: Command): void {
       name?: string;
     }) => {
       const workspaceRoot = resolve(options.dir || '.');
-      const outputDir = '.ctx';
+      const outputDir = '.ctxify';
       const ctxDir = join(workspaceRoot, outputDir);
 
       // Check if shards exist
       const indexPath = join(ctxDir, 'index.yaml');
       if (!existsSync(indexPath)) {
-        errorJson('No .ctx/index.yaml found. Run "ctxify scan" first.');
+        errorJson('No .ctxify/index.yaml found. Run "ctxify scan" first.');
       }
 
       const section = options.section as Section | undefined;

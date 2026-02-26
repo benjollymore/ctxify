@@ -14,7 +14,7 @@ function makeConfig(): CtxConfig {
     repos: [],
     relationships: [],
     options: {
-      outputDir: '.ctx',
+      outputDir: '.ctxify',
       maxFileSize: 100_000,
       maxDepth: 5,
       includePatterns: [],

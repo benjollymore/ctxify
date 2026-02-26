@@ -4,11 +4,11 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { dumpYaml } from '../../src/utils/yaml.js';
 
-// Query command reads files from .ctx/ directory. We'll set up a fake shard directory
+// Query command reads files from .ctxify/ directory. We'll set up a fake shard directory
 // and test the filtering logic by simulating what the command does internally.
 
 function createTestShards(baseDir: string): void {
-  const ctxDir = join(baseDir, '.ctx');
+  const ctxDir = join(baseDir, '.ctxify');
 
   // index.yaml
   mkdirSync(ctxDir, { recursive: true });
@@ -228,21 +228,21 @@ describe('query: shard file reading', () => {
   });
 
   it('can read and parse index.yaml', () => {
-    const content = readFileSync(join(tmpDir, '.ctx', 'index.yaml'), 'utf-8');
+    const content = readFileSync(join(tmpDir, '.ctxify', 'index.yaml'), 'utf-8');
     const parsed = JSON.parse(JSON.stringify(require('js-yaml').load(content)));
     expect(parsed.ctxify).toBe('2.0');
     expect(parsed.repos).toHaveLength(2);
   });
 
   it('can read repo shard', () => {
-    const content = readFileSync(join(tmpDir, '.ctx', 'repos', 'api.yaml'), 'utf-8');
+    const content = readFileSync(join(tmpDir, '.ctxify', 'repos', 'api.yaml'), 'utf-8');
     const parsed = JSON.parse(JSON.stringify(require('js-yaml').load(content)));
     expect(parsed.name).toBe('api');
     expect(parsed.framework).toBe('hono');
   });
 
   it('can read and filter endpoints shard', () => {
-    const content = readFileSync(join(tmpDir, '.ctx', 'endpoints', 'api.yaml'), 'utf-8');
+    const content = readFileSync(join(tmpDir, '.ctxify', 'endpoints', 'api.yaml'), 'utf-8');
     const parsed = require('js-yaml').load(content) as { endpoints: Array<Record<string, unknown>> };
     const filtered = filterEndpoints(parsed, 'POST');
     expect(filtered.endpoints).toHaveLength(1);
@@ -250,7 +250,7 @@ describe('query: shard file reading', () => {
   });
 
   it('can read and filter types shard by name', () => {
-    const content = readFileSync(join(tmpDir, '.ctx', 'types', 'shared.yaml'), 'utf-8');
+    const content = readFileSync(join(tmpDir, '.ctxify', 'types', 'shared.yaml'), 'utf-8');
     const parsed = require('js-yaml').load(content) as { shared_types: Array<Record<string, unknown>> };
     const filtered = filterTypes(parsed, 'UserProfile');
     expect(filtered.shared_types).toHaveLength(1);
@@ -258,7 +258,7 @@ describe('query: shard file reading', () => {
   });
 
   it('can read and filter env shard by repo', () => {
-    const content = readFileSync(join(tmpDir, '.ctx', 'env', 'all.yaml'), 'utf-8');
+    const content = readFileSync(join(tmpDir, '.ctxify', 'env', 'all.yaml'), 'utf-8');
     const parsed = require('js-yaml').load(content) as { env_vars: Array<{ name: string; repos: string[] }> };
     const filtered = filterEnvByRepo(parsed, 'api');
     expect(filtered.env_vars).toHaveLength(2);

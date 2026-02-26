@@ -12,7 +12,7 @@ description: Use when working in a multi-repo workspace to get cross-repo contex
 ### Step 1: Scan (once per session)
 
 Run `ctxify scan --dir <workspace>` to generate/refresh context.
-Then read `.ctx/index.yaml` for the workspace overview (~300 bytes).
+Then read `.ctxify/index.yaml` for the workspace overview (~300 bytes).
 
 The index tells you: repo names, languages, frameworks, endpoint counts,
 relationship summary, and totals. This is enough to plan.
@@ -35,7 +35,7 @@ Use `ctxify query` to get specific data without loading everything:
 ### Rules
 
 1. Always scan before querying (if you haven't this session).
-2. Never read .ctx/ files directly — use `ctxify query`.
+2. Never read .ctxify/ files directly — use `ctxify query`.
 3. Query only what your current task needs. Never load everything.
 4. When spawning sub-agents, include in their prompt:
    "Run `ctxify query --repo <name> --section <section> --dir <ws>`

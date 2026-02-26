@@ -2,7 +2,7 @@ import type { Renderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
 export const shardTypesRenderer: Renderer = {
-  outputPath: '.ctx/types/shared.yaml',
+  outputPath: '.ctxify/types/shared.yaml',
 
   render(ctx) {
     const data = {

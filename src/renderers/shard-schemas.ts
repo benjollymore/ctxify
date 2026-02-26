@@ -2,7 +2,7 @@ import type { MultiRenderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
 export const shardSchemasRenderer: MultiRenderer = {
-  outputPathTemplate: '.ctx/schemas/{name}.yaml',
+  outputPathTemplate: '.ctxify/schemas/{name}.yaml',
 
   renderAll(ctx) {
     const result = new Map<string, string>();
@@ -27,11 +27,11 @@ export const shardSchemasRenderer: MultiRenderer = {
         })),
       };
 
-      result.set(`.ctx/schemas/${repoName}.yaml`, dumpYaml(data));
+      result.set(`.ctxify/schemas/${repoName}.yaml`, dumpYaml(data));
     }
 
     if (result.size === 0) {
-      result.set('.ctx/schemas/_empty.yaml', dumpYaml({ schemas: [] }));
+      result.set('.ctxify/schemas/_empty.yaml', dumpYaml({ schemas: [] }));
     }
 
     return result;

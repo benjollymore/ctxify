@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync, readFileSync, appendFileSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
 import type { RepoEntry, OperatingMode, MonoRepoOptions, Relationship } from '../../core/config.js';
 import { createWorkspaceContext } from '../../core/context.js';
@@ -103,8 +103,11 @@ export function registerInitCommand(program: Command): void {
       await runPipelineParallel(ctx, registry, logger);
 
       // Write shards
-      const outputDir = config.options.outputDir || '.ctx';
+      const outputDir = config.options.outputDir || '.ctxify';
       writeShards(ctx, workspaceRoot, outputDir);
+
+      // Ensure output dir is gitignored
+      ensureGitignore(workspaceRoot, outputDir);
 
       // Save cache
       const cache = createCacheStore();
@@ -127,6 +130,22 @@ export function registerInitCommand(program: Command): void {
       };
       console.log(JSON.stringify(summary, null, 2));
     });
+}
+
+function ensureGitignore(workspaceRoot: string, outputDir: string): void {
+  const gitignorePath = join(workspaceRoot, '.gitignore');
+  const entry = outputDir.endsWith('/') ? outputDir : outputDir + '/';
+
+  if (existsSync(gitignorePath)) {
+    const content = readFileSync(gitignorePath, 'utf-8');
+    // Check if outputDir is already covered (with or without trailing slash)
+    const lines = content.split('\n').map((l) => l.trim());
+    if (lines.includes(entry) || lines.includes(outputDir)) return;
+    const suffix = content.endsWith('\n') ? '' : '\n';
+    appendFileSync(gitignorePath, `${suffix}${entry}\n`, 'utf-8');
+  } else {
+    writeFileSync(gitignorePath, `${entry}\n`, 'utf-8');
+  }
 }
 
 function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {

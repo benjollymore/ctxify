@@ -20,7 +20,7 @@ function createTestConfig(): CtxConfig {
       { path: './web', name: 'web' },
     ],
     relationships: [],
-    options: { outputDir: '.ctx' },
+    options: { outputDir: '.ctxify' },
   };
 }
 
@@ -155,14 +155,14 @@ describe('shard-repos renderer', () => {
     const ctx = createTestContext();
     const files = shardReposRenderer.renderAll(ctx);
     expect(files.size).toBe(2);
-    expect(files.has('.ctx/repos/api.yaml')).toBe(true);
-    expect(files.has('.ctx/repos/web.yaml')).toBe(true);
+    expect(files.has('.ctxify/repos/api.yaml')).toBe(true);
+    expect(files.has('.ctxify/repos/web.yaml')).toBe(true);
   });
 
   it('includes expected fields in repo shard', () => {
     const ctx = createTestContext();
     const files = shardReposRenderer.renderAll(ctx);
-    const apiContent = files.get('.ctx/repos/api.yaml')!;
+    const apiContent = files.get('.ctxify/repos/api.yaml')!;
     const parsed = parseYaml<Record<string, unknown>>(apiContent);
 
     expect(parsed).toHaveProperty('name', 'api');
@@ -182,13 +182,13 @@ describe('shard-endpoints renderer', () => {
     const ctx = createTestContext();
     const files = shardEndpointsRenderer.renderAll(ctx);
     expect(files.size).toBe(1);
-    expect(files.has('.ctx/endpoints/api.yaml')).toBe(true);
+    expect(files.has('.ctxify/endpoints/api.yaml')).toBe(true);
   });
 
   it('includes all endpoint fields', () => {
     const ctx = createTestContext();
     const files = shardEndpointsRenderer.renderAll(ctx);
-    const parsed = parseYaml<Record<string, unknown>>(files.get('.ctx/endpoints/api.yaml')!) as {
+    const parsed = parseYaml<Record<string, unknown>>(files.get('.ctxify/endpoints/api.yaml')!) as {
       endpoints: Array<Record<string, unknown>>;
     };
 
@@ -255,13 +255,13 @@ describe('shard-schemas renderer', () => {
     const ctx = createTestContext();
     const files = shardSchemasRenderer.renderAll(ctx);
     expect(files.size).toBe(1);
-    expect(files.has('.ctx/schemas/api.yaml')).toBe(true);
+    expect(files.has('.ctxify/schemas/api.yaml')).toBe(true);
   });
 
   it('includes model details', () => {
     const ctx = createTestContext();
     const files = shardSchemasRenderer.renderAll(ctx);
-    const parsed = parseYaml<Record<string, unknown>>(files.get('.ctx/schemas/api.yaml')!) as {
+    const parsed = parseYaml<Record<string, unknown>>(files.get('.ctxify/schemas/api.yaml')!) as {
       schemas: Array<{ orm: string; models: Array<{ name: string; fields: Array<Record<string, string>> }> }>;
     };
 
