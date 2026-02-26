@@ -99,5 +99,10 @@ function addEnvVar(
   if (!envVar.repos.includes(repo)) {
     envVar.repos.push(repo);
   }
-  envVar.sources.push({ repo, file, type });
+  const isDuplicate = envVar.sources.some(
+    (s) => s.repo === repo && s.file === file && s.type === type,
+  );
+  if (!isDuplicate) {
+    envVar.sources.push({ repo, file, type });
+  }
 }

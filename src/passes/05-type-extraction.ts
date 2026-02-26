@@ -97,6 +97,23 @@ export const typeExtractionPass: AnalysisPass = {
       }
     }
 
+    // In single-repo mode, emit all exported types as public API context
+    if (ctx.repos.length === 1 && ctx.sharedTypes.length === 0) {
+      const firstEntry = [...exportedTypes.entries()][0];
+      if (firstEntry) {
+        const [repoName, repoTypes] = firstEntry;
+        for (const [typeName, typeInfo] of repoTypes) {
+          ctx.sharedTypes.push({
+            name: typeName,
+            kind: typeInfo.kind,
+            definedIn: repoName,
+            file: typeInfo.file,
+            usedBy: [],
+          });
+        }
+      }
+    }
+
     logger.info(`Found ${ctx.sharedTypes.length} shared types across repos`);
   },
 };

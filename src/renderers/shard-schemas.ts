@@ -30,6 +30,10 @@ export const shardSchemasRenderer: MultiRenderer = {
       result.set(`.ctx/schemas/${repoName}.yaml`, dumpYaml(data));
     }
 
+    if (result.size === 0) {
+      result.set('.ctx/schemas/_empty.yaml', dumpYaml({ schemas: [] }));
+    }
+
     return result;
   },
 };
