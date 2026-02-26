@@ -4,12 +4,6 @@ export type {
 } from './core/config.js';
 export { loadConfig, generateDefaultConfig, serializeConfig } from './core/config.js';
 
-// Context types (reference documentation for agents)
-export type {
-  RepoInfo, ApiEndpoint, SharedType, EnvVar, InferredRelationship,
-  Convention, DbSchema, Question,
-} from './core/context.js';
-
 // Manifest parsing
 export type { ManifestData } from './core/manifest.js';
 export { parseRepoManifest } from './core/manifest.js';

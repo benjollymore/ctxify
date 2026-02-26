@@ -17,20 +17,29 @@ Two roles: **ctxify scaffolds**, **your agent fills**.
 ### Quick start
 
 ```bash
-# Clone and build
+# Install globally
+npm install -g ctxify
+
+# Or run directly with npx
+npx ctxify init
+```
+
+```bash
+# Scaffold context in your workspace
+cd your-workspace
+ctxify init
+```
+
+After init, your agent loads the installed playbook and takes it from there. For Claude Code, type `/ctxify`. Other agents (Copilot, Cursor, Codex) load the playbook automatically via their native instruction mechanisms.
+
+### Build from source
+
+```bash
 git clone https://github.com/benjollymore/ctxify.git
 cd ctxify
 npm install && npm run build
 npm link
-
-# Scaffold context in your workspace
-cd your-workspace
-ctxify init
-
-# Next step: open Claude Code and run /ctxify to fill the context
 ```
-
-After init, open Claude Code in the workspace and type `/ctxify`. The skill guides the agent through reading your code and filling in architecture, patterns, and domain knowledge.
 
 ### Example workflow
 
@@ -42,9 +51,7 @@ workspace/
 cd workspace
 ctxify init --repos ./api ./web
 
-# Now open Claude Code in this workspace and run:
-#   /ctxify
-# The agent will read your code and fill .ctxify/ with context.
+# Your agent reads the scaffolded hubs and fills in context.
 ```
 
 ## What ctxify scaffolds
@@ -100,8 +107,6 @@ When you run `ctxify init`, the installed playbook teaches your agent how to:
 2. Create `patterns.md` for each repo — the most important deliverable
 3. Create domain files for complex areas
 4. Fill cross-repo workflows in index.md
-
-For Claude Code: after init, type `/ctxify` and the agent takes it from there. Other agents load the playbook automatically via their native instruction mechanisms.
 
 ## Supported manifests and modes
 

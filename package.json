@@ -1,8 +1,10 @@
 {
   "name": "ctxify",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Context layer for AI coding agents — a turbocharged CLAUDE.md for multi-repo workspaces",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "ctxify": "./dist/bin/ctxify.js"
   },
@@ -14,7 +16,6 @@
   },
   "files": [
     "dist",
-    ".claude",
     "skills"
   ],
   "scripts": {
@@ -28,13 +29,29 @@
   },
   "keywords": [
     "ai",
+    "claude",
+    "codex",
     "coding-agent",
     "context",
+    "copilot",
+    "cursor",
+    "developer-tools",
+    "llm",
+    "monorepo",
     "multi-repo",
+    "scaffolding",
     "workspace"
   ],
-  "author": "",
+  "author": "Ben Jollymore",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benjollymore/ctxify.git"
+  },
+  "homepage": "https://github.com/benjollymore/ctxify#readme",
+  "bugs": {
+    "url": "https://github.com/benjollymore/ctxify/issues"
+  },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",
     "commander": "^12.1.0",

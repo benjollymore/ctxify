@@ -3,6 +3,7 @@ dist/
 *.tsbuildinfo
 .ctxify/
 .claude/
+.qodo/
 ctx.yaml
 coverage/
 .DS_Store

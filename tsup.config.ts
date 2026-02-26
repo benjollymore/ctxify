@@ -9,7 +9,7 @@ export default defineConfig([
     dts: true,
     splitting: false,
     clean: true,
-    sourcemap: true,
+    sourcemap: false,
   },
   {
     entry: { 'bin/ctxify': 'bin/ctxify.ts' },
@@ -17,7 +17,7 @@ export default defineConfig([
     target: 'es2022',
     platform: 'node',
     splitting: false,
-    sourcemap: true,
+    sourcemap: false,
     banner: {
       js: '#!/usr/bin/env node',
     },
