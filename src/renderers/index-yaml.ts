@@ -34,6 +34,7 @@ export const indexYamlRenderer: Renderer = {
 
     const data: Record<string, unknown> = {
       ctxify: '2.0',
+      mode: ctx.config.mode || 'multi-repo',
       scanned_at: ctx.metadata.generatedAt,
       workspace: ctx.workspaceRoot,
       repos,

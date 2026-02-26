@@ -27,6 +27,7 @@ import { relationshipInferencePass } from '../../src/passes/07-relationship-infe
 import { conventionDetectionPass } from '../../src/passes/08-convention-detection.js';
 
 const FIXTURE_DIR = join(__dirname, '..', 'fixtures', 'workspace-simple');
+const MONOREPO_FIXTURE_DIR = join(__dirname, '..', 'fixtures', 'workspace-monorepo');
 
 function createCtxYaml(workspaceDir: string): string {
   return `
@@ -353,6 +354,129 @@ describe('integration: parallel pipeline produces same results as sequential', (
     delete seqIndex['scanned_at'];
     delete parIndex['scanned_at'];
     expect(parIndex).toEqual(seqIndex);
+  });
+});
+
+import { generateDefaultConfig, serializeConfig } from '../../src/core/config.js';
+
+describe('integration: mono-repo mode scan', () => {
+  let tmpDir: string;
+  let workspaceDir: string;
+
+  beforeAll(() => {
+    if (!existsSync(MONOREPO_FIXTURE_DIR)) return;
+
+    tmpDir = mkdtempSync(join(tmpdir(), 'ctxify-monorepo-'));
+    workspaceDir = join(tmpDir, 'workspace');
+    cpSync(MONOREPO_FIXTURE_DIR, workspaceDir, { recursive: true });
+
+    // Write mono-repo ctx.yaml
+    const config = generateDefaultConfig(workspaceDir, [
+      { path: 'packages/shared', name: '@myapp/shared' },
+      { path: 'packages/web', name: '@myapp/web' },
+      { path: 'packages/api', name: '@myapp/api' },
+    ], 'mono-repo', { manager: 'npm', packageGlobs: ['packages/*'] });
+    writeFileSync(join(workspaceDir, 'ctx.yaml'), serializeConfig(config), 'utf-8');
+  });
+
+  afterAll(() => {
+    if (tmpDir) rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('should detect mono-repo packages and run pipeline', async () => {
+    if (!existsSync(MONOREPO_FIXTURE_DIR)) return;
+
+    const config = loadConfig(join(workspaceDir, 'ctx.yaml'));
+    expect(config.mode).toBe('mono-repo');
+    expect(config.monoRepo).toBeDefined();
+    expect(config.monoRepo!.manager).toBe('npm');
+
+    const ctx = createWorkspaceContext(config, workspaceDir);
+    const logger = createLogger('silent');
+    const registry = new PassRegistry();
+    registerAllPasses(registry);
+
+    await runPipeline(ctx, registry, logger);
+
+    expect(ctx.repos).toHaveLength(3);
+    expect(ctx.repos.map((r) => r.name).sort()).toEqual(['@myapp/api', '@myapp/shared', '@myapp/web']);
+  });
+
+  it('should include mode in index.yaml output', async () => {
+    if (!existsSync(MONOREPO_FIXTURE_DIR)) return;
+
+    const config = loadConfig(join(workspaceDir, 'ctx.yaml'));
+    const ctx = createWorkspaceContext(config, workspaceDir);
+    const logger = createLogger('silent');
+    const registry = new PassRegistry();
+    registerAllPasses(registry);
+
+    await runPipeline(ctx, registry, logger);
+
+    const output = indexYamlRenderer.render(ctx);
+    const parsed = parseYaml<Record<string, unknown>>(output);
+    expect(parsed.mode).toBe('mono-repo');
+  });
+});
+
+describe('integration: single-repo mode scan', () => {
+  let tmpDir: string;
+  let workspaceDir: string;
+
+  beforeAll(() => {
+    if (!existsSync(FIXTURE_DIR)) return;
+
+    tmpDir = mkdtempSync(join(tmpdir(), 'ctxify-singlerepo-'));
+    workspaceDir = join(tmpDir, 'workspace');
+
+    // Use just the api-server as a single repo
+    cpSync(join(FIXTURE_DIR, 'api-server'), workspaceDir, { recursive: true });
+
+    // Write single-repo ctx.yaml
+    const config = generateDefaultConfig(workspaceDir, [
+      { path: '.', name: 'api-server' },
+    ], 'single-repo');
+    writeFileSync(join(workspaceDir, 'ctx.yaml'), serializeConfig(config), 'utf-8');
+  });
+
+  afterAll(() => {
+    if (tmpDir) rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('should run in single-repo mode with no cross-repo inference', async () => {
+    if (!existsSync(FIXTURE_DIR)) return;
+
+    const config = loadConfig(join(workspaceDir, 'ctx.yaml'));
+    expect(config.mode).toBe('single-repo');
+
+    const ctx = createWorkspaceContext(config, workspaceDir);
+    const logger = createLogger('silent');
+    const registry = new PassRegistry();
+    registerAllPasses(registry);
+
+    await runPipeline(ctx, registry, logger);
+
+    expect(ctx.repos).toHaveLength(1);
+    expect(ctx.repos[0].name).toBe('api-server');
+
+    // Single-repo mode: no cross-repo relationships inferred
+    expect(ctx.relationships.length).toBe(0);
+  });
+
+  it('should include mode in index.yaml output', async () => {
+    if (!existsSync(FIXTURE_DIR)) return;
+
+    const config = loadConfig(join(workspaceDir, 'ctx.yaml'));
+    const ctx = createWorkspaceContext(config, workspaceDir);
+    const logger = createLogger('silent');
+    const registry = new PassRegistry();
+    registerAllPasses(registry);
+
+    await runPipeline(ctx, registry, logger);
+
+    const output = indexYamlRenderer.render(ctx);
+    const parsed = parseYaml<Record<string, unknown>>(output);
+    expect(parsed.mode).toBe('single-repo');
   });
 });
 
