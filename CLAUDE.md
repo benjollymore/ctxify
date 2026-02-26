@@ -25,7 +25,7 @@ npx vitest run test/unit/validate.test.ts
 ```
 bin/ctxify.ts                    CLI entry (Commander.js, registers commands)
     ↓
-src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit)
+src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain)
     ↓
 src/core/*.ts                    Business logic (config, manifest, validate, detect)
 src/templates/*.ts               Markdown template generators
@@ -58,6 +58,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
 | `branch.ts` | Create branch across all repos (multi-repo only) |
 | `commit.ts` | Commit across all repos with changes (multi-repo only) |
+| `domain.ts` | `domain add <repo> <domain>` scaffolds domain file + updates overview.md index. `domain list` scans for domain files. Flags: `--tags`, `--description`, `--repo` |
 
 ### `src/templates/` — markdown generators
 
@@ -67,6 +68,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 |------|-----------|
 | `index-md.ts` | `.ctxify/index.md` — workspace overview with frontmatter, repo table, relationship/command TODOs |
 | `repo.ts` | `.ctxify/repos/{name}/overview.md` — lightweight hub: curated dirs, essential scripts, context file index pointing to patterns.md + domain files. Exports `filterEssentialScripts()` |
+| `domain.ts` | `.ctxify/repos/{name}/{domain}.md` — domain file template with frontmatter and TODO placeholders. Exports `generateDomainTemplate()`, `DomainTemplateData` |
 
 ### `src/utils/` — shared utilities
 
@@ -101,6 +103,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/init-scaffold.test.ts` | scaffoldWorkspace function: single/multi-repo, skill install, gitignore |
 | `unit/install-skill.test.ts` | Skill installer: copy, version header, directory creation, overwrite |
 | `unit/init-interactive.test.ts` | resolveInteractiveOptions: mode mapping, agent pass-through |
+| `unit/domain.test.ts` | Domain template generator, domain add (scaffold, idempotency, validation), domain list |
 | `integration/init.test.ts` | Full init flow: single/multi/mono-repo scaffolding |
 | `integration/git-commands.test.ts` | Multi-repo branch and commit coordination |
 
@@ -142,7 +145,7 @@ HTML comments invisible to markdown renderers, parseable by `extractSegments()`:
 <!-- /endpoint -->
 ```
 
-Tags: `endpoint`, `type`, `env`, `model`, `question`. Attributes are colon-separated after the tag name.
+Tags: `endpoint`, `type`, `env`, `model`, `question`, `domain-index`. Attributes are colon-separated after the tag name.
 
 ### YAML frontmatter for structured metadata
 
@@ -201,7 +204,7 @@ After `ctxify init`, the `.ctxify/` directory contains:
             └── {domain}.md     # Domain deep dives (one per complex area)
 ```
 
-Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The SKILL file at `.claude/skills/ctxify/SKILL.md` guides this workflow.
+Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The playbook at `skills/PLAYBOOK.md` guides this workflow (installed to agent-specific paths by `ctxify init --agent`).
 
 ## Current state
 

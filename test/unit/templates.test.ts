@@ -187,6 +187,11 @@ describe('repo template', () => {
     expect(output).toContain('Domain files');
   });
 
+  it('has domain-index segment markers', () => {
+    expect(output).toContain('<!-- domain-index -->');
+    expect(output).toContain('<!-- /domain-index -->');
+  });
+
   it('has TODO markers', () => {
     expect(output).toContain('<!-- TODO:');
   });

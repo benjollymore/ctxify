@@ -23,6 +23,7 @@ import { registerValidateCommand } from '../src/cli/commands/validate.js';
 import { registerBranchCommand } from '../src/cli/commands/branch.js';
 import { registerCommitCommand } from '../src/cli/commands/commit.js';
 import { registerCleanCommand } from '../src/cli/commands/clean.js';
+import { registerDomainCommand } from '../src/cli/commands/domain.js';
 
 function findPackageJson(): { version: string } {
   let dir = dirname(fileURLToPath(import.meta.url));
@@ -50,5 +51,6 @@ registerValidateCommand(program);
 registerBranchCommand(program);
 registerCommitCommand(program);
 registerCleanCommand(program);
+registerDomainCommand(program);
 
 program.parse();
