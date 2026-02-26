@@ -2,6 +2,13 @@ import { readFileSync, existsSync } from 'node:fs';
 import yaml from 'js-yaml';
 import { ConfigError } from './errors.js';
 
+export type OperatingMode = 'single-repo' | 'multi-repo' | 'mono-repo';
+
+export interface MonoRepoOptions {
+  manager?: string;        // 'npm' | 'yarn' | 'pnpm' | 'turborepo'
+  packageGlobs?: string[]; // from package.json workspaces field
+}
+
 export interface RepoEntry {
   path: string;
   name: string;
@@ -30,6 +37,8 @@ export interface ContextOptions {
 export interface CtxConfig {
   version: string;
   workspace: string;
+  mode: OperatingMode;
+  monoRepo?: MonoRepoOptions;
   repos: RepoEntry[];
   relationships: Relationship[];
   options: ContextOptions;
@@ -77,6 +86,8 @@ function validateConfig(raw: unknown): CtxConfig {
     throw new ConfigError('Config must have a "workspace" string field');
   }
 
+  const mode = validateMode(obj.mode);
+  const monoRepo = mode === 'mono-repo' ? validateMonoRepoOptions(obj.monoRepo) : undefined;
   const repos = validateRepos(obj.repos);
   const relationships = validateRelationships(obj.relationships);
   const options = validateOptions(obj.options);
@@ -84,9 +95,35 @@ function validateConfig(raw: unknown): CtxConfig {
   return {
     version: obj.version,
     workspace: obj.workspace,
+    mode,
+    ...(monoRepo ? { monoRepo } : {}),
     repos,
     relationships,
     options,
+  };
+}
+
+const VALID_MODES: OperatingMode[] = ['single-repo', 'multi-repo', 'mono-repo'];
+
+function validateMode(raw: unknown): OperatingMode {
+  if (raw === undefined || raw === null) return 'multi-repo'; // backward compat default
+  if (typeof raw !== 'string' || !VALID_MODES.includes(raw as OperatingMode)) {
+    throw new ConfigError(`"mode" must be one of: ${VALID_MODES.join(', ')}`);
+  }
+  return raw as OperatingMode;
+}
+
+function validateMonoRepoOptions(raw: unknown): MonoRepoOptions | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object') {
+    throw new ConfigError('"monoRepo" must be an object');
+  }
+  const o = raw as Record<string, unknown>;
+  return {
+    manager: typeof o.manager === 'string' ? o.manager : undefined,
+    packageGlobs: Array.isArray(o.packageGlobs)
+      ? o.packageGlobs.filter((s): s is string => typeof s === 'string')
+      : undefined,
   };
 }
 
@@ -169,10 +206,17 @@ function validateOptions(raw: unknown): ContextOptions {
   };
 }
 
-export function generateDefaultConfig(workspacePath: string, repos: RepoEntry[]): CtxConfig {
+export function generateDefaultConfig(
+  workspacePath: string,
+  repos: RepoEntry[],
+  mode: OperatingMode = 'multi-repo',
+  monoRepoOptions?: MonoRepoOptions,
+): CtxConfig {
   return {
     version: '1',
     workspace: workspacePath,
+    mode,
+    ...(monoRepoOptions ? { monoRepo: monoRepoOptions } : {}),
     repos,
     relationships: [],
     options: { ...DEFAULT_OPTIONS },

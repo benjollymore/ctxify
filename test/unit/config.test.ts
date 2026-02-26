@@ -156,6 +156,85 @@ repos:
     });
   });
 
+  describe('mode validation', () => {
+    it('should default mode to multi-repo when absent (backward compat)', () => {
+      const yamlContent = `
+version: "1"
+workspace: /tmp/ws
+`;
+      const configPath = join(tmpDir, 'ctx.yaml');
+      writeFileSync(configPath, yamlContent, 'utf-8');
+
+      const config = loadConfig(configPath);
+      expect(config.mode).toBe('multi-repo');
+    });
+
+    it('should accept valid mode values', () => {
+      for (const mode of ['single-repo', 'multi-repo', 'mono-repo']) {
+        const yamlContent = `
+version: "1"
+workspace: /tmp/ws
+mode: ${mode}
+`;
+        const configPath = join(tmpDir, `ctx-${mode}.yaml`);
+        writeFileSync(configPath, yamlContent, 'utf-8');
+
+        const config = loadConfig(configPath);
+        expect(config.mode).toBe(mode);
+      }
+    });
+
+    it('should reject invalid mode values', () => {
+      const yamlContent = `
+version: "1"
+workspace: /tmp/ws
+mode: invalid-mode
+`;
+      const configPath = join(tmpDir, 'ctx.yaml');
+      writeFileSync(configPath, yamlContent, 'utf-8');
+
+      expect(() => loadConfig(configPath)).toThrow(ConfigError);
+      expect(() => loadConfig(configPath)).toThrow(/mode/);
+    });
+
+    it('should accept monoRepo options for mono-repo mode', () => {
+      const yamlContent = `
+version: "1"
+workspace: /tmp/ws
+mode: mono-repo
+monoRepo:
+  manager: npm
+  packageGlobs:
+    - "packages/*"
+    - "apps/*"
+`;
+      const configPath = join(tmpDir, 'ctx.yaml');
+      writeFileSync(configPath, yamlContent, 'utf-8');
+
+      const config = loadConfig(configPath);
+      expect(config.mode).toBe('mono-repo');
+      expect(config.monoRepo).toBeDefined();
+      expect(config.monoRepo!.manager).toBe('npm');
+      expect(config.monoRepo!.packageGlobs).toEqual(['packages/*', 'apps/*']);
+    });
+
+    it('should ignore monoRepo options for non-mono-repo modes', () => {
+      const yamlContent = `
+version: "1"
+workspace: /tmp/ws
+mode: multi-repo
+monoRepo:
+  manager: npm
+`;
+      const configPath = join(tmpDir, 'ctx.yaml');
+      writeFileSync(configPath, yamlContent, 'utf-8');
+
+      const config = loadConfig(configPath);
+      expect(config.mode).toBe('multi-repo');
+      expect(config.monoRepo).toBeUndefined();
+    });
+  });
+
   describe('generateDefaultConfig', () => {
     it('should produce a valid config', () => {
       const repos = [
@@ -166,6 +245,7 @@ repos:
 
       expect(config.version).toBe('1');
       expect(config.workspace).toBe('/tmp/workspace');
+      expect(config.mode).toBe('multi-repo');
       expect(config.repos).toHaveLength(2);
       expect(config.repos[0].name).toBe('frontend');
       expect(config.repos[1].name).toBe('api');
@@ -173,6 +253,25 @@ repos:
       expect(config.options.outputDir).toBe('.ctx');
       expect(config.options.maxFileSize).toBe(100_000);
       expect(config.options.maxDepth).toBe(5);
+    });
+
+    it('should accept explicit mode parameter', () => {
+      const repos = [{ path: '.', name: 'myrepo' }];
+      const config = generateDefaultConfig('/tmp/ws', repos, 'single-repo');
+
+      expect(config.mode).toBe('single-repo');
+    });
+
+    it('should include monoRepo options when provided', () => {
+      const repos = [{ path: 'packages/a', name: 'a' }];
+      const config = generateDefaultConfig('/tmp/ws', repos, 'mono-repo', {
+        manager: 'pnpm',
+        packageGlobs: ['packages/*'],
+      });
+
+      expect(config.mode).toBe('mono-repo');
+      expect(config.monoRepo).toBeDefined();
+      expect(config.monoRepo!.manager).toBe('pnpm');
     });
 
     it('should produce config that roundtrips through serialize and load', () => {
@@ -186,8 +285,27 @@ repos:
       const loaded = loadConfig(configPath);
       expect(loaded.version).toBe(config.version);
       expect(loaded.workspace).toBe(config.workspace);
+      expect(loaded.mode).toBe(config.mode);
       expect(loaded.repos).toHaveLength(config.repos.length);
       expect(loaded.repos[0].name).toBe(config.repos[0].name);
+    });
+
+    it('should roundtrip mono-repo config with monoRepo options', () => {
+      const repos = [{ path: 'packages/core', name: 'core' }];
+      const config = generateDefaultConfig('/tmp/ws', repos, 'mono-repo', {
+        manager: 'turborepo',
+        packageGlobs: ['packages/*'],
+      });
+
+      const serialized = serializeConfig(config);
+      const configPath = join(tmpDir, 'roundtrip-mono.yaml');
+      writeFileSync(configPath, serialized, 'utf-8');
+
+      const loaded = loadConfig(configPath);
+      expect(loaded.mode).toBe('mono-repo');
+      expect(loaded.monoRepo).toBeDefined();
+      expect(loaded.monoRepo!.manager).toBe('turborepo');
+      expect(loaded.monoRepo!.packageGlobs).toEqual(['packages/*']);
     });
   });
 });
