@@ -84,10 +84,10 @@ ctxify auto-detects your package manager and workspace packages:
 ctxify scan --dir .
 ```
 
-Returns JSON index on stdout. Creates sharded `.ctx/` directory:
+Returns JSON index on stdout. Creates sharded `.ctxify/` directory:
 
 ```
-.ctx/
+.ctxify/
   index.yaml                    # ~300 bytes — workspace overview
   repos/<name>.yaml             # Per-repo detail (deps, scripts, conventions)
   endpoints/<name>.yaml         # API endpoints per repo
@@ -189,7 +189,7 @@ All commands accept `--dir <path>` (defaults to `.`).
 |------|-------------|--------|
 | `--force` | `scan`, `init` | Re-scan even if fresh / overwrite existing config |
 | `--interactive`, `-i` | `init` | Guided interview for multi-repo setup |
-| `--with-answers` | `scan` | Incorporate answers from `.ctx/answers.yaml` |
+| `--with-answers` | `scan` | Incorporate answers from `.ctxify/answers.yaml` |
 | `--repo <name>` | `query` | Filter by repo |
 | `--section <s>` | `query` | Section: endpoints, types, env, topology, schemas, questions |
 | `--method <m>` | `query` | Filter endpoints by HTTP method |
@@ -226,4 +226,4 @@ Level 3: [relationship-inference]
 7. **Relationship inference** — connect repos via deps, API calls, shared state (skipped in single-repo mode)
 8. **Convention detection** — tooling, naming, architecture patterns
 
-Passes write to a shared `WorkspaceContext` object, which shard renderers transform into the `.ctx/` output files. A cache tracks git SHAs and file hashes for staleness detection.
+Passes write to a shared `WorkspaceContext` object, which shard renderers transform into the `.ctxify/` output files. A cache tracks git SHAs and file hashes for staleness detection.

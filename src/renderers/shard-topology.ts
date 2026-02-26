@@ -2,7 +2,7 @@ import type { Renderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
 export const shardTopologyRenderer: Renderer = {
-  outputPath: '.ctx/topology/graph.yaml',
+  outputPath: '.ctxify/topology/graph.yaml',
 
   render(ctx) {
     const data = {

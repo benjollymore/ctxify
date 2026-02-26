@@ -291,7 +291,7 @@ function printRecommendedStructure(repoNames: string[]): void {
   console.log('\nRecommended workspace structure:\n');
   console.log('  workspace/');
   console.log('  ├── ctx.yaml            ← ctxify config (just created)');
-  console.log('  ├── .ctx/               ← generated context (gitignore this)');
+  console.log('  ├── .ctxify/            ← generated context (auto-added to .gitignore)');
   for (let i = 0; i < repoNames.length; i++) {
     const prefix = i === repoNames.length - 1 ? '└──' : '├──';
     const padding = ' '.repeat(Math.max(0, 20 - repoNames[i].length));

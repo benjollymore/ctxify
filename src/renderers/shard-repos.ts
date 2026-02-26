@@ -3,7 +3,7 @@ import { dumpYaml } from '../utils/yaml.js';
 import { relative } from 'node:path';
 
 export const shardReposRenderer: MultiRenderer = {
-  outputPathTemplate: '.ctx/repos/{name}.yaml',
+  outputPathTemplate: '.ctxify/repos/{name}.yaml',
 
   renderAll(ctx) {
     const result = new Map<string, string>();
@@ -36,7 +36,7 @@ export const shardReposRenderer: MultiRenderer = {
         data.conventions = conventions;
       }
 
-      result.set(`.ctx/repos/${repo.name}.yaml`, dumpYaml(data));
+      result.set(`.ctxify/repos/${repo.name}.yaml`, dumpYaml(data));
     }
 
     return result;

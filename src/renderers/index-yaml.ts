@@ -3,7 +3,7 @@ import { dumpYaml } from '../utils/yaml.js';
 import { relative } from 'node:path';
 
 export const indexYamlRenderer: Renderer = {
-  outputPath: '.ctx/index.yaml',
+  outputPath: '.ctxify/index.yaml',
 
   render(ctx) {
     const repos = ctx.repos.map((r) => {
@@ -52,13 +52,13 @@ export const indexYamlRenderer: Renderer = {
     };
 
     data.shards = {
-      repos: '.ctx/repos/{name}.yaml',
-      endpoints: '.ctx/endpoints/{name}.yaml',
-      types: '.ctx/types/shared.yaml',
-      env: '.ctx/env/all.yaml',
-      topology: '.ctx/topology/graph.yaml',
-      schemas: '.ctx/schemas/{name}.yaml',
-      questions: '.ctx/questions/pending.yaml',
+      repos: '.ctxify/repos/{name}.yaml',
+      endpoints: '.ctxify/endpoints/{name}.yaml',
+      types: '.ctxify/types/shared.yaml',
+      env: '.ctxify/env/all.yaml',
+      topology: '.ctxify/topology/graph.yaml',
+      schemas: '.ctxify/schemas/{name}.yaml',
+      questions: '.ctxify/questions/pending.yaml',
     };
 
     return dumpYaml(data);

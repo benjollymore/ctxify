@@ -40,7 +40,7 @@ repos:
     name: api-server
 relationships: []
 options:
-  outputDir: .ctx
+  outputDir: .ctxify
   maxFileSize: 100000
   maxDepth: 5
   excludePatterns:
@@ -170,7 +170,7 @@ describe('integration: shard writers produce correct output', () => {
     if (!existsSync(FIXTURE_DIR)) return;
 
     const ctx = await runFullPipeline();
-    const outputDir = '.ctx';
+    const outputDir = '.ctxify';
     writeShards(ctx, workspaceDir, outputDir);
 
     // index.yaml
@@ -216,7 +216,7 @@ describe('integration: shard writers produce correct output', () => {
     expect(parsed.totals.shared_types).toBeGreaterThanOrEqual(1);
     expect(parsed.totals.env_vars).toBeGreaterThanOrEqual(1);
     expect(parsed.shards).toBeDefined();
-    expect(parsed.shards.repos).toBe('.ctx/repos/{name}.yaml');
+    expect(parsed.shards.repos).toBe('.ctxify/repos/{name}.yaml');
   });
 
   it('shard-repos produces valid YAML for each repo', async () => {
@@ -228,7 +228,7 @@ describe('integration: shard writers produce correct output', () => {
     expect(files.size).toBe(2);
 
     for (const [path, content] of files) {
-      expect(path).toMatch(/\.ctx\/repos\/[\w-]+\.yaml$/);
+      expect(path).toMatch(/\.ctxify\/repos\/[\w-]+\.yaml$/);
       const parsed = parseYaml<Record<string, unknown>>(content);
       expect(parsed).toHaveProperty('name');
       expect(parsed).toHaveProperty('path');
@@ -247,7 +247,7 @@ describe('integration: shard writers produce correct output', () => {
     expect(files.size).toBeGreaterThanOrEqual(1);
 
     for (const [path, content] of files) {
-      expect(path).toMatch(/\.ctx\/endpoints\/[\w-]+\.yaml$/);
+      expect(path).toMatch(/\.ctxify\/endpoints\/[\w-]+\.yaml$/);
       const parsed = parseYaml<Record<string, unknown>>(content) as {
         repo: string;
         endpoints: Array<{ method: string; path: string }>;
@@ -501,7 +501,7 @@ describe('integration: staleness check', () => {
     if (!existsSync(FIXTURE_DIR)) return;
 
     const config = loadConfig(join(workspaceDir, 'ctx.yaml'));
-    const outputDir = config.options.outputDir || '.ctx';
+    const outputDir = config.options.outputDir || '.ctxify';
     const ctx = createWorkspaceContext(config, workspaceDir);
     const logger = createLogger('silent');
 

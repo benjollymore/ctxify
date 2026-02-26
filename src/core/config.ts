@@ -45,7 +45,7 @@ export interface CtxConfig {
 }
 
 const DEFAULT_OPTIONS: ContextOptions = {
-  outputDir: '.ctx',
+  outputDir: '.ctxify',
   maxFileSize: 100_000,
   maxDepth: 5,
   includePatterns: [],

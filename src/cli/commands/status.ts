@@ -26,7 +26,7 @@ export function registerStatusCommand(program: Command): void {
       }
 
       const config = loadConfig(configPath);
-      const outputDir = config.options.outputDir || '.ctx';
+      const outputDir = config.options.outputDir || '.ctxify';
       const ctx = createWorkspaceContext(config, workspaceRoot);
 
       // Run repo detection

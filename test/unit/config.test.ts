@@ -34,7 +34,7 @@ relationships:
     type: api-consumer
     description: Frontend calls API
 options:
-  outputDir: .ctx
+  outputDir: .ctxify
   maxFileSize: 50000
 `;
       const configPath = join(tmpDir, 'ctx.yaml');
@@ -51,7 +51,7 @@ options:
       expect(config.repos[1].name).toBe('api');
       expect(config.relationships).toHaveLength(1);
       expect(config.relationships[0].type).toBe('api-consumer');
-      expect(config.options.outputDir).toBe('.ctx');
+      expect(config.options.outputDir).toBe('.ctxify');
       expect(config.options.maxFileSize).toBe(50000);
     });
 
@@ -69,7 +69,7 @@ workspace: /tmp/ws
       expect(config.workspace).toBe('/tmp/ws');
       expect(config.repos).toEqual([]);
       expect(config.relationships).toEqual([]);
-      expect(config.options.outputDir).toBe('.ctx');
+      expect(config.options.outputDir).toBe('.ctxify');
       expect(config.options.maxFileSize).toBe(100_000);
       expect(config.options.maxDepth).toBe(5);
       expect(config.options.excludePatterns).toContain('node_modules');
@@ -250,7 +250,7 @@ monoRepo:
       expect(config.repos[0].name).toBe('frontend');
       expect(config.repos[1].name).toBe('api');
       expect(config.relationships).toEqual([]);
-      expect(config.options.outputDir).toBe('.ctx');
+      expect(config.options.outputDir).toBe('.ctxify');
       expect(config.options.maxFileSize).toBe(100_000);
       expect(config.options.maxDepth).toBe(5);
     });

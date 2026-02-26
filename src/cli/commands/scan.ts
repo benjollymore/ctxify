@@ -93,10 +93,10 @@ function autoInit(workspaceRoot: string): void {
 export function registerScanCommand(program: Command): void {
   program
     .command('scan')
-    .description('Scan workspace, write sharded context to .ctx/, output index as JSON')
+    .description('Scan workspace, write sharded context to .ctxify/, output index as JSON')
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .option('--force', 'Re-scan even if all repos are fresh')
-    .option('--with-answers', 'Incorporate answers from .ctx/answers.yaml')
+    .option('--with-answers', 'Incorporate answers from .ctxify/answers.yaml')
     .action(async (options: { dir?: string; force?: boolean; withAnswers?: boolean }) => {
       const logger = createLogger('error');
       const workspaceRoot = resolve(options.dir || '.');
@@ -108,7 +108,7 @@ export function registerScanCommand(program: Command): void {
       }
 
       const config = loadConfig(configPath);
-      const outputDir = config.options.outputDir || '.ctx';
+      const outputDir = config.options.outputDir || '.ctxify';
 
       // Run repo detection for staleness check
       const detectionCtx = createWorkspaceContext(config, workspaceRoot);

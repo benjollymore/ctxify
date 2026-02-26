@@ -26,8 +26,8 @@ const multiRenderers: MultiRenderer[] = [
 ];
 
 function resolveOutputPath(shardPath: string, workspaceRoot: string, outputDir: string): string {
-  if (shardPath.startsWith('.ctx/')) {
-    return join(workspaceRoot, outputDir, shardPath.slice(5));
+  if (shardPath.startsWith('.ctxify/')) {
+    return join(workspaceRoot, outputDir, shardPath.slice(8));
   }
   return join(workspaceRoot, shardPath);
 }

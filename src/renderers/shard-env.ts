@@ -2,7 +2,7 @@ import type { Renderer } from './types.js';
 import { dumpYaml } from '../utils/yaml.js';
 
 export const shardEnvRenderer: Renderer = {
-  outputPath: '.ctx/env/all.yaml',
+  outputPath: '.ctxify/env/all.yaml',
 
   render(ctx) {
     const data = {
