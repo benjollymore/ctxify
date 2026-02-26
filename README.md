@@ -69,6 +69,8 @@ ctxify init --repos ./api ./web
 | `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
+| `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
+| `ctxify domain list` | List registered domain files. Flags: `--repo` |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
 | `ctxify branch <name>` | Create a branch across all repos (multi-repo only) |
 | `ctxify commit <msg>` | Commit across all repos with changes (multi-repo only) |

@@ -114,8 +114,10 @@ conventions, gotchas and tips. 20-50 lines with brief code examples.
 Each covers: key concepts, workflow/status flows, key files (5-10 with descriptions),
 domain-specific patterns, cross-repo interactions. 50-150 lines each.
 
+<!-- domain-index -->
 <!-- TODO: Agent — List the domains you'll document after exploring the codebase:
 - \`{domain}.md\` — {what it covers}
 -->
+<!-- /domain-index -->
 `;
 }

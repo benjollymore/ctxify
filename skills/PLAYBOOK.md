@@ -65,6 +65,9 @@ Content (20-50 lines total):
 
 ### Pass 3: Create domain files (one per complex area)
 
+To scaffold a domain file quickly: `ctxify domain add <repo> <domain-name> --tags tag1,tag2`
+This creates the file with TODO placeholders and updates overview.md's domain index.
+
 Only for domains complex enough to warrant their own file. Read entry points + 2-3 domain files to understand workflows. Create `repos/{name}/{domain}.md` with frontmatter:
 
 ```yaml
@@ -114,3 +117,7 @@ These rules are hard constraints, not suggestions:
 ## 5. Updating
 
 When code changes, update only the affected overview, patterns, or domain file. Do not regenerate everything. Run `ctxify validate` after updates.
+
+When you encounter an undocumented domain during feature work, register it:
+`ctxify domain add <repo> <domain-name> --description "what it covers"`
+Fill the TODOs in the created file before moving on.

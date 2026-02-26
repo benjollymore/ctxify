@@ -12,7 +12,7 @@ export interface ValidationResult {
 
 // ── Supported segment tags ─────────────────────────────────────────────
 
-const SEGMENT_TAGS = ['endpoint', 'type', 'env', 'model', 'question'];
+const SEGMENT_TAGS = ['endpoint', 'type', 'env', 'model', 'question', 'domain-index'];
 
 // ── Public API ─────────────────────────────────────────────────────────
 
