@@ -211,6 +211,7 @@ export function generateDefaultConfig(
   repos: RepoEntry[],
   mode: OperatingMode = 'multi-repo',
   monoRepoOptions?: MonoRepoOptions,
+  relationships?: Relationship[],
 ): CtxConfig {
   return {
     version: '1',
@@ -218,7 +219,7 @@ export function generateDefaultConfig(
     mode,
     ...(monoRepoOptions ? { monoRepo: monoRepoOptions } : {}),
     repos,
-    relationships: [],
+    relationships: relationships ?? [],
     options: { ...DEFAULT_OPTIONS },
   };
 }

@@ -14,29 +14,24 @@ npm install && npm run build && npm link
 
 ## Quickstart
 
-### Single repo
+### Any repo (just works)
 
 ```bash
 cd my-project
-ctxify init --non-interactive
-# Detects single-repo mode, creates ctx.yaml, runs first scan
-```
-
-### Multi-repo workspace
-
-```bash
-cd workspace/       # contains frontend/, api-server/, etc.
 ctxify init
-# Interactive: select [2] multi-repo, confirm detected repos
 ```
 
-### Monorepo
+Auto-detects single-repo, monorepo, or multi-repo. Creates ctx.yaml, runs first scan.
+
+### Multi-repo (guided setup)
 
 ```bash
-cd my-monorepo/     # has package.json with "workspaces": ["packages/*"]
-ctxify init --non-interactive
-# Auto-detects monorepo, discovers workspace packages
+cd workspace/
+ctxify init --interactive
 ```
+
+Walks you through workspace setup: detects repos, asks about
+relationships, recommends a directory structure.
 
 After init, query context:
 
@@ -144,11 +139,11 @@ ctxify status --dir .
 ### Initialize a new workspace
 
 ```bash
-# Interactive (prompts for mode)
+# Auto-detect (default — no prompts)
 ctxify init .
 
-# Non-interactive (auto-detects mode)
-ctxify init --non-interactive .
+# Guided interview for multi-repo setup
+ctxify init --interactive .
 ```
 
 Creates `ctx.yaml`, runs first scan.
@@ -178,7 +173,7 @@ Then type `/ctxify` in any Claude Code session, or just ask Claude to scan the w
 
 | Command | Description |
 |---------|-------------|
-| `ctxify init [dir]` | Create ctx.yaml (interactive or `--non-interactive`), run first scan |
+| `ctxify init [dir]` | Auto-detect repos, create ctx.yaml, run first scan (`--interactive` for guided setup) |
 | `ctxify scan` | Scan workspace, write shards, output JSON index |
 | `ctxify query` | Query specific shards with filters |
 | `ctxify status` | JSON staleness report |
@@ -193,7 +188,7 @@ All commands accept `--dir <path>` (defaults to `.`).
 | Flag | Available on | Effect |
 |------|-------------|--------|
 | `--force` | `scan`, `init` | Re-scan even if fresh / overwrite existing config |
-| `--non-interactive` | `init` | Auto-detect mode without prompts |
+| `--interactive`, `-i` | `init` | Guided interview for multi-repo setup |
 | `--with-answers` | `scan` | Incorporate answers from `.ctx/answers.yaml` |
 | `--repo <name>` | `query` | Filter by repo |
 | `--section <s>` | `query` | Section: endpoints, types, env, topology, schemas, questions |
