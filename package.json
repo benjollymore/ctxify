@@ -1,6 +1,6 @@
 {
   "name": "ctxify",
-  "version": "2.0.0",
+  "version": "0.1.0",
   "description": "Context layer for AI coding agents — a turbocharged CLAUDE.md for multi-repo workspaces",
   "type": "module",
   "bin": {
@@ -34,6 +34,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@inquirer/prompts": "^8.3.0",
     "commander": "^12.1.0",
     "glob": "^11.0.0",
     "js-yaml": "^4.1.0"
