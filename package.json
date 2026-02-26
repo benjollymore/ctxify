@@ -1,6 +1,6 @@
 {
   "name": "ctxify",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Context layer for AI coding agents — a turbocharged CLAUDE.md for multi-repo workspaces",
   "type": "module",
   "bin": {
@@ -14,7 +14,8 @@
   },
   "files": [
     "dist",
-    ".claude"
+    ".claude",
+    "skills"
   ],
   "scripts": {
     "build": "tsup",

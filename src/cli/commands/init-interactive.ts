@@ -4,11 +4,12 @@ import { autoDetectMode } from '../../core/detect.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import type { OperatingMode, RepoEntry, MonoRepoOptions } from '../../core/config.js';
 import type { AgentType, ScaffoldOptions } from './init.js';
+import { AGENT_CONFIGS } from '../install-skill.js';
 import { findGitRoots } from '../../utils/git.js';
 
 export interface InteractiveAnswers {
   workspaceRoot: string;
-  agent?: AgentType;
+  agents?: AgentType[];
   confirmedMode: OperatingMode;
   repos: RepoEntry[];
   monoRepoOptions?: MonoRepoOptions;
@@ -24,7 +25,7 @@ export function resolveInteractiveOptions(answers: InteractiveAnswers): Scaffold
     mode: answers.confirmedMode,
     repos: answers.repos,
     monoRepoOptions: answers.monoRepoOptions,
-    agent: answers.agent,
+    agents: answers.agents,
   };
 }
 
@@ -32,15 +33,18 @@ export function resolveInteractiveOptions(answers: InteractiveAnswers): Scaffold
  * Run the interactive prompt flow. Collects all info needed for scaffolding.
  */
 export async function runInteractiveFlow(workspaceRoot: string): Promise<ScaffoldOptions> {
-  // Step 1: Agent selection
-  const agentChoice = await select({
-    message: 'Which AI agent do you use?',
-    choices: [
-      { name: 'Claude Code', value: 'claude' as const },
-      { name: 'Skip (no skill installation)', value: 'skip' as const },
-    ],
+  // Step 1: Agent selection (multi-select)
+  const agentChoices = Object.entries(AGENT_CONFIGS).map(([key, config]) => ({
+    name: config.displayName,
+    value: key as AgentType,
+    checked: key === 'claude',
+  }));
+
+  const selectedAgents = await checkbox({
+    message: 'Which AI agents do you use? (select all that apply)',
+    choices: agentChoices,
   });
-  const agent: AgentType | undefined = agentChoice === 'skip' ? undefined : agentChoice;
+  const agents: AgentType[] | undefined = selectedAgents.length > 0 ? selectedAgents : undefined;
 
   // Step 2: Auto-detect and confirm mode
   const detection = autoDetectMode(workspaceRoot);
@@ -112,7 +116,7 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
 
   return resolveInteractiveOptions({
     workspaceRoot,
-    agent,
+    agents,
     confirmedMode: mode,
     repos,
     monoRepoOptions,

@@ -11,10 +11,10 @@ import type { RepoTemplateData } from '../../templates/index-md.js';
 
 import { generateIndexTemplate } from '../../templates/index-md.js';
 import { generateRepoTemplate } from '../../templates/repo.js';
-import { installSkill } from '../install-skill.js';
+import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
 import { runInteractiveFlow } from './init-interactive.js';
 
-export type AgentType = 'claude';
+export type AgentType = 'claude' | 'copilot' | 'cursor' | 'codex';
 
 export interface ScaffoldOptions {
   workspaceRoot: string;
@@ -22,7 +22,7 @@ export interface ScaffoldOptions {
   repos: RepoEntry[];
   monoRepoOptions?: MonoRepoOptions;
   force?: boolean;
-  agent?: AgentType;
+  agents?: AgentType[];
 }
 
 export interface ScaffoldResult {
@@ -31,7 +31,7 @@ export interface ScaffoldResult {
   config: string;
   repos: string[];
   shards_written: boolean;
-  skill_installed?: string;
+  skills_installed?: string[];
 }
 
 export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<ScaffoldResult> {
@@ -90,10 +90,13 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   // Ensure .ctxify/ is in .gitignore
   ensureGitignore(workspaceRoot, outputDir);
 
-  // If agent specified, install skill
-  let skill_installed: string | undefined;
-  if (options.agent) {
-    skill_installed = installSkill(workspaceRoot, options.agent);
+  // Install skills for each specified agent
+  const skills_installed: string[] = [];
+  if (options.agents) {
+    for (const agent of options.agents) {
+      const dest = installSkill(workspaceRoot, agent);
+      skills_installed.push(dest);
+    }
   }
 
   return {
@@ -102,7 +105,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     config: configPath,
     repos: repos.map((r) => r.name),
     shards_written: true,
-    ...(skill_installed ? { skill_installed } : {}),
+    ...(skills_installed.length > 0 ? { skills_installed } : {}),
   };
 }
 
@@ -112,8 +115,9 @@ export function registerInitCommand(program: Command): void {
     .description('Scaffold ctx.yaml and .ctxify/ context shards')
     .option('--repos <paths...>', 'Multi-repo: specify repo subdirectories')
     .option('--mono', 'Mono-repo: detect packages from workspace config')
+    .option('--agent <agents...>', 'Install playbook for specified agents (claude, copilot, cursor, codex)')
     .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
-    .action(async (dir?: string, options?: { repos?: string[]; mono?: boolean; force?: boolean }) => {
+    .action(async (dir?: string, options?: { repos?: string[]; mono?: boolean; agent?: string[]; force?: boolean }) => {
       const workspaceRoot = resolve(dir || '.');
       const configPath = join(workspaceRoot, 'ctx.yaml');
 
@@ -182,7 +186,8 @@ export function registerInitCommand(program: Command): void {
           }
         }
 
-        scaffoldOptions = { workspaceRoot, mode, repos, monoRepoOptions, force: options?.force };
+        const agents = options?.agent as AgentType[] | undefined;
+        scaffoldOptions = { workspaceRoot, mode, repos, monoRepoOptions, force: options?.force, agents };
       }
 
       // 3. Scaffold workspace
@@ -192,7 +197,19 @@ export function registerInitCommand(program: Command): void {
       console.log(JSON.stringify(result, null, 2));
 
       // 5. Next step hint (stderr so it doesn't pollute JSON output)
-      console.error('\n✓ Context scaffolded. Next step: open Claude Code and run /ctxify');
+      if (result.skills_installed && result.skills_installed.length > 0) {
+        // Derive hints from installed destination paths
+        const hints = Object.values(AGENT_CONFIGS)
+          .filter((c) => result.skills_installed!.includes(c.destPath))
+          .map((c) => c.nextStepHint);
+        if (hints.length > 0) {
+          console.error(`\n✓ Context scaffolded. Next steps:\n${hints.map((h) => `  • ${h}`).join('\n')}`);
+        } else {
+          console.error('\n✓ Context scaffolded.');
+        }
+      } else {
+        console.error('\n✓ Context scaffolded.');
+      }
     });
 }
 

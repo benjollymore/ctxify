@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffoldWorkspace } from '../../src/cli/commands/init.js';
@@ -65,7 +65,7 @@ describe('scaffoldWorkspace', () => {
     expect(existsSync(join(dir, '.ctxify', 'repos', 'web', 'overview.md'))).toBe(true);
   });
 
-  it('does not include skill_installed when no agent specified', async () => {
+  it('does not include skills_installed when no agents specified', async () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
     createPackageJson(dir, 'my-app');
@@ -76,7 +76,36 @@ describe('scaffoldWorkspace', () => {
       repos: [{ path: '.', name: 'my-app' }],
     });
 
-    expect(result.skill_installed).toBeUndefined();
+    expect(result.skills_installed).toBeUndefined();
+  });
+
+  it('installs skills for multiple agents', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    const result = await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude', 'cursor', 'codex'],
+    });
+
+    expect(result.skills_installed).toEqual([
+      '.claude/skills/ctxify/SKILL.md',
+      '.cursor/rules/ctxify.md',
+      'AGENTS.md',
+    ]);
+    expect(existsSync(join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(dir, '.cursor', 'rules', 'ctxify.md'))).toBe(true);
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(true);
+
+    // Verify content
+    const claudeContent = readFileSync(join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md'), 'utf-8');
+    expect(claudeContent).toContain('name: ctxify');
+    const codexContent = readFileSync(join(dir, 'AGENTS.md'), 'utf-8');
+    // No YAML frontmatter wrapping — file starts with version comment, not ---
+    expect(codexContent.startsWith('---')).toBe(false);
   });
 
   it('only creates repos/{name}/overview.md (no old shard dirs)', async () => {
@@ -116,7 +145,6 @@ describe('scaffoldWorkspace', () => {
 
     const gitignorePath = join(dir, '.gitignore');
     expect(existsSync(gitignorePath)).toBe(true);
-    const { readFileSync } = await import('node:fs');
     const content = readFileSync(gitignorePath, 'utf-8');
     expect(content).toContain('.ctxify/');
   });

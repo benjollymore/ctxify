@@ -66,7 +66,7 @@ ctxify init --repos ./api ./web
 
 | Command | Purpose |
 |---------|---------|
-| `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--force` |
+| `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
@@ -75,18 +75,31 @@ ctxify init --repos ./api ./web
 
 All commands output JSON to stdout.
 
+## Supported agents
+
+`ctxify init` installs a playbook that teaches your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
+
+| Agent | Flag | Destination |
+|-------|------|-------------|
+| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` |
+| GitHub Copilot | `--agent copilot` | `.github/instructions/ctxify.instructions.md` |
+| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` |
+| OpenAI Codex | `--agent codex` | `AGENTS.md` |
+
+Multiple agents: `ctxify init --agent claude copilot cursor`
+
+The playbook content is identical across agents — only the destination path and frontmatter format differ.
+
 ## Agent integration
 
-ctxify is designed for **Claude Code**. When you run `ctxify init`, it installs a skill at `.claude/skills/ctxify/SKILL.md`. This skill teaches Claude Code how to:
+When you run `ctxify init`, the installed playbook teaches your agent how to:
 
 1. Read the scaffolded hubs (index.md + overview.md per repo)
 2. Create `patterns.md` for each repo — the most important deliverable
 3. Create domain files for complex areas
 4. Fill cross-repo workflows in index.md
 
-**After running `ctxify init`, open Claude Code and type `/ctxify`.** The agent takes it from there.
-
-The markdown output is agent-agnostic — any agent that reads markdown can use it — but the skill playbook is currently tailored for Claude Code.
+For Claude Code: after init, type `/ctxify` and the agent takes it from there. Other agents load the playbook automatically via their native instruction mechanisms.
 
 ## Supported manifests and modes
 

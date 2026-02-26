@@ -5,20 +5,20 @@ describe('resolveInteractiveOptions', () => {
   it('builds single-repo options from answers', () => {
     const result = resolveInteractiveOptions({
       workspaceRoot: '/tmp/test',
-      agent: 'claude',
+      agents: ['claude'],
       confirmedMode: 'single-repo',
       repos: [{ path: '.', name: 'my-app' }],
     });
 
     expect(result.mode).toBe('single-repo');
-    expect(result.agent).toBe('claude');
+    expect(result.agents).toEqual(['claude']);
     expect(result.repos).toEqual([{ path: '.', name: 'my-app' }]);
   });
 
   it('builds multi-repo options with selected repos', () => {
     const result = resolveInteractiveOptions({
       workspaceRoot: '/tmp/test',
-      agent: 'claude',
+      agents: ['claude'],
       confirmedMode: 'multi-repo',
       repos: [
         { path: 'api', name: 'api' },
@@ -30,14 +30,14 @@ describe('resolveInteractiveOptions', () => {
     expect(result.repos).toHaveLength(2);
   });
 
-  it('sets agent to undefined when not provided', () => {
+  it('sets agents to undefined when not provided', () => {
     const result = resolveInteractiveOptions({
       workspaceRoot: '/tmp/test',
       confirmedMode: 'single-repo',
       repos: [{ path: '.', name: 'my-app' }],
     });
 
-    expect(result.agent).toBeUndefined();
+    expect(result.agents).toBeUndefined();
   });
 
   it('passes through monoRepoOptions', () => {
@@ -79,5 +79,16 @@ describe('resolveInteractiveOptions', () => {
       description: 'Core lib',
     });
     expect(result.repos[1].language).toBe('typescript');
+  });
+
+  it('supports multiple agents', () => {
+    const result = resolveInteractiveOptions({
+      workspaceRoot: '/tmp/test',
+      agents: ['claude', 'cursor', 'copilot'],
+      confirmedMode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+    });
+
+    expect(result.agents).toEqual(['claude', 'cursor', 'copilot']);
   });
 });
