@@ -1,3 +1,18 @@
+// Polyfill Array.prototype.findLastIndex for Node 18 (ES2023 method used by @inquirer/select)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if (!(Array.prototype as any).findLastIndex) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (Array.prototype as any).findLastIndex = function (
+    predicate: (value: unknown, index: number, array: unknown[]) => unknown,
+    thisArg?: unknown,
+  ): number {
+    for (let i = this.length - 1; i >= 0; i--) {
+      if (predicate.call(thisArg, this[i], i, this)) return i;
+    }
+    return -1;
+  };
+}
+
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

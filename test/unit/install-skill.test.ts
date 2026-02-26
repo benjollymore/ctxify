@@ -26,13 +26,13 @@ describe('installSkill', () => {
     const destPath = join(dir, relativePath);
     expect(existsSync(destPath)).toBe(true);
 
-    // Verify source content is present in the installed file
-    const sourceContent = readFileSync(getSkillSourcePath(), 'utf-8');
+    // Verify skill content is present (version comment is inserted into the source)
     const installedContent = readFileSync(destPath, 'utf-8');
-    expect(installedContent).toContain(sourceContent);
+    expect(installedContent).toContain('# ctxify');
+    expect(installedContent).toContain('<!-- ctxify v');
   });
 
-  it('prepends version comment as first line', () => {
+  it('inserts version comment after frontmatter, not before', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
@@ -40,8 +40,10 @@ describe('installSkill', () => {
 
     const destPath = join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md');
     const content = readFileSync(destPath, 'utf-8');
-    const firstLine = content.split('\n')[0];
-    expect(firstLine).toMatch(/^<!-- ctxify v\d+\.\d+\.\d+ — do not edit manually, managed by ctxify init -->$/);
+    // Frontmatter must start on line 1 for Claude Code skill discovery
+    expect(content.startsWith('---')).toBe(true);
+    // Version comment appears after the closing ---
+    expect(content).toMatch(/---\n<!-- ctxify v\d+\.\d+\.\d+ — do not edit manually, managed by ctxify init -->/);
   });
 
   it('creates intermediate directories', () => {

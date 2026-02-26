@@ -42,8 +42,17 @@ export function installSkill(workspaceRoot: string, agent: string): string {
   const sourceContent = readFileSync(sourcePath, 'utf-8');
   const version = getVersion();
 
+  // Insert version comment after the frontmatter closing '---' so it doesn't
+  // break skill discovery (Claude Code requires '---' at line 1 to parse frontmatter)
   const versionComment = `<!-- ctxify v${version} — do not edit manually, managed by ctxify init -->`;
-  const installedContent = `${versionComment}\n${sourceContent}`;
+  const frontmatterEnd = sourceContent.indexOf('---', sourceContent.indexOf('---') + 3);
+  let installedContent: string;
+  if (frontmatterEnd !== -1) {
+    const insertPos = frontmatterEnd + 3;
+    installedContent = sourceContent.slice(0, insertPos) + '\n' + versionComment + sourceContent.slice(insertPos);
+  } else {
+    installedContent = `${sourceContent}\n${versionComment}`;
+  }
 
   const destPath = join(workspaceRoot, relativePath);
   mkdirSync(dirname(destPath), { recursive: true });
