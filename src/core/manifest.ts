@@ -2,6 +2,10 @@ import { join, relative } from 'node:path';
 import { readdirSync, statSync } from 'node:fs';
 import { readJsonFile, readFileIfExists, isFile, isDirectory } from '../utils/fs.js';
 
+// ── Constants ─────────────────────────────────────────────────────────
+
+const DEFAULT_EXCLUDES = ['node_modules', '.git', 'dist', 'build', '__pycache__', 'vendor'];
+
 // ── Types ──────────────────────────────────────────────────────────────
 
 export interface ManifestData {
@@ -292,7 +296,6 @@ function extractExportPaths(exports: unknown, entries: string[], repoPath: strin
 // ── Key directory discovery ────────────────────────────────────────────
 
 function discoverKeyDirs(repoPath: string, excludes: string[]): string[] {
-  const DEFAULT_EXCLUDES = ['node_modules', '.git', 'dist', 'build', '__pycache__', 'vendor'];
   const allExcludes = [...new Set([...excludes, ...DEFAULT_EXCLUDES])];
   const keyDirs: string[] = [];
 
@@ -333,7 +336,6 @@ function discoverKeyDirs(repoPath: string, excludes: string[]): string[] {
 // ── File counting ──────────────────────────────────────────────────────
 
 function countFiles(dir: string, excludes: string[], maxDepth = 8): number {
-  const DEFAULT_EXCLUDES = ['node_modules', '.git', 'dist', 'build', '__pycache__', 'vendor'];
   const allExcludes = [...new Set([...excludes, ...DEFAULT_EXCLUDES])];
   let count = 0;
 

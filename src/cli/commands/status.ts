@@ -1,7 +1,8 @@
 import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
+import { collectMdFiles } from '../../core/validate.js';
 
 export function registerStatusCommand(program: Command): void {
   program
@@ -48,33 +49,4 @@ export function registerStatusCommand(program: Command): void {
 
       console.log(JSON.stringify(result, null, 2));
     });
-}
-
-function collectMdFiles(dir: string): string[] {
-  const files: string[] = [];
-
-  function walk(currentDir: string): void {
-    let entries: string[];
-    try {
-      entries = readdirSync(currentDir);
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const fullPath = join(currentDir, entry);
-      try {
-        const stat = statSync(fullPath);
-        if (stat.isDirectory()) {
-          walk(fullPath);
-        } else if (stat.isFile() && entry.endsWith('.md')) {
-          files.push(fullPath);
-        }
-      } catch {
-        // skip inaccessible
-      }
-    }
-  }
-
-  walk(dir);
-  return files;
 }

@@ -94,13 +94,14 @@ describe('index template', () => {
   });
 
   it('shard pointers are present', () => {
-    expect(output).toContain('repo-api-server.md');
-    expect(output).toContain('repo-web-ui.md');
-    expect(output).toContain('endpoints-');
-    expect(output).toContain('topology.md');
-    expect(output).toContain('types.md');
-    expect(output).toContain('env.md');
-    expect(output).toContain('questions.md');
+    expect(output).toContain('repos/api-server.md');
+    expect(output).toContain('repos/web-ui.md');
+    expect(output).toContain('endpoints/');
+    expect(output).toContain('topology/graph.md');
+    expect(output).toContain('types/shared.md');
+    expect(output).toContain('env/all.md');
+    expect(output).toContain('questions/pending.md');
+    expect(output).toContain('_analysis.md');
   });
 });
 

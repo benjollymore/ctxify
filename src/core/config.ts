@@ -49,7 +49,7 @@ const DEFAULT_OPTIONS: ContextOptions = {
   maxFileSize: 100_000,
   maxDepth: 5,
   includePatterns: [],
-  excludePatterns: ['node_modules', '.git', 'dist', 'build', 'coverage', '__pycache__', '.venv'],
+  excludePatterns: ['node_modules', '.git', 'dist', 'build', 'coverage', '__pycache__', '.venv', 'fixtures', '__fixtures__'],
 };
 
 export function loadConfig(configPath: string): CtxConfig {

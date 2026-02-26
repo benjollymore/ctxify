@@ -171,6 +171,53 @@ totals:
     expect(result.warnings.some((w) => w.includes('TODO'))).toBe(true);
   });
 
+  it('ignores segment markers inside TODO comment blocks', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'endpoints'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+scanned_at: "2025-01-15T10:00:00.000Z"
+workspace: /workspace
+mode: single-repo
+totals:
+  repos: 1
+  endpoints: 0
+  shared_types: 0
+  env_vars: 0
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    // Endpoints template with example markers inside a TODO block
+    writeFileSync(
+      join(ctxDir, 'endpoints', 'api.md'),
+      `# api — Endpoints
+
+<!-- TODO: Agent — document endpoints using this format:
+
+<!-- endpoint:METHOD:/path -->
+**METHOD /path** — \`file:line\` (handlerName)
+<!-- /endpoint -->
+
+-->
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+
+    // Should not produce errors (example markers are balanced but inside TODO)
+    expect(result.errors).toHaveLength(0);
+    // Should not warn about totals mismatch (0 declared, 0 real)
+    expect(result.warnings.some((w) => w.includes('totals.endpoints mismatch'))).toBe(false);
+  });
+
   it('fails when index.md is missing', () => {
     // No .ctxify directory at all
     const result = validateShards(tmpDir);

@@ -7,7 +7,6 @@ import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { autoDetectMode } from '../../core/detect.js';
 import { findGitRoots, getHeadSha } from '../../utils/git.js';
-import { readJsonFile } from '../../utils/fs.js';
 import type { RepoTemplateData } from '../../templates/index-md.js';
 
 import { generateIndexTemplate } from '../../templates/index-md.js';

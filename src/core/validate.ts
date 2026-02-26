@@ -40,9 +40,9 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
   // Collect all .md files recursively
   const mdFiles = collectMdFiles(ctxifyPath);
 
-  // 3. Segment marker matching
+  // 3. Segment marker matching (strip TODO blocks so examples aren't counted)
   for (const filePath of mdFiles) {
-    const content = readFileSync(filePath, 'utf-8');
+    const content = stripTodoBlocks(readFileSync(filePath, 'utf-8'));
     const relativePath = filePath.slice(ctxifyPath.length + 1);
     checkSegmentMarkers(content, relativePath, errors);
   }
@@ -68,7 +68,20 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function collectMdFiles(dir: string): string[] {
+/**
+ * Strip TODO comment blocks from content so example markers inside them
+ * aren't counted as real segment markers by the validator.
+ *
+ * TODO blocks follow this pattern:
+ *   <!-- TODO: ...
+ *   (may contain example segment markers with inline -->)
+ *   -->            ← standalone closing on its own line
+ */
+function stripTodoBlocks(content: string): string {
+  return content.replace(/<!-- TODO:[\s\S]*?\n-->/g, '');
+}
+
+export function collectMdFiles(dir: string): string[] {
   const files: string[] = [];
 
   function walk(currentDir: string): void {
@@ -143,7 +156,7 @@ function checkTotalsConsistency(
     const relativePath = filePath.slice(ctxifyPath.length + 1);
     if (!relativePath.startsWith('endpoints')) continue;
 
-    const content = readFileSync(filePath, 'utf-8');
+    const content = stripTodoBlocks(readFileSync(filePath, 'utf-8'));
     const matches = content.match(/<!--\s*endpoint:/g);
     if (matches) {
       actualEndpoints += matches.length;

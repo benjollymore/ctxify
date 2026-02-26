@@ -45,15 +45,15 @@ export function generateIndexTemplate(
   // ── Shard links ──
   const shardLinks: string[] = [];
   for (const r of repos) {
-    shardLinks.push(`- [${r.name}](repo-${r.name}.md)`);
-    shardLinks.push(`- [${r.name} endpoints](endpoints-${r.name}.md)`);
-    shardLinks.push(`- [${r.name} schemas](schemas-${r.name}.md)`);
+    shardLinks.push(`- [${r.name}](repos/${r.name}.md)`);
+    shardLinks.push(`- [${r.name} endpoints](endpoints/${r.name}.md)`);
+    shardLinks.push(`- [${r.name} schemas](schemas/${r.name}.md)`);
   }
-  shardLinks.push('- [Shared types](types.md)');
-  shardLinks.push('- [Environment variables](env.md)');
-  shardLinks.push('- [Topology](topology.md)');
-  shardLinks.push('- [Pending questions](questions.md)');
-  shardLinks.push('- [Analysis checklist](analysis.md)');
+  shardLinks.push('- [Shared types](types/shared.md)');
+  shardLinks.push('- [Environment variables](env/all.md)');
+  shardLinks.push('- [Topology](topology/graph.md)');
+  shardLinks.push('- [Pending questions](questions/pending.md)');
+  shardLinks.push('- [Analysis checklist](_analysis.md)');
 
   return `---
 ${fm.trimEnd()}

@@ -67,7 +67,7 @@ export interface DbSchema {
 
 export interface Question {
   id: string;
-  pass: string;
+  source: string;
   category: 'relationship' | 'framework' | 'api' | 'type' | 'env';
   question: string;
   context: string;

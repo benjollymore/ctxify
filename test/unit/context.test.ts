@@ -93,7 +93,7 @@ describe('context types', () => {
   it('Question type can be used as a value shape', () => {
     const q: Question = {
       id: 'q1',
-      pass: 'relationship',
+      source: 'relationship',
       category: 'relationship',
       question: 'Does web call api directly?',
       context: 'Found fetch calls',
