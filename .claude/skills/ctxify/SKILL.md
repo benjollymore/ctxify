@@ -66,9 +66,7 @@ Read route/controller files. Use this format per endpoint:
 ```
 <!-- endpoint:METHOD:/path -->
 **METHOD /path** — `file:line` (handlerName)
-Request: { field: type }
-Response: { field: type }
-Auth: required | none
+Brief description.
 <!-- /endpoint -->
 ```
 
@@ -77,9 +75,9 @@ Auth: required | none
 Find types exported from one repo and imported by another. Format:
 
 ```
-<!-- type:Name:interface -->
-**Name** — defined in `repo-a/src/types.ts`, used by repo-b, repo-c
-Fields: { id: string, name: string }
+<!-- type:Name:kind -->
+**Name** — `source/file.ts:line`
+Brief description of what this type represents and where it's used.
 <!-- /type -->
 ```
 
@@ -88,9 +86,10 @@ Fields: { id: string, name: string }
 Check `.env`, `.env.example`, and source code references. Format:
 
 ```
-<!-- env:VAR_NAME -->
-**VAR_NAME** — used by repo-a, repo-b | required | secret
-Example: `postgres://localhost:5432/mydb`
+<!-- env:NAME -->
+**NAME** — required/optional
+Used by: `repo/file.ts:line`
+Description of what this variable controls.
 <!-- /env -->
 ```
 
@@ -122,10 +121,10 @@ Append to the repo shard: testing framework, linter config, naming patterns, dir
 
 ### Questions (`questions/pending.md`)
 
-Record anything uncertain. Format:
+Record anything uncertain as you analyze the codebase — architecture decisions, missing docs, unclear ownership, etc. Remove questions as they get answered. Use this format:
 
 ```
-<!-- question:q1 -->
+<!-- question:id -->
 **Q:** Does repo-b call repo-a directly or via the gateway?
 **Context:** Found imports in both directions.
 <!-- /question -->
@@ -133,7 +132,7 @@ Record anything uncertain. Format:
 
 ### After filling
 
-1. Update the `totals` fields in `index.md` frontmatter (endpoints, types, env, schemas counts).
+1. Update the `totals` fields in `index.md` frontmatter (endpoints, shared_types, env_vars counts).
 2. Run `ctxify validate` to check structural integrity.
 
 ## 5. Updating — Incremental Maintenance
