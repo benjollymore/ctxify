@@ -1,8 +1,8 @@
 # ctxify
 
-Multi-repo context compiler for AI coding agents.
+Context compiler for AI coding agents. Works with single repos, multi-repo workspaces, and monorepos.
 
-ctxify scans a workspace with multiple repositories and generates sharded context files — so an AI agent can query exactly the context it needs (repo details, endpoints, types, env vars) without loading everything.
+ctxify scans your workspace and generates sharded context files — so an AI agent can query exactly the context it needs (repo details, endpoints, types, env vars) without loading everything.
 
 ## Install
 
@@ -11,6 +11,75 @@ git clone git@github.com:benjollymore/ctxify.git
 cd ctxify
 npm install && npm run build && npm link
 ```
+
+## Quickstart
+
+### Single repo
+
+```bash
+cd my-project
+ctxify init --non-interactive
+# Detects single-repo mode, creates ctx.yaml, runs first scan
+```
+
+### Multi-repo workspace
+
+```bash
+cd workspace/       # contains frontend/, api-server/, etc.
+ctxify init
+# Interactive: select [2] multi-repo, confirm detected repos
+```
+
+### Monorepo
+
+```bash
+cd my-monorepo/     # has package.json with "workspaces": ["packages/*"]
+ctxify init --non-interactive
+# Auto-detects monorepo, discovers workspace packages
+```
+
+After init, query context:
+
+```bash
+ctxify query --repo api-server --section endpoints --dir .
+ctxify query --section types --dir .
+ctxify scan --dir .   # re-scan (skips if fresh)
+```
+
+## Operating modes
+
+ctxify supports three modes, set during `ctxify init` or in `ctx.yaml`:
+
+| Mode | Use case | Repo discovery |
+|------|----------|----------------|
+| `single-repo` | One repository | Workspace root is the repo; no cross-repo inference |
+| `multi-repo` | Multiple independent repos | Finds `.git/` directories recursively |
+| `mono-repo` | Monorepo with workspace packages | Reads `package.json` workspaces / `pnpm-workspace.yaml` |
+
+Mode is stored in `ctx.yaml` as `mode: single-repo | multi-repo | mono-repo`. Configs without `mode` default to `multi-repo` for backward compatibility.
+
+### Multi-repo git coordination
+
+In multi-repo mode, ctxify provides commands to branch and commit across all repos at once:
+
+```bash
+# Create a branch in every configured repo
+ctxify branch feature-x --dir .
+
+# Commit in all repos that have changes (skips clean repos)
+ctxify commit "implement feature x" --dir .
+
+# Add a new repo to the workspace
+ctxify add-repo ../new-service --dir .
+```
+
+### Monorepo detection
+
+ctxify auto-detects your package manager and workspace packages:
+
+- **npm/yarn** — reads `workspaces` from root `package.json`
+- **pnpm** — reads `pnpm-workspace.yaml`
+- **turborepo** — detects `turbo.json`, uses `package.json` workspaces for package globs
 
 ## Usage
 
@@ -75,10 +144,14 @@ ctxify status --dir .
 ### Initialize a new workspace
 
 ```bash
+# Interactive (prompts for mode)
 ctxify init .
+
+# Non-interactive (auto-detects mode)
+ctxify init --non-interactive .
 ```
 
-Auto-detects repos, creates `ctx.yaml`, runs first scan.
+Creates `ctx.yaml`, runs first scan.
 
 ## What it detects
 
@@ -105,10 +178,13 @@ Then type `/ctxify` in any Claude Code session, or just ask Claude to scan the w
 
 | Command | Description |
 |---------|-------------|
-| `ctxify init [dir]` | Auto-detect repos, create ctx.yaml, run first scan |
+| `ctxify init [dir]` | Create ctx.yaml (interactive or `--non-interactive`), run first scan |
 | `ctxify scan` | Scan workspace, write shards, output JSON index |
 | `ctxify query` | Query specific shards with filters |
 | `ctxify status` | JSON staleness report |
+| `ctxify branch <name>` | Create branch in all repos (multi-repo only) |
+| `ctxify commit <message>` | Stage + commit in dirty repos (multi-repo only) |
+| `ctxify add-repo <path>` | Add a repo to multi-repo config |
 
 All commands accept `--dir <path>` (defaults to `.`).
 
@@ -116,13 +192,15 @@ All commands accept `--dir <path>` (defaults to `.`).
 
 | Flag | Available on | Effect |
 |------|-------------|--------|
-| `--force` | `scan`, `init` | Re-scan even if fresh |
+| `--force` | `scan`, `init` | Re-scan even if fresh / overwrite existing config |
+| `--non-interactive` | `init` | Auto-detect mode without prompts |
 | `--with-answers` | `scan` | Incorporate answers from `.ctx/answers.yaml` |
 | `--repo <name>` | `query` | Filter by repo |
 | `--section <s>` | `query` | Section: endpoints, types, env, topology, schemas, questions |
 | `--method <m>` | `query` | Filter endpoints by HTTP method |
 | `--path-contains <s>` | `query` | Filter endpoints by path substring |
-| `--name <n>` | `query` | Filter types by name |
+| `--name <n>` | `query`, `add-repo` | Filter types by name / override repo name |
+| `--scan` | `add-repo` | Run scan after adding |
 
 ## Development
 
@@ -144,13 +222,13 @@ Level 2: [api-discovery, type-extraction, convention-detection]     — 3 in par
 Level 3: [relationship-inference]
 ```
 
-1. **Repo detection** — find `.git/` directories
+1. **Repo detection** — mode-aware: finds `.git/` dirs (multi-repo), reads workspace packages (mono-repo), or uses workspace root (single-repo)
 2. **Manifest parsing** — read package.json, go.mod, pyproject.toml
 3. **Structure mapping** — identify key dirs, entry points, file counts
 4. **API discovery** — regex-based route extraction
 5. **Type extraction** — find exports, cross-reference imports across repos
 6. **Env scanning** — parse `.env` files and code references
-7. **Relationship inference** — connect repos via deps, API calls, shared state
+7. **Relationship inference** — connect repos via deps, API calls, shared state (skipped in single-repo mode)
 8. **Convention detection** — tooling, naming, architecture patterns
 
 Passes write to a shared `WorkspaceContext` object, which shard renderers transform into the `.ctx/` output files. A cache tracks git SHAs and file hashes for staleness detection.
