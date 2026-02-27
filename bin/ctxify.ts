@@ -25,6 +25,8 @@ import { registerCommitCommand } from '../src/cli/commands/commit.js';
 import { registerCleanCommand } from '../src/cli/commands/clean.js';
 import { registerDomainCommand } from '../src/cli/commands/domain.js';
 import { registerFeedbackCommand } from '../src/cli/commands/feedback.js';
+import { registerUpgradeCommand } from '../src/cli/commands/upgrade.js';
+import { checkForUpdate } from '../src/utils/version-check.js';
 
 function findPackageJson(): { version: string } {
   let dir = dirname(fileURLToPath(import.meta.url));
@@ -39,12 +41,29 @@ function findPackageJson(): { version: string } {
 }
 
 const pkg = findPackageJson();
+
+// Expose current version for upgrade command
+process.env.CTXIFY_CURRENT_VERSION = pkg.version;
+
 const program = new Command();
 
 program
   .name('ctxify')
   .description('Turbocharged workspace context for AI coding agents')
   .version(pkg.version);
+
+// Non-blocking version check warning before each command
+program.hook('preAction', async () => {
+  const latest = await checkForUpdate(pkg.version);
+  if (latest) {
+    const hint = process.argv[1]?.includes('_npx')
+      ? `run npx @benjollymore/ctxify@latest to use the latest version`
+      : `run ctxify upgrade to update`;
+    console.error(
+      `warn: ctxify is out of date (latest v${latest}, on v${pkg.version}). ${hint}`,
+    );
+  }
+});
 
 registerInitCommand(program);
 registerStatusCommand(program);
@@ -54,6 +73,7 @@ registerCommitCommand(program);
 registerCleanCommand(program);
 registerDomainCommand(program);
 registerFeedbackCommand(program);
+registerUpgradeCommand(program);
 
 program.parseAsync().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);
