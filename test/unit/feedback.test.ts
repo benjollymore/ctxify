@@ -281,10 +281,7 @@ describe('feedback command', () => {
     expect(parsed.status).toBe('recorded');
     expect(parsed.type).toBe('antipattern');
 
-    const content = readFileSync(
-      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
-      'utf-8',
-    );
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
     expect(content).toContain('# Anti-Patterns');
     expect(content).toContain('<!-- antipattern:');
     expect(content).toContain('<!-- /antipattern -->');
@@ -309,10 +306,7 @@ describe('feedback command', () => {
       dir,
     );
 
-    const content = readFileSync(
-      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
-      'utf-8',
-    );
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
     expect(content).toContain('Missing validation — `src/payments/handler.ts:42`');
   });
 
@@ -324,10 +318,7 @@ describe('feedback command', () => {
     runFeedback(['api', '--type', 'antipattern', '--body', 'First anti-pattern'], dir);
     runFeedback(['api', '--type', 'antipattern', '--body', 'Second anti-pattern'], dir);
 
-    const content = readFileSync(
-      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
-      'utf-8',
-    );
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
     const headerCount = (content.match(/# Anti-Patterns/g) || []).length;
     expect(headerCount).toBe(1);
     expect(content).toContain('First anti-pattern');
@@ -343,10 +334,7 @@ describe('feedback command', () => {
     runFeedback(['api', '--type', 'antipattern', '--body', 'An anti-pattern'], dir);
     runFeedback(['api', '--body', 'Another correction'], dir);
 
-    const content = readFileSync(
-      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
-      'utf-8',
-    );
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
     expect(content).toContain('A correction');
     expect(content).toContain('An anti-pattern');
     expect(content).toContain('Another correction');
@@ -359,13 +347,13 @@ describe('feedback command', () => {
     tmpDirs.push(dir);
     createWorkspace(dir, ['api']);
 
-    const { parsed } = runFeedback(['api', '--type', 'correction', '--body', 'Explicit correction'], dir);
+    const { parsed } = runFeedback(
+      ['api', '--type', 'correction', '--body', 'Explicit correction'],
+      dir,
+    );
     expect(parsed.type).toBe('correction');
 
-    const content = readFileSync(
-      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
-      'utf-8',
-    );
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
     expect(content).toContain('<!-- correction:');
     expect(content).not.toContain('<!-- antipattern:');
   });
