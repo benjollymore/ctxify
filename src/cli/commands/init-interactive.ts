@@ -54,6 +54,7 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     const scopeMap: Record<string, SkillScope> = {};
     for (const agent of agents) {
       const agentCfg = AGENT_CONFIGS[agent];
+      if (!agentCfg) continue; // defensive — all AgentType values are in AGENT_CONFIGS
       if (agentCfg.globalDestDir) {
         const scope = await select<SkillScope>({
           message: `Where should ${agentCfg.displayName} skills be installed?`,
