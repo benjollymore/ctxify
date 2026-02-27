@@ -17,6 +17,7 @@ For each `repos/{name}/overview.md`:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Annotate pre-filled key directories. Describe request/data flow (e.g., "Route → Validation → Controller → Service → Model"). Note DI approach, ORM, testing framework. 10-20 lines total.
 - **Domain files**: Identify 3-5 domains to document. For each, invoke **ctxify:domain** — this scaffolds the file and registers it. Do NOT list domains without creating their files.
+- **Anti-patterns**: Only if you spot a systemic issue that would cause real harm (data loss, silent error swallowing in a critical path, missing auth at an obvious boundary). Max 1-2 per repo. See STOP Rule 11 before logging anything.
 
 ### Pass 2: Scaffold and fill patterns.md (THE PRIMARY DELIVERABLE)
 
@@ -62,3 +63,4 @@ These are hard constraints, not suggestions:
 8. **If listing more than 10 of anything, STOP.** You're cataloging. Describe the pattern, give 2-3 examples.
 9. **Do NOT inline patterns in overview.md.** Patterns belong in `patterns.md`. Overview is the hub, not the content.
 10. **Do NOT list a domain in overview.md without creating it.** Use `ctxify domain add` for every domain you identify. `ctxify validate` will error if domain files are referenced but missing.
+11. **Do NOT log anti-patterns liberally.** Apply the three-question bar (broad impact + learnable + real harm) strictly. Max 2 per repo. FIXME comments, style issues, and isolated oddities do not qualify.

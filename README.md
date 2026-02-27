@@ -80,7 +80,7 @@ ctxify init --repos ./api ./web
 | `ctxify patterns <repo>` | Scaffold `patterns.md` with TODO placeholders for an agent to fill. Flags: `--force` |
 | `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
 | `ctxify domain list` | List registered domain files. Flags: `--repo` |
-| `ctxify feedback <repo>` | Log a correction to `corrections.md`. Flags: `--body` (required) |
+| `ctxify feedback <repo>` | Log a correction or anti-pattern to `corrections.md`. Flags: `--body` (required), `--type correction\|antipattern`, `--source file:line` |
 | `ctxify upgrade` | Upgrade ctxify and reinstall all tracked agent skills |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
 | `ctxify branch <name>` | Create a branch across all repos (multi-repo only) |
