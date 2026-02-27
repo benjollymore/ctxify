@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseFrontmatter } from '../utils/frontmatter.js';
 
@@ -11,6 +11,9 @@ interface AgentConfig {
   primaryFilename: string;
   // For agents that install each skill as a separate file (claude, cursor):
   skillFrontmatter?: (opts: { name: string; description: string; isPrimary: boolean }) => string;
+  // When set, each satellite skill gets its own sibling directory containing this filename.
+  // Used by Claude Code, which requires one directory per skill with SKILL.md inside.
+  satelliteFilename?: string;
   // For agents that combine all skills into one file (copilot, codex):
   singleFile?: boolean;
   combinedFrontmatter?: () => string;
@@ -22,6 +25,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     displayName: 'Claude Code',
     destDir: '.claude/skills/ctxify',
     primaryFilename: 'SKILL.md',
+    satelliteFilename: 'SKILL.md',
     skillFrontmatter: ({ name, description }) =>
       `---\nname: ${name}\ndescription: ${description}\n---`,
     nextStepHint: 'open Claude Code and run /ctxify',
@@ -150,11 +154,21 @@ export function installSkill(workspaceRoot: string, agent: string): string {
       const isPrimary = filename === 'SKILL.md';
       const agentFm = config.skillFrontmatter?.({ name, description, isPrimary }) ?? '';
       const body = stripFrontmatter(raw);
-      const destFilename = isPrimary ? config.primaryFilename : filename;
       const installedContent = agentFm
         ? `${agentFm}\n${versionComment}\n${body}`
         : `${versionComment}\n${body}`;
-      writeFileSync(join(destDir, destFilename), installedContent, 'utf-8');
+
+      if (!isPrimary && config.satelliteFilename) {
+        // Each satellite skill gets its own sibling directory so Claude Code
+        // registers it as an independent invokable skill (requires dir/SKILL.md).
+        const baseName = filename.replace(/\.md$/, '');
+        const satelliteDir = join(dirname(destDir), `${basename(destDir)}-${baseName}`);
+        mkdirSync(satelliteDir, { recursive: true });
+        writeFileSync(join(satelliteDir, config.satelliteFilename), installedContent, 'utf-8');
+      } else {
+        const destFilename = isPrimary ? config.primaryFilename : filename;
+        writeFileSync(join(destDir, destFilename), installedContent, 'utf-8');
+      }
     }
   }
 
