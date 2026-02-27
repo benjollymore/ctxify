@@ -12,7 +12,7 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 204 tests, 20 files
+npm test             # vitest run — 232 tests, 20 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -54,7 +54,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | File | Purpose |
 |------|---------|
 | `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent playbooks. Types: `AgentType` (`'claude' \| 'copilot' \| 'cursor' \| 'codex'`), `ScaffoldOptions` (with `agents?: AgentType[]`, `install_method?: 'global' \| 'local' \| 'npx'`, `agentScopes?: Record<string, SkillScope>`, `homeDir?: string`), `ScaffoldResult` (with `skills_installed?: string[]`). Exports `detectInstallMethod(argv1?)` — detects global/local/npx from `process.argv[1]`. Flags: `--repos`, `--mono`, `--agent <agents...>`, `--force` |
-| `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Multi-select agent checkbox, confirms mode, confirms repos. Returns `ScaffoldOptions` |
+| `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Multi-select agent checkbox, per-agent scope prompt (workspace vs global, for agents with `globalDestDir`), confirms mode, confirms repos. Returns `ScaffoldOptions` |
 | `status.ts` | JSON status report: index exists, repo list, shard dirs, TODO count |
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
 | `branch.ts` | Create branch across all repos (multi-repo only) |
