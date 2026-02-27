@@ -1,11 +1,11 @@
 import { select, confirm, checkbox } from '@inquirer/prompts';
-import { basename, resolve, relative } from 'node:path';
+import { basename } from 'node:path';
 import { autoDetectMode } from '../../core/detect.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import type { OperatingMode, RepoEntry, MonoRepoOptions } from '../../core/config.js';
 import type { AgentType, ScaffoldOptions } from './init.js';
+import { buildMultiRepoEntries } from './init.js';
 import { AGENT_CONFIGS } from '../install-skill.js';
-import { findGitRoots } from '../../utils/git.js';
 
 export interface InteractiveAnswers {
   workspaceRoot: string;
@@ -87,7 +87,7 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     repos = [{ path: '.', name: basename(workspaceRoot) }];
   } else {
     // multi-repo: discover and let user confirm
-    const discovered = discoverMultiRepoEntries(workspaceRoot);
+    const discovered = buildMultiRepoEntries(workspaceRoot);
 
     if (discovered.length === 0) {
       console.log('No repositories found in subdirectories.');
@@ -120,18 +120,5 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     confirmedMode: mode,
     repos,
     monoRepoOptions,
-  });
-}
-
-function discoverMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
-  const gitRoots = findGitRoots(workspaceRoot, 3);
-  const workspaceAbs = resolve(workspaceRoot);
-  const subRepos = gitRoots.filter((root) => resolve(root) !== workspaceAbs);
-  const repoRoots = subRepos.length > 0 ? subRepos : gitRoots;
-
-  return repoRoots.map((root) => {
-    const name = basename(root);
-    const relPath = relative(workspaceRoot, root) || '.';
-    return { path: relPath, name };
   });
 }

@@ -65,7 +65,7 @@ function updateOverviewDomainIndex(
   const newBlock = '\n' + existingEntries.join('\n') + '\n';
   content = content.slice(0, blockStart) + newBlock + content.slice(endIdx);
 
-  writeFileSync(content.length > 0 ? overviewPath : overviewPath, content, 'utf-8');
+  writeFileSync(overviewPath, content, 'utf-8');
   return true;
 }
 

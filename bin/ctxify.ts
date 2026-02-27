@@ -42,7 +42,7 @@ const program = new Command();
 
 program
   .name('ctxify')
-  .description('Context layer for AI coding agents — a turbocharged CLAUDE.md for multi-repo workspaces')
+  .description('Turbocharged workspace context for AI coding agents')
   .version(pkg.version);
 
 registerInitCommand(program);
@@ -53,4 +53,8 @@ registerCommitCommand(program);
 registerCleanCommand(program);
 registerDomainCommand(program);
 
-program.parse();
+program.parseAsync().catch((err: unknown) => {
+  const message = err instanceof Error ? err.message : String(err);
+  console.log(JSON.stringify({ error: message }));
+  process.exit(1);
+});

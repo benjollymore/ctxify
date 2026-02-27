@@ -106,6 +106,16 @@ serve = "my_api.main:app"
     expect(result.fileCount).toBeGreaterThan(0);
   });
 
+  it('should detect Python with requirements.txt fallback', () => {
+    writeFileSync(join(tmpDir, 'requirements.txt'), 'flask>=2.0.0\nrequests>=2.28.0\n', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('python');
+    expect(result.framework).toBe('flask');
+    expect(result.manifestType).toBe('requirements.txt');
+  });
+
   it('should detect Go with go.mod', () => {
     const goModContent = `module github.com/example/myservice
 

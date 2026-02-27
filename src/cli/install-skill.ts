@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export interface AgentConfig {
+interface AgentConfig {
   displayName: string;
   destPath: string;
   frontmatter: () => string;
