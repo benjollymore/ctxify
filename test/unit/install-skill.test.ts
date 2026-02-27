@@ -114,7 +114,13 @@ describe('installSkill', () => {
     installSkill(dir, 'claude');
 
     const skillDir = join(dir, '.claude', 'skills', 'ctxify');
-    const satellites = ['reading-context.md', 'filling-context.md', 'domain.md', 'corrections.md', 'multi-repo.md'];
+    const satellites = [
+      'reading-context.md',
+      'filling-context.md',
+      'domain.md',
+      'corrections.md',
+      'multi-repo.md',
+    ];
     for (const filename of satellites) {
       const content = readFileSync(join(skillDir, filename), 'utf-8');
       expect(content.startsWith('---'), `${filename} should start with ---`).toBe(true);
@@ -140,7 +146,13 @@ describe('installSkill', () => {
     installSkill(dir, 'cursor');
 
     const rulesDir = join(dir, '.cursor', 'rules');
-    const satellites = ['reading-context.md', 'filling-context.md', 'domain.md', 'corrections.md', 'multi-repo.md'];
+    const satellites = [
+      'reading-context.md',
+      'filling-context.md',
+      'domain.md',
+      'corrections.md',
+      'multi-repo.md',
+    ];
     for (const filename of satellites) {
       const content = readFileSync(join(rulesDir, filename), 'utf-8');
       expect(content, `${filename} should have alwaysApply: false`).toContain('alwaysApply: false');
@@ -191,7 +203,9 @@ describe('installSkill', () => {
     for (const agent of Object.keys(AGENT_CONFIGS)) {
       const dest = installSkill(dir, agent);
       const content = readFileSync(join(dir, dest), 'utf-8');
-      expect(content, `${agent} primary file should have version comment`).toContain('<!-- ctxify v');
+      expect(content, `${agent} primary file should have version comment`).toContain(
+        '<!-- ctxify v',
+      );
       expect(content, `${agent} primary file should have ctxify heading`).toContain('# ctxify');
     }
   });
@@ -201,7 +215,10 @@ describe('installSkill', () => {
     tmpDirs.push(dir);
 
     installSkill(dir, 'copilot');
-    const content = readFileSync(join(dir, '.github', 'instructions', 'ctxify.instructions.md'), 'utf-8');
+    const content = readFileSync(
+      join(dir, '.github', 'instructions', 'ctxify.instructions.md'),
+      'utf-8',
+    );
 
     expect(content).toContain('# ctxify — Orientation');
     expect(content).toContain('ctxify:reading-context');
