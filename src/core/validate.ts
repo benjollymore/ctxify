@@ -54,6 +54,9 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
     checkTodoMarkers(content, relativePath, warnings);
   }
 
+  // 5. Domain file existence
+  checkMissingDomainFiles(ctxifyPath, errors);
+
   return {
     valid: errors.length === 0,
     errors,
@@ -130,11 +133,59 @@ function checkTodoMarkers(content: string, relativePath: string, warnings: strin
   const todoPattern = /<!--\s*TODO:/g;
   let match;
   while ((match = todoPattern.exec(content)) !== null) {
-    // Extract a snippet of the TODO text for the warning
     const snippet = content
       .slice(match.index, match.index + 80)
       .replace(/\n/g, ' ')
       .trim();
     warnings.push(`TODO marker in ${relativePath}: ${snippet}`);
+  }
+}
+
+function checkMissingDomainFiles(ctxifyPath: string, errors: string[]): void {
+  const reposDir = join(ctxifyPath, 'repos');
+  if (!existsSync(reposDir)) return;
+
+  let repoDirs: string[];
+  try {
+    repoDirs = readdirSync(reposDir);
+  } catch {
+    return;
+  }
+
+  for (const repoName of repoDirs) {
+    const repoPath = join(reposDir, repoName);
+    try {
+      if (!statSync(repoPath).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+
+    const overviewPath = join(repoPath, 'overview.md');
+    if (!existsSync(overviewPath)) continue;
+
+    let overviewContent: string;
+    try {
+      overviewContent = readFileSync(overviewPath, 'utf-8');
+    } catch {
+      continue;
+    }
+
+    const blockMatch = overviewContent.match(
+      /<!--\s*domain-index\s*-->([\s\S]*?)<!--\s*\/domain-index\s*-->/,
+    );
+    if (!blockMatch) continue;
+
+    const block = blockMatch[1];
+    const entryPattern = /^\s*-\s*`([^`]+\.md)`/gm;
+    let entryMatch;
+    while ((entryMatch = entryPattern.exec(block)) !== null) {
+      const filename = entryMatch[1];
+      if (filename.includes('{') || filename.includes('}')) continue;
+      if (!existsSync(join(repoPath, filename))) {
+        errors.push(
+          `domain file referenced in repos/${repoName}/overview.md but not found: repos/${repoName}/${filename}`,
+        );
+      }
+    }
   }
 }

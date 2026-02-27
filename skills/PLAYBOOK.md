@@ -40,7 +40,7 @@ You are writing the mental model a senior engineer carries in their head. Work i
 For each `repos/{name}/overview.md`:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Annotate pre-filled key directories. Describe the request/data flow (e.g., "Route → Validation → Controller → Service → Model"). Note DI approach, ORM, testing framework. 10-20 lines total.
-- **Context TODO**: List the domains you'll document (e.g., `calendar.md` — calendar lifecycle and scheduling).
+- **Domain files**: Identify 3-5 domains to document. For each, run `ctxify domain add <repo> <domain> --tags tag1,tag2` — this scaffolds the file and registers it in the domain index. Do NOT list domains manually without creating their files first.
 
 ### Pass 2: Create patterns.md for each repo (THE PRIMARY DELIVERABLE)
 
@@ -64,27 +64,17 @@ Content (20-50 lines total):
 
 **Reference over duplication:** Don't include code snippets that will become stale. Use `file:line` references pointing to authoritative source locations. Only use inline code for patterns repeated across many files where no single canonical source exists.
 
-### Pass 3: Create domain files (one per complex area)
+### Pass 3: Fill domain file TODOs
 
-To scaffold a domain file quickly: `ctxify domain add <repo> <domain-name> --tags tag1,tag2`
-This creates the file with TODO placeholders and updates overview.md's domain index.
+Domain files were scaffolded in Pass 1 via `ctxify domain add`. Now fill their TODOs.
 
-Only for domains complex enough to warrant their own file. Read entry points + 2-3 domain files to understand workflows. Create `repos/{name}/{domain}.md` with frontmatter:
-
-```yaml
----
-repo: backend
-type: domain
-domain: calendar
-tags: [appointment, meeting, out-of-office]
----
-```
-
-Content (50-150 lines total):
+For each `repos/{name}/{domain}.md`, read entry points + 2-3 relevant source files and fill in:
 - **Overview**: What this domain covers, key concepts, workflow/status flows
 - **Key Files**: 5-10 most important files with 1-line descriptions (`file:line` references)
 - **Patterns**: Domain-specific patterns with brief code examples
 - **Cross-repo**: How this domain spans repos (e.g., backend model + frontend form)
+
+Keep each file 50-150 lines total.
 
 ### Pass 4: Fill index.md
 
@@ -114,6 +104,8 @@ These rules are hard constraints, not suggestions:
 8. **If listing more than 10 of anything, STOP.** You're cataloging, not providing context. Describe the pattern and give 2-3 examples instead.
 
 9. **Do NOT inline patterns in overview.md.** Patterns belong in `patterns.md`. Overview is the hub, not the content.
+
+10. **Do NOT list a domain in overview.md without creating it.** In Pass 1, run `ctxify domain add <repo> <domain>` for every domain you identify. `ctxify validate` will error if domain files are referenced but missing.
 
 ## 5. Updating
 
