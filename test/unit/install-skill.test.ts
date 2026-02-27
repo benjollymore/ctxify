@@ -21,22 +21,24 @@ describe('installSkill', () => {
     tmpDirs.length = 0;
   });
 
-  it('installs claude skill — SKILL.md + satellite files in .claude/skills/ctxify/', () => {
+  it('installs claude skill — each skill in its own .claude/skills/{name}/ directory', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
     const relativePath = installSkill(dir, 'claude');
 
     expect(relativePath).toBe('.claude/skills/ctxify/SKILL.md');
-    const skillDir = join(dir, '.claude', 'skills', 'ctxify');
-    expect(existsSync(join(skillDir, 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(skillDir, 'reading-context.md'))).toBe(true);
-    expect(existsSync(join(skillDir, 'filling-context.md'))).toBe(true);
-    expect(existsSync(join(skillDir, 'domain.md'))).toBe(true);
-    expect(existsSync(join(skillDir, 'corrections.md'))).toBe(true);
-    expect(existsSync(join(skillDir, 'multi-repo.md'))).toBe(true);
+    const skillsDir = join(dir, '.claude', 'skills');
+    // Primary skill
+    expect(existsSync(join(skillsDir, 'ctxify', 'SKILL.md'))).toBe(true);
+    // Each satellite gets its own sibling directory with SKILL.md
+    expect(existsSync(join(skillsDir, 'ctxify-reading-context', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-filling-context', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-domain', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-corrections', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-multi-repo', 'SKILL.md'))).toBe(true);
 
-    const primaryContent = readFileSync(join(skillDir, 'SKILL.md'), 'utf-8');
+    const primaryContent = readFileSync(join(skillsDir, 'ctxify', 'SKILL.md'), 'utf-8');
     expect(primaryContent).toContain('# ctxify');
     expect(primaryContent).toContain('<!-- ctxify v');
   });
@@ -107,25 +109,25 @@ describe('installSkill', () => {
     expect(content).toContain('<!-- ctxify v');
   });
 
-  it('claude satellite files each have name: and description: frontmatter', () => {
+  it('claude satellite skills each have name: and description: frontmatter in their own SKILL.md', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
     installSkill(dir, 'claude');
 
-    const skillDir = join(dir, '.claude', 'skills', 'ctxify');
-    const satellites = [
-      'reading-context.md',
-      'filling-context.md',
-      'domain.md',
-      'corrections.md',
-      'multi-repo.md',
+    const skillsDir = join(dir, '.claude', 'skills');
+    const satelliteDirs = [
+      'ctxify-reading-context',
+      'ctxify-filling-context',
+      'ctxify-domain',
+      'ctxify-corrections',
+      'ctxify-multi-repo',
     ];
-    for (const filename of satellites) {
-      const content = readFileSync(join(skillDir, filename), 'utf-8');
-      expect(content.startsWith('---'), `${filename} should start with ---`).toBe(true);
-      expect(content, `${filename} should have name:`).toContain('name: ctxify:');
-      expect(content, `${filename} should have description:`).toContain('description:');
+    for (const dirName of satelliteDirs) {
+      const content = readFileSync(join(skillsDir, dirName, 'SKILL.md'), 'utf-8');
+      expect(content.startsWith('---'), `${dirName}/SKILL.md should start with ---`).toBe(true);
+      expect(content, `${dirName}/SKILL.md should have name:`).toContain('name: ctxify:');
+      expect(content, `${dirName}/SKILL.md should have description:`).toContain('description:');
     }
   });
 
