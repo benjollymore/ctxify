@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
 import { parseFrontmatter } from '../utils/frontmatter.js';
+import type { SkillScope } from '../core/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -18,6 +20,9 @@ interface AgentConfig {
   singleFile?: boolean;
   combinedFrontmatter?: () => string;
   nextStepHint: string;
+  // Path relative to $HOME for global scope installation (e.g. '.claude/skills/ctxify').
+  // If undefined, global scope is not supported for this agent.
+  globalDestDir?: string;
 }
 
 export const AGENT_CONFIGS: Record<string, AgentConfig> = {
@@ -29,6 +34,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     skillFrontmatter: ({ name, description }) =>
       `---\nname: ${name}\ndescription: ${description}\n---`,
     nextStepHint: 'open Claude Code and run /ctxify',
+    globalDestDir: '.claude/skills/ctxify',
   },
   copilot: {
     displayName: 'GitHub Copilot',
@@ -53,6 +59,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     singleFile: true,
     combinedFrontmatter: () => '',
     nextStepHint: 'run Codex CLI — AGENTS.md loads automatically',
+    globalDestDir: '.codex',
   },
 };
 
@@ -119,7 +126,12 @@ export function getPlaybookSourcePath(): string {
 
 // ── Install ───────────────────────────────────────────────────────────────
 
-export function installSkill(workspaceRoot: string, agent: string): string {
+export function installSkill(
+  workspaceRoot: string,
+  agent: string,
+  scope: SkillScope = 'workspace',
+  homeDir?: string,
+): string {
   const config = AGENT_CONFIGS[agent];
   if (!config) {
     throw new Error(
@@ -127,11 +139,22 @@ export function installSkill(workspaceRoot: string, agent: string): string {
     );
   }
 
+  if (scope === 'global' && !config.globalDestDir) {
+    throw new Error(
+      `Agent "${agent}" does not support global scope installation.`,
+    );
+  }
+
   const skillFiles = listSkillSourceFiles();
   const version = getVersion();
   const versionComment = `<!-- ctxify v${version} — do not edit manually, managed by ctxify init -->`;
-  const destDir = join(workspaceRoot, config.destDir);
-  mkdirSync(destDir, { recursive: true });
+
+  const resolvedHome = homeDir ?? homedir();
+  const baseDir =
+    scope === 'global'
+      ? join(resolvedHome, config.globalDestDir!)
+      : join(workspaceRoot, config.destDir);
+  mkdirSync(baseDir, { recursive: true });
 
   if (config.singleFile) {
     // Concatenate all skills, strip frontmatter from each, prepend combined frontmatter
@@ -143,7 +166,7 @@ export function installSkill(workspaceRoot: string, agent: string): string {
     const content = combinedFm
       ? `${combinedFm}\n${versionComment}\n${bodies.join('\n\n---\n\n')}`
       : `${versionComment}\n${bodies.join('\n\n---\n\n')}`;
-    writeFileSync(join(destDir, config.primaryFilename), content, 'utf-8');
+    writeFileSync(join(baseDir, config.primaryFilename), content, 'utf-8');
   } else {
     // Install each skill as a separate file
     for (const { filename, sourcePath } of skillFiles) {
@@ -162,15 +185,18 @@ export function installSkill(workspaceRoot: string, agent: string): string {
         // Each satellite skill gets its own sibling directory so Claude Code
         // registers it as an independent invokable skill (requires dir/SKILL.md).
         const baseName = filename.replace(/\.md$/, '');
-        const satelliteDir = join(dirname(destDir), `${basename(destDir)}-${baseName}`);
+        const satelliteDir = join(dirname(baseDir), `${basename(baseDir)}-${baseName}`);
         mkdirSync(satelliteDir, { recursive: true });
         writeFileSync(join(satelliteDir, config.satelliteFilename), installedContent, 'utf-8');
       } else {
         const destFilename = isPrimary ? config.primaryFilename : filename;
-        writeFileSync(join(destDir, destFilename), installedContent, 'utf-8');
+        writeFileSync(join(baseDir, destFilename), installedContent, 'utf-8');
       }
     }
   }
 
+  if (scope === 'global') {
+    return join('~', config.globalDestDir!, config.primaryFilename);
+  }
   return join(config.destDir, config.primaryFilename);
 }
