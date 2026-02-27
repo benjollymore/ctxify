@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from 'node:fs';
-import yaml from 'js-yaml';
+import { parseYaml, dumpYaml } from '../utils/yaml.js';
 import { ConfigError } from './errors.js';
 
 export type OperatingMode = 'single-repo' | 'multi-repo' | 'mono-repo';
@@ -60,7 +60,7 @@ export function loadConfig(configPath: string): CtxConfig {
   let raw: unknown;
   try {
     const content = readFileSync(configPath, 'utf-8');
-    raw = yaml.load(content);
+    raw = parseYaml(content);
   } catch (err) {
     throw new ConfigError(
       `Failed to parse config: ${configPath}`,
@@ -225,5 +225,5 @@ export function generateDefaultConfig(
 }
 
 export function serializeConfig(config: CtxConfig): string {
-  return yaml.dump(config, { lineWidth: 120, noRefs: true });
+  return dumpYaml(config);
 }
