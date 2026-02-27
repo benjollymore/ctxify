@@ -46,11 +46,7 @@ describe('autoDetectMode', () => {
     // Create a workspace package
     const pkgDir = join(tmpDir, 'packages', 'lib-a');
     mkdirSync(pkgDir, { recursive: true });
-    writeFileSync(
-      join(pkgDir, 'package.json'),
-      JSON.stringify({ name: '@mono/lib-a' }),
-      'utf-8',
-    );
+    writeFileSync(join(pkgDir, 'package.json'), JSON.stringify({ name: '@mono/lib-a' }), 'utf-8');
 
     const result = autoDetectMode(tmpDir);
 

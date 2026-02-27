@@ -3,7 +3,12 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { createBranch, hasChanges, stageAndCommit, getCurrentBranch } from '../../src/utils/git-mutate.js';
+import {
+  createBranch,
+  hasChanges,
+  stageAndCommit,
+  getCurrentBranch,
+} from '../../src/utils/git-mutate.js';
 
 describe('git-mutate', () => {
   let tmpDir: string;
@@ -41,7 +46,11 @@ describe('git-mutate', () => {
     it('should throw on duplicate branch name', async () => {
       await createBranch(tmpDir, 'my-branch');
       // Switch back to main/master
-      const mainBranch = execFileSync('git', ['branch', '--list', 'main', 'master'], { cwd: tmpDir }).toString().trim();
+      const mainBranch = execFileSync('git', ['branch', '--list', 'main', 'master'], {
+        cwd: tmpDir,
+      })
+        .toString()
+        .trim();
       const branchToCheckout = mainBranch.includes('main') ? 'main' : 'master';
       execFileSync('git', ['checkout', branchToCheckout], { cwd: tmpDir });
 

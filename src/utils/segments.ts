@@ -15,10 +15,7 @@ export function extractSegments(
   tag: string,
   filter?: { index: number; value: string; exact?: boolean },
 ): string[] {
-  const regex = new RegExp(
-    `<!-- ${tag}((?::[^\\s>]+)*) -->([\\s\\S]*?)<!-- \\/${tag} -->`,
-    'g',
-  );
+  const regex = new RegExp(`<!-- ${tag}((?::[^\\s>]+)*) -->([\\s\\S]*?)<!-- \\/${tag} -->`, 'g');
 
   const results: string[] = [];
   let match: RegExpExecArray | null;

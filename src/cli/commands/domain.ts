@@ -41,7 +41,8 @@ function updateOverviewDomainIndex(
       // Append after the Context section (before next ## or end of file)
       const nextSection = content.indexOf('\n## ', contextIdx + 1);
       const insertPos = nextSection === -1 ? content.length : nextSection;
-      content = content.slice(0, insertPos).trimEnd() + '\n\n' + entry + '\n' + content.slice(insertPos);
+      content =
+        content.slice(0, insertPos).trimEnd() + '\n\n' + entry + '\n' + content.slice(insertPos);
     }
     writeFileSync(overviewPath, content, 'utf-8');
     return true;
@@ -72,9 +73,7 @@ function updateOverviewDomainIndex(
 // ── Commands ─────────────────────────────────────────────────────────────
 
 export function registerDomainCommand(program: Command): void {
-  const domain = program
-    .command('domain')
-    .description('Manage domain context files');
+  const domain = program.command('domain').description('Manage domain context files');
 
   // ── domain add ──
   domain
@@ -83,78 +82,97 @@ export function registerDomainCommand(program: Command): void {
     .option('--tags <tags...>', 'Tags for frontmatter')
     .option('--description <text>', 'One-line description')
     .option('-d, --dir <path>', 'Workspace directory', '.')
-    .action(async (repo: string, domainName: string, options: {
-      tags?: string[];
-      description?: string;
-      dir?: string;
-    }) => {
-      const workspaceRoot = resolve(options.dir || '.');
-      const configPath = join(workspaceRoot, 'ctx.yaml');
+    .action(
+      async (
+        repo: string,
+        domainName: string,
+        options: {
+          tags?: string[];
+          description?: string;
+          dir?: string;
+        },
+      ) => {
+        const workspaceRoot = resolve(options.dir || '.');
+        const configPath = join(workspaceRoot, 'ctx.yaml');
 
-      if (!existsSync(configPath)) {
-        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.' }));
-        process.exit(1);
-      }
+        if (!existsSync(configPath)) {
+          console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.' }));
+          process.exit(1);
+        }
 
-      // Validate domain name
-      if (!isValidDomainName(domainName)) {
-        console.log(JSON.stringify({
-          error: `Invalid domain name "${domainName}". Must be lowercase alphanumeric with hyphens only.`,
-        }));
-        process.exit(1);
-      }
+        // Validate domain name
+        if (!isValidDomainName(domainName)) {
+          console.log(
+            JSON.stringify({
+              error: `Invalid domain name "${domainName}". Must be lowercase alphanumeric with hyphens only.`,
+            }),
+          );
+          process.exit(1);
+        }
 
-      const config = loadConfig(configPath);
-      const outputDir = config.options.outputDir || '.ctxify';
+        const config = loadConfig(configPath);
+        const outputDir = config.options.outputDir || '.ctxify';
 
-      // Validate repo exists
-      const repoEntry = config.repos.find((r) => r.name === repo);
-      if (!repoEntry) {
-        console.log(JSON.stringify({
-          error: `Repo "${repo}" not found in ctx.yaml. Available repos: ${config.repos.map((r) => r.name).join(', ')}`,
-        }));
-        process.exit(1);
-      }
+        // Validate repo exists
+        const repoEntry = config.repos.find((r) => r.name === repo);
+        if (!repoEntry) {
+          console.log(
+            JSON.stringify({
+              error: `Repo "${repo}" not found in ctx.yaml. Available repos: ${config.repos.map((r) => r.name).join(', ')}`,
+            }),
+          );
+          process.exit(1);
+        }
 
-      // Parse tags from comma-separated string if needed
-      const tags = options.tags
-        ? options.tags.flatMap((t) => t.split(',').map((s) => s.trim()).filter(Boolean))
-        : undefined;
+        // Parse tags from comma-separated string if needed
+        const tags = options.tags
+          ? options.tags.flatMap((t) =>
+              t
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            )
+          : undefined;
 
-      const repoDir = join(workspaceRoot, outputDir, 'repos', repo);
-      const domainPath = join(repoDir, `${domainName}.md`);
-      const overviewPath = join(repoDir, 'overview.md');
+        const repoDir = join(workspaceRoot, outputDir, 'repos', repo);
+        const domainPath = join(repoDir, `${domainName}.md`);
+        const overviewPath = join(repoDir, 'overview.md');
 
-      let fileExisted = false;
+        let fileExisted = false;
 
-      if (existsSync(domainPath)) {
-        fileExisted = true;
-      } else {
-        // Create domain file
-        mkdirSync(repoDir, { recursive: true });
-        const content = generateDomainTemplate({
+        if (existsSync(domainPath)) {
+          fileExisted = true;
+        } else {
+          // Create domain file
+          mkdirSync(repoDir, { recursive: true });
+          const content = generateDomainTemplate({
+            repo,
+            domain: domainName,
+            tags,
+            description: options.description,
+          });
+          writeFileSync(domainPath, content, 'utf-8');
+        }
+
+        // Update overview.md domain index
+        const overviewUpdated = updateOverviewDomainIndex(
+          overviewPath,
+          domainName,
+          options.description,
+        );
+
+        const result = {
+          status: 'registered',
           repo,
           domain: domainName,
-          tags,
-          description: options.description,
-        });
-        writeFileSync(domainPath, content, 'utf-8');
-      }
+          path: domainPath,
+          file_existed: fileExisted,
+          overview_updated: overviewUpdated,
+        };
 
-      // Update overview.md domain index
-      const overviewUpdated = updateOverviewDomainIndex(overviewPath, domainName, options.description);
-
-      const result = {
-        status: 'registered',
-        repo,
-        domain: domainName,
-        path: domainPath,
-        file_existed: fileExisted,
-        overview_updated: overviewUpdated,
-      };
-
-      console.log(JSON.stringify(result, null, 2));
-    });
+        console.log(JSON.stringify(result, null, 2));
+      },
+    );
 
   // ── domain list ──
   domain
@@ -179,9 +197,11 @@ export function registerDomainCommand(program: Command): void {
         : config.repos;
 
       if (options.repo && repos.length === 0) {
-        console.log(JSON.stringify({
-          error: `Repo "${options.repo}" not found in ctx.yaml.`,
-        }));
+        console.log(
+          JSON.stringify({
+            error: `Repo "${options.repo}" not found in ctx.yaml.`,
+          }),
+        );
         process.exit(1);
       }
 
@@ -205,7 +225,12 @@ export function registerDomainCommand(program: Command): void {
         }
 
         for (const entry of entries) {
-          if (!entry.endsWith('.md') || entry === 'overview.md' || entry === 'patterns.md' || entry === 'corrections.md') {
+          if (
+            !entry.endsWith('.md') ||
+            entry === 'overview.md' ||
+            entry === 'patterns.md' ||
+            entry === 'corrections.md'
+          ) {
             continue;
           }
 
@@ -216,7 +241,9 @@ export function registerDomainCommand(program: Command): void {
           if (fm && fm.type === 'domain') {
             domains.push({
               domain: (fm.domain as string) || entry.replace('.md', ''),
-              tags: Array.isArray(fm.tags) ? fm.tags.filter((t): t is string => typeof t === 'string') : [],
+              tags: Array.isArray(fm.tags)
+                ? fm.tags.filter((t): t is string => typeof t === 'string')
+                : [],
               path: filePath,
             });
           }

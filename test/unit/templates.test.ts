@@ -26,7 +26,14 @@ function makeRepo(overrides: Partial<RepoTemplateData> = {}): RepoTemplateData {
     },
     manifestType: 'package.json',
     entryPoints: ['src/index.ts', 'bin/cli.ts'],
-    keyDirs: ['src', 'src/routes', 'src/middleware', 'src/services/dropoff', 'patches/legacy', 'tests/unit'],
+    keyDirs: [
+      'src',
+      'src/routes',
+      'src/middleware',
+      'src/services/dropoff',
+      'patches/legacy',
+      'tests/unit',
+    ],
     fileCount: 42,
     ...overrides,
   };

@@ -12,7 +12,11 @@ export interface ModeDetectionResult {
 export function autoDetectMode(dir: string): ModeDetectionResult {
   const monoDetection = detectMonoRepo(dir);
   if (monoDetection.detected) {
-    return { mode: 'mono-repo', manager: monoDetection.manager, packageGlobs: monoDetection.packageGlobs };
+    return {
+      mode: 'mono-repo',
+      manager: monoDetection.manager,
+      packageGlobs: monoDetection.packageGlobs,
+    };
   }
   const gitRoots = findGitRoots(dir, 3);
   const dirAbs = resolve(dir);

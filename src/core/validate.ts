@@ -131,8 +131,10 @@ function checkTodoMarkers(content: string, relativePath: string, warnings: strin
   let match;
   while ((match = todoPattern.exec(content)) !== null) {
     // Extract a snippet of the TODO text for the warning
-    const snippet = content.slice(match.index, match.index + 80).replace(/\n/g, ' ').trim();
+    const snippet = content
+      .slice(match.index, match.index + 80)
+      .replace(/\n/g, ' ')
+      .trim();
     warnings.push(`TODO marker in ${relativePath}: ${snippet}`);
   }
 }
-

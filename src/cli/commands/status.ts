@@ -14,7 +14,12 @@ export function registerStatusCommand(program: Command): void {
 
       const configPath = join(workspaceRoot, 'ctx.yaml');
       if (!existsSync(configPath)) {
-        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.', has_config: false }));
+        console.log(
+          JSON.stringify({
+            error: 'No ctx.yaml found. Run "ctxify init" first.',
+            has_config: false,
+          }),
+        );
         return;
       }
 

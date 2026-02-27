@@ -42,7 +42,11 @@ describe('segment extraction: endpoints', () => {
   });
 
   it('returns empty when no match', () => {
-    const segments = extractSegments(content, 'endpoint', { index: 0, value: 'PATCH', exact: true });
+    const segments = extractSegments(content, 'endpoint', {
+      index: 0,
+      value: 'PATCH',
+      exact: true,
+    });
     expect(segments).toHaveLength(0);
   });
 });
@@ -67,7 +71,11 @@ Internal config type.
 `;
 
   it('filters by exact name (attr index 0)', () => {
-    const segments = extractSegments(content, 'type', { index: 0, value: 'UserProfile', exact: true });
+    const segments = extractSegments(content, 'type', {
+      index: 0,
+      value: 'UserProfile',
+      exact: true,
+    });
     expect(segments).toHaveLength(1);
     expect(segments[0]).toContain('UserProfile');
   });
@@ -78,7 +86,11 @@ Internal config type.
   });
 
   it('returns empty when name not found', () => {
-    const segments = extractSegments(content, 'type', { index: 0, value: 'NonExistent', exact: true });
+    const segments = extractSegments(content, 'type', {
+      index: 0,
+      value: 'NonExistent',
+      exact: true,
+    });
     expect(segments).toHaveLength(0);
   });
 });

@@ -27,9 +27,11 @@ export function registerFeedbackCommand(program: Command): void {
       // Validate repo exists
       const repoEntry = config.repos.find((r) => r.name === repo);
       if (!repoEntry) {
-        console.log(JSON.stringify({
-          error: `Repo "${repo}" not found in ctx.yaml. Available repos: ${config.repos.map((r) => r.name).join(', ')}`,
-        }));
+        console.log(
+          JSON.stringify({
+            error: `Repo "${repo}" not found in ctx.yaml. Available repos: ${config.repos.map((r) => r.name).join(', ')}`,
+          }),
+        );
         process.exit(1);
       }
 
@@ -50,12 +52,18 @@ export function registerFeedbackCommand(program: Command): void {
       const entry = formatCorrectionEntry({ body: options.body, timestamp });
       writeFileSync(correctionsPath, current + entry, 'utf-8');
 
-      console.log(JSON.stringify({
-        status: 'recorded',
-        repo,
-        path: correctionsPath,
-        timestamp,
-        created_file: createdFile,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            status: 'recorded',
+            repo,
+            path: correctionsPath,
+            timestamp,
+            created_file: createdFile,
+          },
+          null,
+          2,
+        ),
+      );
     });
 }

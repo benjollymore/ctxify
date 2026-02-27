@@ -69,11 +69,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   for (const repo of repoTemplateDataList) {
     const repoDir = join(outputRoot, 'repos', repo.name);
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      generateRepoTemplate(repo),
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), generateRepoTemplate(repo), 'utf-8');
   }
 
   // Ensure .ctxify/ is in .gitignore
@@ -104,58 +100,53 @@ export function registerInitCommand(program: Command): void {
     .description('Scaffold ctx.yaml and .ctxify/ context shards')
     .option('--repos <paths...>', 'Multi-repo: specify repo subdirectories')
     .option('--mono', 'Mono-repo: detect packages from workspace config')
-    .option('--agent <agents...>', 'Install playbook for specified agents (claude, copilot, cursor, codex)')
+    .option(
+      '--agent <agents...>',
+      'Install playbook for specified agents (claude, copilot, cursor, codex)',
+    )
     .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
-    .action(async (dir?: string, options?: { repos?: string[]; mono?: boolean; agent?: string[]; force?: boolean }) => {
-      const workspaceRoot = resolve(dir || '.');
-      const configPath = join(workspaceRoot, 'ctx.yaml');
+    .action(
+      async (
+        dir?: string,
+        options?: { repos?: string[]; mono?: boolean; agent?: string[]; force?: boolean },
+      ) => {
+        const workspaceRoot = resolve(dir || '.');
+        const configPath = join(workspaceRoot, 'ctx.yaml');
 
-      // 1. If ctx.yaml exists and --force not set -> error + exit
-      if (existsSync(configPath) && !options?.force) {
-        console.log(JSON.stringify({ error: `ctx.yaml already exists in ${workspaceRoot}. Use --force to overwrite.` }));
-        process.exit(1);
-      }
+        // 1. If ctx.yaml exists and --force not set -> error + exit
+        if (existsSync(configPath) && !options?.force) {
+          console.log(
+            JSON.stringify({
+              error: `ctx.yaml already exists in ${workspaceRoot}. Use --force to overwrite.`,
+            }),
+          );
+          process.exit(1);
+        }
 
-      // 2. Interactive vs flag-driven path
-      const hasFlags = (options?.repos && options.repos.length > 0) || options?.mono;
-      const isInteractive = !hasFlags && process.stdin.isTTY;
+        // 2. Interactive vs flag-driven path
+        const hasFlags = (options?.repos && options.repos.length > 0) || options?.mono;
+        const isInteractive = !hasFlags && process.stdin.isTTY;
 
-      let scaffoldOptions: ScaffoldOptions;
+        let scaffoldOptions: ScaffoldOptions;
 
-      if (isInteractive) {
-        scaffoldOptions = await runInteractiveFlow(workspaceRoot);
-      } else {
-        // Flag-driven path
-        let mode: OperatingMode;
-        let repos: RepoEntry[];
-        let monoRepoOptions: MonoRepoOptions | undefined;
-
-        if (options?.repos && options.repos.length > 0) {
-          mode = 'multi-repo';
-          repos = options.repos.map((repoPath) => {
-            const absPath = resolve(workspaceRoot, repoPath);
-            const name = basename(absPath);
-            const relPath = relative(workspaceRoot, absPath) || '.';
-            return { path: relPath, name };
-          });
-        } else if (options?.mono) {
-          mode = 'mono-repo';
-          const monoDetection = detectMonoRepo(workspaceRoot);
-          monoRepoOptions = {
-            manager: monoDetection.manager || undefined,
-            packageGlobs: monoDetection.packageGlobs,
-          };
-          repos = monoDetection.packages.map((pkg) => ({
-            path: pkg.relativePath,
-            name: pkg.name,
-            language: pkg.language,
-            description: pkg.description,
-          }));
+        if (isInteractive) {
+          scaffoldOptions = await runInteractiveFlow(workspaceRoot);
         } else {
-          const detection = autoDetectMode(workspaceRoot);
-          mode = detection.mode;
+          // Flag-driven path
+          let mode: OperatingMode;
+          let repos: RepoEntry[];
+          let monoRepoOptions: MonoRepoOptions | undefined;
 
-          if (mode === 'mono-repo') {
+          if (options?.repos && options.repos.length > 0) {
+            mode = 'multi-repo';
+            repos = options.repos.map((repoPath) => {
+              const absPath = resolve(workspaceRoot, repoPath);
+              const name = basename(absPath);
+              const relPath = relative(workspaceRoot, absPath) || '.';
+              return { path: relPath, name };
+            });
+          } else if (options?.mono) {
+            mode = 'mono-repo';
             const monoDetection = detectMonoRepo(workspaceRoot);
             monoRepoOptions = {
               manager: monoDetection.manager || undefined,
@@ -167,49 +158,79 @@ export function registerInitCommand(program: Command): void {
               language: pkg.language,
               description: pkg.description,
             }));
-          } else if (mode === 'single-repo') {
-            const name = basename(workspaceRoot);
-            repos = [{ path: '.', name }];
           } else {
-            repos = buildMultiRepoEntries(workspaceRoot);
-          }
-        }
+            const detection = autoDetectMode(workspaceRoot);
+            mode = detection.mode;
 
-        let agents: AgentType[] | undefined;
-        if (options?.agent) {
-          const validAgents = Object.keys(AGENT_CONFIGS);
-          for (const name of options.agent) {
-            if (!validAgents.includes(name)) {
-              console.log(JSON.stringify({ error: `Unknown agent "${name}". Valid agents: ${validAgents.join(', ')}` }));
-              process.exit(1);
+            if (mode === 'mono-repo') {
+              const monoDetection = detectMonoRepo(workspaceRoot);
+              monoRepoOptions = {
+                manager: monoDetection.manager || undefined,
+                packageGlobs: monoDetection.packageGlobs,
+              };
+              repos = monoDetection.packages.map((pkg) => ({
+                path: pkg.relativePath,
+                name: pkg.name,
+                language: pkg.language,
+                description: pkg.description,
+              }));
+            } else if (mode === 'single-repo') {
+              const name = basename(workspaceRoot);
+              repos = [{ path: '.', name }];
+            } else {
+              repos = buildMultiRepoEntries(workspaceRoot);
             }
           }
-          agents = options.agent as AgentType[];
+
+          let agents: AgentType[] | undefined;
+          if (options?.agent) {
+            const validAgents = Object.keys(AGENT_CONFIGS);
+            for (const name of options.agent) {
+              if (!validAgents.includes(name)) {
+                console.log(
+                  JSON.stringify({
+                    error: `Unknown agent "${name}". Valid agents: ${validAgents.join(', ')}`,
+                  }),
+                );
+                process.exit(1);
+              }
+            }
+            agents = options.agent as AgentType[];
+          }
+          scaffoldOptions = {
+            workspaceRoot,
+            mode,
+            repos,
+            monoRepoOptions,
+            force: options?.force,
+            agents,
+          };
         }
-        scaffoldOptions = { workspaceRoot, mode, repos, monoRepoOptions, force: options?.force, agents };
-      }
 
-      // 3. Scaffold workspace
-      const result = await scaffoldWorkspace(scaffoldOptions);
+        // 3. Scaffold workspace
+        const result = await scaffoldWorkspace(scaffoldOptions);
 
-      // 4. Output JSON summary
-      console.log(JSON.stringify(result, null, 2));
+        // 4. Output JSON summary
+        console.log(JSON.stringify(result, null, 2));
 
-      // 5. Next step hint (stderr so it doesn't pollute JSON output)
-      if (result.skills_installed && result.skills_installed.length > 0) {
-        // Derive hints from installed destination paths
-        const hints = Object.values(AGENT_CONFIGS)
-          .filter((c) => result.skills_installed!.includes(c.destPath))
-          .map((c) => c.nextStepHint);
-        if (hints.length > 0) {
-          console.error(`\n✓ Context scaffolded. Next steps:\n${hints.map((h) => `  • ${h}`).join('\n')}`);
+        // 5. Next step hint (stderr so it doesn't pollute JSON output)
+        if (result.skills_installed && result.skills_installed.length > 0) {
+          // Derive hints from installed destination paths
+          const hints = Object.values(AGENT_CONFIGS)
+            .filter((c) => result.skills_installed!.includes(c.destPath))
+            .map((c) => c.nextStepHint);
+          if (hints.length > 0) {
+            console.error(
+              `\n✓ Context scaffolded. Next steps:\n${hints.map((h) => `  • ${h}`).join('\n')}`,
+            );
+          } else {
+            console.error('\n✓ Context scaffolded.');
+          }
         } else {
           console.error('\n✓ Context scaffolded.');
         }
-      } else {
-        console.error('\n✓ Context scaffolded.');
-      }
-    });
+      },
+    );
 }
 
 function ensureGitignore(workspaceRoot: string, outputDir: string): void {

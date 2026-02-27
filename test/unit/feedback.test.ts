@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { parseFrontmatter } from '../../src/utils/frontmatter.js';
-import { generateCorrectionsTemplate, formatCorrectionEntry } from '../../src/templates/corrections.js';
+import {
+  generateCorrectionsTemplate,
+  formatCorrectionEntry,
+} from '../../src/templates/corrections.js';
 import { generateRepoTemplate } from '../../src/templates/repo.js';
 import { serializeConfig } from '../../src/core/config.js';
 import { validateShards } from '../../src/core/validate.js';
@@ -95,7 +98,8 @@ describe('formatCorrectionEntry', () => {
   });
 
   it('preserves multiline body', () => {
-    const body = '## Wrong assumption\n\nThe API uses JWT, not session cookies.\nSee `src/auth.ts:42`.';
+    const body =
+      '## Wrong assumption\n\nThe API uses JWT, not session cookies.\nSee `src/auth.ts:42`.';
     const entry = formatCorrectionEntry({ body, timestamp: '2025-06-15T10:30:00.000Z' });
 
     expect(entry).toContain('## Wrong assumption');
@@ -115,7 +119,10 @@ describe('feedback command', () => {
     tmpDirs.length = 0;
   });
 
-  function runFeedback(args: string[], cwd: string): { stdout: string; parsed: Record<string, unknown> } {
+  function runFeedback(
+    args: string[],
+    cwd: string,
+  ): { stdout: string; parsed: Record<string, unknown> } {
     const stdout = execFileSync('node', [cliBin, 'feedback', ...args], {
       cwd,
       encoding: 'utf-8',

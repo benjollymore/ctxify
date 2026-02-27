@@ -21,13 +21,20 @@ export function registerBranchCommand(program: Command): void {
       const config = loadConfig(configPath);
 
       if (config.mode !== 'multi-repo') {
-        console.log(JSON.stringify({
-          error: `"branch" command is only available in multi-repo mode (current mode: ${config.mode})`,
-        }));
+        console.log(
+          JSON.stringify({
+            error: `"branch" command is only available in multi-repo mode (current mode: ${config.mode})`,
+          }),
+        );
         process.exit(1);
       }
 
-      const results: Array<{ repo: string; status: string; previousBranch?: string; error?: string }> = [];
+      const results: Array<{
+        repo: string;
+        status: string;
+        previousBranch?: string;
+        error?: string;
+      }> = [];
 
       for (const entry of config.repos) {
         const repoPath = resolve(workspaceRoot, entry.path);

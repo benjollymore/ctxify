@@ -67,7 +67,9 @@ function getVersion(): string {
 export function installSkill(workspaceRoot: string, agent: string): string {
   const config = AGENT_CONFIGS[agent];
   if (!config) {
-    throw new Error(`Unsupported agent: ${agent}. Supported: ${Object.keys(AGENT_CONFIGS).join(', ')}`);
+    throw new Error(
+      `Unsupported agent: ${agent}. Supported: ${Object.keys(AGENT_CONFIGS).join(', ')}`,
+    );
   }
 
   const playbookPath = getPlaybookSourcePath();

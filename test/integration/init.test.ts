@@ -32,7 +32,11 @@ function runCli(args: string[], cwd: string): { stdout: string; exitCode: number
 function createPackageJson(dir: string, name: string, extras: Record<string, unknown> = {}): void {
   writeFileSync(
     join(dir, 'package.json'),
-    JSON.stringify({ name, version: '1.0.0', description: `The ${name} package`, ...extras }, null, 2),
+    JSON.stringify(
+      { name, version: '1.0.0', description: `The ${name} package`, ...extras },
+      null,
+      2,
+    ),
     'utf-8',
   );
 }

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint:fix || true
+      - run: npm run format
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        if: github.ref != 'refs/heads/main'
+        with:
+          commit_message: 'style: autofix lint and formatting'
+      - run: npm run lint
+      - run: npm run format:check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test

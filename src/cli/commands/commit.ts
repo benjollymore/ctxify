@@ -21,9 +21,11 @@ export function registerCommitCommand(program: Command): void {
       const config = loadConfig(configPath);
 
       if (config.mode !== 'multi-repo') {
-        console.log(JSON.stringify({
-          error: `"commit" command is only available in multi-repo mode (current mode: ${config.mode})`,
-        }));
+        console.log(
+          JSON.stringify({
+            error: `"commit" command is only available in multi-repo mode (current mode: ${config.mode})`,
+          }),
+        );
         process.exit(1);
       }
 
