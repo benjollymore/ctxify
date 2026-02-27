@@ -2,11 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  loadConfig,
-  generateDefaultConfig,
-  serializeConfig,
-} from '../../src/core/config.js';
+import { loadConfig, generateDefaultConfig, serializeConfig } from '../../src/core/config.js';
 import { ConfigError } from '../../src/core/errors.js';
 
 describe('config', () => {
