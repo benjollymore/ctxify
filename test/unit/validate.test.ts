@@ -188,4 +188,46 @@ type: overview
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
   });
+
+  it('handles domain-index markers without colon (no false positive)', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'overview.md'),
+      `---
+repo: api
+type: overview
+---
+
+# api
+
+## Context
+
+<!-- domain-index -->
+- \`payments.md\` — Payment processing
+<!-- /domain-index -->
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+
+    expect(result.errors).toHaveLength(0);
+  });
 });
