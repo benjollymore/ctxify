@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { checkForUpdate, invalidateVersionCache } from '../../src/utils/version-check.js';
@@ -57,7 +57,7 @@ describe('checkForUpdate', () => {
       checked_at: new Date(Date.now() + 1_000_000).toISOString(), // still fresh
       latest: '2.0.0',
     };
-    require('node:fs').writeFileSync(cacheFile, JSON.stringify(cache), 'utf-8');
+    writeFileSync(cacheFile, JSON.stringify(cache), 'utf-8');
 
     let fetchCalled = false;
     const fetchFn = async () => {
@@ -79,7 +79,7 @@ describe('checkForUpdate', () => {
       checked_at: new Date(0).toISOString(), // epoch = very old
       latest: '1.0.0',
     };
-    require('node:fs').writeFileSync(cacheFile, JSON.stringify(cache), 'utf-8');
+    writeFileSync(cacheFile, JSON.stringify(cache), 'utf-8');
 
     const fetchFn = async () => '3.0.0';
 
@@ -128,7 +128,7 @@ describe('invalidateVersionCache', () => {
 
   it('deletes the cache file', async () => {
     const cacheFile = join(tmpDir, 'version-check.json');
-    require('node:fs').writeFileSync(
+    writeFileSync(
       cacheFile,
       JSON.stringify({ checked_at: new Date().toISOString(), latest: '1.0.0' }),
       'utf-8',

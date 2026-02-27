@@ -237,7 +237,7 @@ export function registerInitCommand(program: Command): void {
         if (result.skills_installed && result.skills_installed.length > 0) {
           // Derive hints from installed destination paths
           const hints = Object.values(AGENT_CONFIGS)
-            .filter((c) => result.skills_installed!.includes(c.destPath))
+            .filter((c) => result.skills_installed!.includes(join(c.destDir, c.primaryFilename)))
             .map((c) => c.nextStepHint);
           if (hints.length > 0) {
             console.error(

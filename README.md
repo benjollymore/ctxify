@@ -30,7 +30,7 @@ cd your-workspace
 ctxify init
 ```
 
-After init, your agent loads the installed playbook and takes it from there. For Claude Code, type `/ctxify`. Other agents (Copilot, Cursor, Codex) load the playbook automatically via their native instruction mechanisms.
+After init, your agent loads the installed skills and takes it from there. For Claude Code, type `/ctxify`. Other agents (Copilot, Cursor, Codex) load the skills automatically via their native instruction mechanisms.
 
 ### Build from source
 
@@ -77,9 +77,11 @@ ctxify init --repos ./api ./web
 | `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
+| `ctxify patterns <repo>` | Scaffold `patterns.md` with TODO placeholders for an agent to fill. Flags: `--force` |
 | `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
 | `ctxify domain list` | List registered domain files. Flags: `--repo` |
-| `ctxify feedback <repo>` | Log a correction to `corrections.md`. Flags: `--body` (required) |
+| `ctxify feedback <repo>` | Log a correction or anti-pattern to `corrections.md`. Flags: `--body` (required), `--type correction\|antipattern`, `--source file:line` |
+| `ctxify upgrade` | Upgrade ctxify and reinstall all tracked agent skills |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
 | `ctxify branch <name>` | Create a branch across all repos (multi-repo only) |
 | `ctxify commit <msg>` | Commit across all repos with changes (multi-repo only) |
@@ -88,27 +90,42 @@ All commands output JSON to stdout.
 
 ## Supported agents
 
-`ctxify init` installs a playbook that teaches your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
+`ctxify init` installs 6 focused skills that teach your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
 
-| Agent | Flag | Destination |
-|-------|------|-------------|
-| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` |
-| GitHub Copilot | `--agent copilot` | `.github/instructions/ctxify.instructions.md` |
-| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` |
-| OpenAI Codex | `--agent codex` | `AGENTS.md` |
+| Agent | Flag | Primary skill | Files installed |
+|-------|------|---------------|-----------------|
+| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` | 6 separate skill files |
+| GitHub Copilot | `--agent copilot` | `.github/instructions/ctxify.instructions.md` | 1 combined file |
+| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` | 6 separate rule files |
+| OpenAI Codex | `--agent codex` | `AGENTS.md` | 1 combined file |
 
 Multiple agents: `ctxify init --agent claude copilot cursor`
 
-The playbook content is identical across agents — only the destination path and frontmatter format differ.
+The 6 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
 
 ## Agent integration
 
-When you run `ctxify init`, the installed playbook teaches your agent how to:
+When you run `ctxify init`, the installed skills teach your agent how to:
 
 1. Read the scaffolded hubs (index.md + overview.md per repo)
-2. Create `patterns.md` for each repo — the most important deliverable
-3. Create domain files for complex areas
+2. Run `ctxify patterns <repo>` to scaffold `patterns.md`, then fill the TODOs — the most important deliverable
+3. Run `ctxify domain add <repo> <domain>` to scaffold domain files for complex areas
 4. Fill cross-repo workflows in index.md
+5. Log corrections with `ctxify feedback <repo>` when context guidance was wrong
+
+## Keeping ctxify and skills up to date
+
+```bash
+ctxify upgrade
+```
+
+Upgrades ctxify using the install method recorded in `ctx.yaml` at init time (global npm, local npm, or npx), then reinstalls all agent skills that were originally installed. Run it from your workspace root.
+
+```bash
+ctxify upgrade --dry-run   # show what would happen without executing
+```
+
+The install method and installed agents are persisted in `ctx.yaml` automatically on `ctxify init`, so `upgrade` requires no flags.
 
 ## Supported manifests and modes
 

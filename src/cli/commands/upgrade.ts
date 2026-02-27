@@ -85,7 +85,7 @@ export async function runUpgrade(
 
   // Reinstall skills
   const skills_reinstalled: string[] = [];
-  for (const [agent, _path] of Object.entries(skillsMap)) {
+  for (const [agent] of Object.entries(skillsMap)) {
     try {
       const dest = installSkill(workspaceRoot, agent);
       skills_reinstalled.push(dest);

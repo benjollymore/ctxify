@@ -12,7 +12,7 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 151 tests, 17 files
+npm test             # vitest run — 204 tests, 20 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -27,7 +27,7 @@ npx vitest run test/unit/validate.test.ts
 ```
 bin/ctxify.ts                    CLI entry (Commander.js, registers commands)
     ↓
-src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain, feedback)
+src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain, patterns, feedback)
     ↓
 src/core/*.ts                    Business logic (config, manifest, validate, detect)
 src/templates/*.ts               Markdown template generators
@@ -61,6 +61,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `commit.ts` | Commit across all repos with changes (multi-repo only) |
 | `clean.ts` | Remove .ctxify/ and ctx.yaml from workspace, respects custom outputDir |
 | `domain.ts` | `domain add <repo> <domain>` scaffolds domain file + updates overview.md index. `domain list` scans for domain files. Flags: `--tags`, `--description`, `--repo` |
+| `patterns.ts` | `patterns <repo>` scaffolds `repos/{name}/patterns.md` with TODO placeholders. Flags: `--force`, `-d`. JSON output with `status`, `repo`, `path`, `file_existed` |
 | `feedback.ts` | `feedback <repo> --body "..."` appends a correction entry to `repos/{name}/corrections.md`, creating the file if needed. JSON output with `status`, `created_file`, `timestamp` |
 | `upgrade.ts` | `upgrade` upgrades ctxify using the `install_method` from ctx.yaml (global/local/npx) and reinstalls all tracked skills. Exports `runUpgrade(workspaceRoot, opts?)` with injectable `execFn` for testability. `--dry-run` flag shows what would happen. |
 
@@ -73,6 +74,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `index-md.ts` | `.ctxify/index.md` — workspace overview with frontmatter, repo table, relationship/command TODOs |
 | `repo.ts` | `.ctxify/repos/{name}/overview.md` — lightweight hub: curated dirs, essential scripts, context file index pointing to patterns.md + domain files. Exports `filterEssentialScripts()` |
 | `domain.ts` | `.ctxify/repos/{name}/{domain}.md` — domain file template with frontmatter and TODO placeholders. Exports `generateDomainTemplate()` |
+| `patterns.ts` | `.ctxify/repos/{name}/patterns.md` — patterns template with frontmatter (`type: patterns`, `repo`) and TODO sections for routes, validation, testing, naming, gotchas. Exports `generatePatternsTemplate()` |
 | `corrections.ts` | `.ctxify/repos/{name}/corrections.md` — corrections file template with frontmatter. Exports `generateCorrectionsTemplate()`, `formatCorrectionEntry()` |
 
 ### `src/utils/` — shared utilities
@@ -92,7 +94,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 
 | File | Purpose |
 |------|---------|
-| `install-skill.ts` | `AgentConfig` interface, `AGENT_CONFIGS` registry (claude, copilot, cursor, codex), `installSkill()` — reads `skills/PLAYBOOK.md`, prepends agent-specific frontmatter, writes to agent destination. `getPlaybookSourcePath()` resolves bundled playbook |
+| `install-skill.ts` | `AgentConfig` interface (`destDir`, `primaryFilename`, `skillFrontmatter`, `singleFile`, `combinedFrontmatter`), `AGENT_CONFIGS` registry (claude, copilot, cursor, codex). Multi-file agents (claude, cursor) install each skill as a separate file; single-file agents (copilot, codex) concatenate all skills. `installSkill()` returns primary file path. `getSkillSourceDir()` finds skills/ package root. `listSkillSourceFiles()` returns `[{filename, sourcePath}]` ordered SKILL.md-first then alphabetical. `getPrimarySkillSourcePath()` / `getPlaybookSourcePath()` (compat alias) |
 
 ### `test/`
 
@@ -106,7 +108,8 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/monorepo-detection.test.ts` | Workspace detection across package managers |
 | `unit/git-mutate.test.ts` | Branch creation, change detection, commit |
 | `unit/init-scaffold.test.ts` | scaffoldWorkspace function: single/multi-repo, skill install, gitignore |
-| `unit/install-skill.test.ts` | Skill installer: copy, version header, directory creation, overwrite |
+| `unit/install-skill.test.ts` | Skill installer: multi-file (claude, cursor), single-file (copilot, codex), frontmatter per agent, alwaysApply cursor logic, version header, directory creation, overwrite. `getSkillSourceDir()`, `listSkillSourceFiles()` |
+| `unit/patterns.test.ts` | `generatePatternsTemplate`: frontmatter, TODO sections, line limit. CLI `ctxify patterns <repo>`: creates file, correct JSON, error if exists (no --force), --force overwrites, unknown repo error, no ctx.yaml error |
 | `unit/init-interactive.test.ts` | resolveInteractiveOptions: mode mapping, agent pass-through |
 | `unit/domain.test.ts` | Domain template generator, domain add (scaffold, idempotency, validation), domain list |
 | `unit/feedback.test.ts` | Corrections template generator, feedback command (create, append, validation, unknown repo) |
@@ -134,7 +137,7 @@ When `ctxify init` is run without `--repos` or `--mono` flags and stdin is a TTY
 
 Flags (`--repos`, `--mono`, `--agent`) bypass interactivity for agent/CI use. Non-TTY stdin also falls through to the auto-detect path.
 
-The skill installer (`src/cli/install-skill.ts`) reads `skills/PLAYBOOK.md` (canonical playbook body, no frontmatter), prepends agent-specific frontmatter from `AGENT_CONFIGS`, inserts a version comment header (`<!-- ctxify v0.2.0 ... -->`), and writes to the agent's destination path. Version is read from package.json at runtime.
+The skill installer (`src/cli/install-skill.ts`) reads all 6 files from `skills/` (SKILL.md + 5 satellite skills). Multi-file agents (claude, cursor) install each skill as a separate file with agent-specific frontmatter. Single-file agents (copilot, codex) concatenate all skills into one file. All installed files include a version comment header (`<!-- ctxify v... -->`). Version is read from package.json at runtime.
 
 ### Template generators are pure functions
 
@@ -216,7 +219,7 @@ After `ctxify init`, the `.ctxify/` directory contains:
             └── {domain}.md     # Domain deep dives (one per complex area)
 ```
 
-Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The playbook at `skills/PLAYBOOK.md` guides this workflow (installed to agent-specific paths by `ctxify init --agent`).
+Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The 6 focused skills in `skills/` guide this workflow (installed to agent-specific paths by `ctxify init --agent`): `SKILL.md` (orientation), `reading-context.md`, `filling-context.md`, `domain.md`, `corrections.md`, `multi-repo.md`.
 
 ## Known gaps and future work
 
@@ -225,6 +228,19 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 - No `ctxify update` / `ctxify refresh` command to re-scaffold without losing agent-filled content
 - No support for Cargo.toml (Rust) manifest parsing — only framework detection via deps
 - `git add -A` in `stageAndCommit` stages everything including potentially unrelated files
+
+## README hygiene
+
+Keep `README.md` in sync when making changes. The README is user-facing documentation — it must reflect current behaviour, not aspirational or stale state.
+
+**Update README when:**
+- Adding or removing a CLI command — update the Commands table
+- Changing flags on an existing command — update the relevant row
+- Changing how skills are installed (agent destinations, file count, format) — update the Supported agents table
+- Adding a significant new workflow or feature — add or update the relevant section
+- Changing the test count in Quick reference — update `npm test` line
+
+**Do not** add sections for every internal refactor or test change. README covers user-visible behaviour only.
 
 ## Commit conventions
 
