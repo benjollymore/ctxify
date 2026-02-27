@@ -41,6 +41,10 @@ For each `repos/{name}/overview.md`:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Annotate pre-filled key directories. Describe the request/data flow (e.g., "Route → Validation → Controller → Service → Model"). Note DI approach, ORM, testing framework. 10-20 lines total.
 - **Domain files**: Identify 3-5 domains to document. For each, run `ctxify domain add <repo> <domain> --tags tag1,tag2` — this scaffolds the file and registers it in the domain index. Do NOT list domains manually without creating their files first.
+- **Anti-patterns**: As you read source files, log any anti-patterns you spot (FIXME/HACK/XXX comments, silent catches, missing validation, inconsistent error handling):
+  ```bash
+  ctxify feedback <repo> --type antipattern --body "Description" --source "file.ts:line"
+  ```
 
 ### Pass 2: Create patterns.md for each repo (THE PRIMARY DELIVERABLE)
 
@@ -64,6 +68,11 @@ Content (20-50 lines total):
 
 **Reference over duplication:** Don't include code snippets that will become stale. Use `file:line` references pointing to authoritative source locations. Only use inline code for patterns repeated across many files where no single canonical source exists.
 
+As you read source files, log any anti-patterns you spot (FIXME/HACK/XXX comments, silent catches, missing validation, inconsistent error handling):
+```bash
+ctxify feedback <repo> --type antipattern --body "Description" --source "file.ts:line"
+```
+
 ### Pass 3: Fill domain file TODOs
 
 Domain files were scaffolded in Pass 1 via `ctxify domain add`. Now fill their TODOs.
@@ -75,6 +84,11 @@ For each `repos/{name}/{domain}.md`, read entry points + 2-3 relevant source fil
 - **Cross-repo**: How this domain spans repos (e.g., backend model + frontend form)
 
 Keep each file 50-150 lines total.
+
+As you read source files, log any anti-patterns you spot (FIXME/HACK/XXX comments, silent catches, missing validation, inconsistent error handling):
+```bash
+ctxify feedback <repo> --type antipattern --body "Description" --source "file.ts:line"
+```
 
 ### Pass 4: Fill index.md
 
@@ -159,3 +173,20 @@ ctxify feedback <repo> --body "## Wrong assumption about auth middleware
 corrections.md is loaded alongside overview.md before every task.
 
 **Do NOT file for:** stale TODOs (fill them), typos (fix directly), new patterns (add to patterns.md).
+
+## Anti-patterns (proactive)
+
+Unlike corrections (which fix wrong context), anti-patterns are proactive — log them whenever you read code with issues, even when everything else is working.
+
+**What qualifies:**
+- FIXME/HACK/XXX/NOTE-problem comments in source
+- Silent catches (`catch(e) {}`)
+- Missing auth/validation at an obvious boundary
+- Known broken patterns (e.g., sync call in async path)
+
+```bash
+ctxify feedback api \
+  --type antipattern \
+  --body "Silent catch swallows payment errors" \
+  --source "src/payments/handler.ts:42"
+```

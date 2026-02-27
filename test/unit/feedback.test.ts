@@ -7,6 +7,8 @@ import { parseFrontmatter } from '../../src/utils/frontmatter.js';
 import {
   generateCorrectionsTemplate,
   formatCorrectionEntry,
+  formatAntiPatternEntry,
+  ANTI_PATTERNS_SECTION_HEADER,
 } from '../../src/templates/corrections.js';
 import { generateRepoTemplate } from '../../src/templates/repo.js';
 import { serializeConfig } from '../../src/core/config.js';
@@ -105,6 +107,41 @@ describe('formatCorrectionEntry', () => {
     expect(entry).toContain('## Wrong assumption');
     expect(entry).toContain('The API uses JWT, not session cookies.');
     expect(entry).toContain('See `src/auth.ts:42`.');
+  });
+});
+
+describe('formatAntiPatternEntry', () => {
+  it('wraps body with antipattern markers', () => {
+    const ts = '2025-06-15T10:30:00.000Z';
+    const entry = formatAntiPatternEntry({ body: 'Silent catch swallows errors', timestamp: ts });
+
+    expect(entry).toContain(`<!-- antipattern:${ts} -->`);
+    expect(entry).toContain('Silent catch swallows errors');
+    expect(entry).toContain('<!-- /antipattern -->');
+  });
+
+  it('appends source inline when provided', () => {
+    const entry = formatAntiPatternEntry({
+      body: 'Missing validation',
+      source: 'src/handler.ts:42',
+      timestamp: '2025-06-15T10:30:00.000Z',
+    });
+    expect(entry).toContain('Missing validation — `src/handler.ts:42`');
+  });
+
+  it('omits source suffix when not provided', () => {
+    const entry = formatAntiPatternEntry({
+      body: 'Bad pattern',
+      timestamp: '2025-06-15T10:30:00.000Z',
+    });
+    expect(entry).not.toContain(' — `');
+    expect(entry).toContain('Bad pattern');
+  });
+});
+
+describe('ANTI_PATTERNS_SECTION_HEADER', () => {
+  it('contains the # Anti-Patterns heading', () => {
+    expect(ANTI_PATTERNS_SECTION_HEADER).toContain('# Anti-Patterns');
   });
 });
 
@@ -225,6 +262,134 @@ describe('feedback command', () => {
     createWorkspace(dir, ['api']);
 
     runFeedback(['api', '--body', 'Test correction with balanced markers'], dir);
+
+    const result = validateShards(dir);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('--type antipattern creates # Anti-Patterns section and antipattern markers', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    const { parsed } = runFeedback(
+      ['api', '--type', 'antipattern', '--body', 'Silent catch swallows payment errors'],
+      dir,
+    );
+
+    expect(parsed.status).toBe('recorded');
+    expect(parsed.type).toBe('antipattern');
+
+    const content = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
+      'utf-8',
+    );
+    expect(content).toContain('# Anti-Patterns');
+    expect(content).toContain('<!-- antipattern:');
+    expect(content).toContain('<!-- /antipattern -->');
+    expect(content).toContain('Silent catch swallows payment errors');
+  });
+
+  it('--source is included inline in antipattern entry', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    runFeedback(
+      [
+        'api',
+        '--type',
+        'antipattern',
+        '--body',
+        'Missing validation',
+        '--source',
+        'src/payments/handler.ts:42',
+      ],
+      dir,
+    );
+
+    const content = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
+      'utf-8',
+    );
+    expect(content).toContain('Missing validation — `src/payments/handler.ts:42`');
+  });
+
+  it('appending a second antipattern does not duplicate # Anti-Patterns header', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    runFeedback(['api', '--type', 'antipattern', '--body', 'First anti-pattern'], dir);
+    runFeedback(['api', '--type', 'antipattern', '--body', 'Second anti-pattern'], dir);
+
+    const content = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
+      'utf-8',
+    );
+    const headerCount = (content.match(/# Anti-Patterns/g) || []).length;
+    expect(headerCount).toBe(1);
+    expect(content).toContain('First anti-pattern');
+    expect(content).toContain('Second anti-pattern');
+  });
+
+  it('antipatterns and corrections coexist without interference', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    runFeedback(['api', '--body', 'A correction'], dir);
+    runFeedback(['api', '--type', 'antipattern', '--body', 'An anti-pattern'], dir);
+    runFeedback(['api', '--body', 'Another correction'], dir);
+
+    const content = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
+      'utf-8',
+    );
+    expect(content).toContain('A correction');
+    expect(content).toContain('An anti-pattern');
+    expect(content).toContain('Another correction');
+    expect(content).toContain('<!-- correction:');
+    expect(content).toContain('<!-- antipattern:');
+  });
+
+  it('explicit --type correction works same as default', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    const { parsed } = runFeedback(['api', '--type', 'correction', '--body', 'Explicit correction'], dir);
+    expect(parsed.type).toBe('correction');
+
+    const content = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
+      'utf-8',
+    );
+    expect(content).toContain('<!-- correction:');
+    expect(content).not.toContain('<!-- antipattern:');
+  });
+
+  it('invalid --type value exits with JSON error', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    const stdout = runFeedbackExpectFail(['api', '--type', 'invalid', '--body', 'test'], dir);
+    const parsed = JSON.parse(stdout);
+    expect(parsed.error).toContain('Invalid --type');
+    expect(parsed.error).toContain('invalid');
+  });
+
+  it('antipattern entries pass validateShards', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    runFeedback(
+      ['api', '--type', 'antipattern', '--body', 'Anti-pattern', '--source', 'src/foo.ts:10'],
+      dir,
+    );
 
     const result = validateShards(dir);
     expect(result.valid).toBe(true);
