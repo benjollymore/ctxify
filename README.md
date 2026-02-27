@@ -99,6 +99,8 @@ All commands output JSON to stdout.
 | Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` | 6 separate rule files |
 | OpenAI Codex | `--agent codex` | `AGENTS.md` | 1 combined file |
 
+**Skill scope:** During `ctxify init`, you'll be prompted to choose where to install skills for each agent that supports global installation (Claude Code and Codex). Choose **workspace** (default) to install skills local to the current project, or **global** to install to your home directory (e.g., `~/.claude/skills/`) so skills are available in every project.
+
 Multiple agents: `ctxify init --agent claude copilot cursor`
 
 The 6 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.

@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { loadConfig } from '../../core/config.js';
+import type { SkillEntry } from '../../core/config.js';
 import { installSkill } from '../install-skill.js';
 import { invalidateVersionCache } from '../../utils/version-check.js';
 
@@ -19,18 +20,19 @@ export interface UpgradeResult {
 export interface UpgradeOptions {
   dryRun?: boolean;
   execFn?: (args: string[], opts?: { cwd?: string }) => void;
+  homeDir?: string; // injectable for testing global reinstall
 }
 
 export async function runUpgrade(
   workspaceRoot: string,
   opts: UpgradeOptions = {},
 ): Promise<UpgradeResult> {
-  const { dryRun = false, execFn } = opts;
+  const { dryRun = false, execFn, homeDir } = opts;
 
   // Load ctx.yaml if available to get install_method and skills
   const configPath = join(workspaceRoot, 'ctx.yaml');
   let install_method: 'global' | 'local' | 'npx' = 'global';
-  let skillsMap: Record<string, string> = {};
+  let skillsMap: Record<string, SkillEntry> = {};
 
   if (existsSync(configPath)) {
     try {
@@ -67,7 +69,7 @@ export async function runUpgrade(
       install_method,
       npm_command: npmArgs,
       ...(npx_note ? { npx_note } : {}),
-      skills_reinstalled: Object.values(skillsMap),
+      skills_reinstalled: Object.values(skillsMap).map((e) => e.path),
     };
   }
 
@@ -85,9 +87,9 @@ export async function runUpgrade(
 
   // Reinstall skills
   const skills_reinstalled: string[] = [];
-  for (const [agent] of Object.entries(skillsMap)) {
+  for (const [agent, entry] of Object.entries(skillsMap)) {
     try {
-      const dest = installSkill(workspaceRoot, agent);
+      const dest = installSkill(workspaceRoot, agent, entry.scope, homeDir);
       skills_reinstalled.push(dest);
     } catch {
       // Non-fatal — if agent is unknown or skill install fails, continue

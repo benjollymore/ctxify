@@ -34,6 +34,13 @@ export interface ContextOptions {
   excludePatterns?: string[];
 }
 
+export type SkillScope = 'workspace' | 'global';
+
+export interface SkillEntry {
+  path: string;
+  scope: SkillScope;
+}
+
 export interface CtxConfig {
   version: string;
   workspace: string;
@@ -42,7 +49,7 @@ export interface CtxConfig {
   repos: RepoEntry[];
   relationships: Relationship[];
   options: ContextOptions;
-  skills?: Record<string, string>;
+  skills?: Record<string, SkillEntry>;
   install_method?: 'global' | 'local' | 'npx';
 }
 
@@ -207,18 +214,33 @@ function validateRelationships(raw: unknown): Relationship[] {
   });
 }
 
-function validateSkills(raw: unknown): Record<string, string> | undefined {
+function validateSkills(raw: unknown): Record<string, SkillEntry> | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new ConfigError('"skills" must be an object mapping agent names to paths');
+    throw new ConfigError(
+      '"skills" must be an object mapping agent names to paths or skill entries',
+    );
   }
   const o = raw as Record<string, unknown>;
-  const result: Record<string, string> = {};
+  const result: Record<string, SkillEntry> = {};
   for (const [key, val] of Object.entries(o)) {
-    if (typeof val !== 'string') {
-      throw new ConfigError(`skills.${key} must be a string`);
+    if (typeof val === 'string') {
+      // Backward compat: plain string → { path, scope: 'workspace' }
+      result[key] = { path: val, scope: 'workspace' };
+    } else if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+      const entry = val as Record<string, unknown>;
+      if (typeof entry.path !== 'string') {
+        throw new ConfigError(`skills.${key}.path must be a string`);
+      }
+      if (entry.scope !== 'workspace' && entry.scope !== 'global') {
+        throw new ConfigError(
+          `skills.${key}.scope must be "workspace" or "global" (got "${String(entry.scope)}")`,
+        );
+      }
+      result[key] = { path: entry.path, scope: entry.scope };
+    } else {
+      throw new ConfigError(`skills.${key} must be a string or { path, scope } object`);
     }
-    result[key] = val;
   }
   return Object.keys(result).length > 0 ? result : undefined;
 }
@@ -258,7 +280,7 @@ export function generateDefaultConfig(
   mode: OperatingMode = 'multi-repo',
   monoRepoOptions?: MonoRepoOptions,
   relationships?: Relationship[],
-  skills?: Record<string, string>,
+  skills?: Record<string, SkillEntry>,
   install_method?: 'global' | 'local' | 'npx',
 ): CtxConfig {
   return {

@@ -198,6 +198,65 @@ describe('installSkill', () => {
     );
   });
 
+  it('installs claude skill to global path when scope is global', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    const fakeHome = makeTmpDir();
+    tmpDirs.push(fakeHome);
+
+    const returnedPath = installSkill(dir, 'claude', 'global', fakeHome);
+
+    expect(returnedPath).toBe('~/.claude/skills/ctxify/SKILL.md');
+    const skillsDir = join(fakeHome, '.claude', 'skills');
+    expect(existsSync(join(skillsDir, 'ctxify', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-reading-context', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-filling-context', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-domain', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-corrections', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-multi-repo', 'SKILL.md'))).toBe(true);
+  });
+
+  it('installs codex skill to global path when scope is global', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    const fakeHome = makeTmpDir();
+    tmpDirs.push(fakeHome);
+
+    const returnedPath = installSkill(dir, 'codex', 'global', fakeHome);
+
+    expect(returnedPath).toBe('~/.codex/AGENTS.md');
+    expect(existsSync(join(fakeHome, '.codex', 'AGENTS.md'))).toBe(true);
+  });
+
+  it('workspace scope installs to workspaceRoot (unchanged behavior)', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const returnedPath = installSkill(dir, 'claude', 'workspace');
+
+    expect(returnedPath).toBe('.claude/skills/ctxify/SKILL.md');
+    expect(existsSync(join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
+  });
+
+  it('default scope (no argument) installs to workspace', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    // Call without scope argument - should default to workspace
+    const returnedPath = installSkill(dir, 'claude');
+
+    expect(returnedPath).toBe('.claude/skills/ctxify/SKILL.md');
+    expect(existsSync(join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
+  });
+
+  it('throws when global scope requested for agent without globalDestDir', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    expect(() => installSkill(dir, 'cursor', 'global')).toThrow(/does not support global/);
+    expect(() => installSkill(dir, 'copilot', 'global')).toThrow(/does not support global/);
+  });
+
   it('all agents produce primary file with version comment and ctxify heading', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
