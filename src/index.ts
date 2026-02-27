@@ -1,6 +1,11 @@
 // Config
 export type {
-  CtxConfig, RepoEntry, Relationship, ContextOptions, OperatingMode, MonoRepoOptions,
+  CtxConfig,
+  RepoEntry,
+  Relationship,
+  ContextOptions,
+  OperatingMode,
+  MonoRepoOptions,
 } from './core/config.js';
 export { loadConfig, generateDefaultConfig, serializeConfig } from './core/config.js';
 

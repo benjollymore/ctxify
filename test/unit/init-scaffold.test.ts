@@ -55,7 +55,10 @@ describe('scaffoldWorkspace', () => {
     const result = await scaffoldWorkspace({
       workspaceRoot: dir,
       mode: 'multi-repo',
-      repos: [{ path: 'api', name: 'api' }, { path: 'web', name: 'web' }],
+      repos: [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ],
     });
 
     expect(result.status).toBe('initialized');
@@ -101,7 +104,10 @@ describe('scaffoldWorkspace', () => {
     expect(existsSync(join(dir, 'AGENTS.md'))).toBe(true);
 
     // Verify content
-    const claudeContent = readFileSync(join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md'), 'utf-8');
+    const claudeContent = readFileSync(
+      join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md'),
+      'utf-8',
+    );
     expect(claudeContent).toContain('name: ctxify');
     const codexContent = readFileSync(join(dir, 'AGENTS.md'), 'utf-8');
     // No YAML frontmatter wrapping — file starts with version comment, not ---

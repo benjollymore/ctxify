@@ -6,7 +6,7 @@ import { parseYaml } from './yaml.js';
 
 interface WorkspacePackage {
   name: string;
-  path: string;         // absolute
+  path: string; // absolute
   relativePath: string; // relative to root
   language?: string;
   description?: string;

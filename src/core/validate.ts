@@ -12,7 +12,7 @@ export interface ValidationResult {
 
 // ── Supported segment tags ─────────────────────────────────────────────
 
-const SEGMENT_TAGS = ['endpoint', 'type', 'env', 'model', 'question', 'domain-index'];
+const SEGMENT_TAGS = ['endpoint', 'type', 'env', 'model', 'question', 'domain-index', 'correction'];
 
 // ── Public API ─────────────────────────────────────────────────────────
 
@@ -73,7 +73,9 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
  *   -->            ← standalone closing on its own line
  */
 function stripTodoBlocks(content: string): string {
-  return content.replace(/<!-- TODO:[\s\S]*?\n-->/g, '');
+  // Only match multi-line TODO blocks where --> is NOT on the same line as <!-- TODO:
+  // The negative lookahead (?:(?!-->).)* ensures we don't span past a single-line TODO's -->
+  return content.replace(/<!-- TODO:(?:(?!-->).)*\n[\s\S]*?\n-->/g, '');
 }
 
 export function collectMdFiles(dir: string): string[] {
@@ -129,8 +131,10 @@ function checkTodoMarkers(content: string, relativePath: string, warnings: strin
   let match;
   while ((match = todoPattern.exec(content)) !== null) {
     // Extract a snippet of the TODO text for the warning
-    const snippet = content.slice(match.index, match.index + 80).replace(/\n/g, ' ').trim();
+    const snippet = content
+      .slice(match.index, match.index + 80)
+      .replace(/\n/g, ' ')
+      .trim();
     warnings.push(`TODO marker in ${relativePath}: ${snippet}`);
   }
 }
-

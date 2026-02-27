@@ -100,7 +100,10 @@ describe('domain add', () => {
     tmpDirs.length = 0;
   });
 
-  function runDomain(args: string[], cwd: string): { stdout: string; parsed: Record<string, unknown> } {
+  function runDomain(
+    args: string[],
+    cwd: string,
+  ): { stdout: string; parsed: Record<string, unknown> } {
     const stdout = execFileSync('node', [cliBin, 'domain', ...args], {
       cwd,
       encoding: 'utf-8',
@@ -150,7 +153,10 @@ describe('domain add', () => {
     tmpDirs.push(dir);
     createWorkspace(dir, ['api']);
 
-    const { parsed } = runDomain(['add', 'api', 'payments', '--description', 'Payment processing'], dir);
+    const { parsed } = runDomain(
+      ['add', 'api', 'payments', '--description', 'Payment processing'],
+      dir,
+    );
     expect(parsed.overview_updated).toBe(true);
 
     const overview = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'), 'utf-8');

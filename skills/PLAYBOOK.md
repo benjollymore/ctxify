@@ -23,7 +23,7 @@ After init: fill context following the progressive disclosure workflow in sectio
 
 Context is layered. Load only what your current task requires:
 
-1. **Always read:** `index.md` + each `repos/{name}/overview.md` (~30-40 lines each — lightweight hubs)
+1. **Always read:** `index.md` + each `repos/{name}/overview.md` + `repos/{name}/corrections.md` (if exists)
 2. **When writing code in a repo:** read `repos/{name}/patterns.md` (how to build features)
 3. **When working in a specific domain:** read `repos/{name}/{domain}.md` (deep dive)
 4. **Only load what's relevant to the current task**
@@ -121,3 +121,48 @@ When code changes, update only the affected overview, patterns, or domain file. 
 When you encounter an undocumented domain during feature work, register it:
 `ctxify domain add <repo> <domain-name> --description "what it covers"`
 Fill the TODOs in the created file before moving on.
+
+## 6. Multi-repo Git Workflow
+
+In multi-repo workspaces, coordinate branches and commits across all repos:
+
+**Create a matching branch in all repos:**
+```
+ctxify branch feat/add-notifications
+```
+Creates the branch in every repo listed in ctx.yaml. Output shows previous branch per repo.
+
+**Commit changes across all repos:**
+```
+ctxify commit "feat: add notification support"
+```
+Stages and commits in every repo that has changes. Clean repos are skipped.
+
+**When to use these:**
+- Cross-repo features touching multiple repos in a single task
+- Keeping branches aligned for a coherent PR set
+- Multi-repo mode only (errors in single-repo and mono-repo)
+
+**When NOT to use:**
+- Single-repo work — use git directly
+- When repos need different commit messages — commit individually
+
+## 7. Corrections — Logging Mistakes
+
+When existing context is wrong or you make a mistake future agents should avoid:
+
+```
+ctxify feedback <repo> --body "## Wrong assumption about auth middleware
+..."
+```
+
+**When to file:**
+- Context guidance led you astray
+- A pattern contradicts documented patterns
+- A cross-repo interaction works differently than described
+- Significant time wasted due to missing/wrong context
+
+**Format:** Include what happened, what's correct, and why. Use `file:line` refs.
+corrections.md is loaded alongside overview.md before every task.
+
+**Do NOT file for:** stale TODOs (fill them), typos (fix directly), new patterns (add to patterns.md).

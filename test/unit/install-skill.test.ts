@@ -86,7 +86,9 @@ describe('installSkill', () => {
     const destPath = join(dir, '.claude', 'skills', 'ctxify', 'SKILL.md');
     const content = readFileSync(destPath, 'utf-8');
     expect(content.startsWith('---')).toBe(true);
-    expect(content).toMatch(/---\n<!-- ctxify v\d+\.\d+\.\d+ — do not edit manually, managed by ctxify init -->/);
+    expect(content).toMatch(
+      /---\n<!-- ctxify v\d+\.\d+\.\d+ — do not edit manually, managed by ctxify init -->/,
+    );
   });
 
   it('creates intermediate directories', () => {
@@ -121,7 +123,9 @@ describe('installSkill', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
-    expect(() => installSkill(dir, 'unsupported-agent')).toThrow('Unsupported agent: unsupported-agent');
+    expect(() => installSkill(dir, 'unsupported-agent')).toThrow(
+      'Unsupported agent: unsupported-agent',
+    );
   });
 
   it('all agents produce content with version comment', () => {

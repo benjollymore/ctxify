@@ -24,6 +24,7 @@ import { registerBranchCommand } from '../src/cli/commands/branch.js';
 import { registerCommitCommand } from '../src/cli/commands/commit.js';
 import { registerCleanCommand } from '../src/cli/commands/clean.js';
 import { registerDomainCommand } from '../src/cli/commands/domain.js';
+import { registerFeedbackCommand } from '../src/cli/commands/feedback.js';
 
 function findPackageJson(): { version: string } {
   let dir = dirname(fileURLToPath(import.meta.url));
@@ -52,6 +53,7 @@ registerBranchCommand(program);
 registerCommitCommand(program);
 registerCleanCommand(program);
 registerDomainCommand(program);
+registerFeedbackCommand(program);
 
 program.parseAsync().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);

@@ -213,8 +213,8 @@ function discoverEntryPoints(repoPath: string, manifestType: string): string[] {
     const content = readFileIfExists(join(repoPath, 'pyproject.toml'));
     if (content) {
       const scriptPatterns = [
-        /\[project\.scripts\]\s*\n((?:[^\[].+\n)*)/,
-        /\[tool\.poetry\.scripts\]\s*\n((?:[^\[].+\n)*)/,
+        /\[project\.scripts\]\s*\n((?:[^[].+\n)*)/,
+        /\[tool\.poetry\.scripts\]\s*\n((?:[^[].+\n)*)/,
       ];
       for (const pattern of scriptPatterns) {
         const match = content.match(pattern);

@@ -1,5 +1,4 @@
-import { readFileSync, existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
 
 export function readFileIfExists(filePath: string): string | null {
   try {

@@ -1,6 +1,6 @@
 {
-  "name": "ctxify",
-  "version": "0.3.1",
+  "name": "@benjollymore/ctxify",
+  "version": "0.3.2",
   "description": "Turbocharged workspace context for AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,7 +24,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit",
+    "lint": "eslint . && tsc --noEmit",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -53,14 +56,18 @@
     "url": "https://github.com/benjollymore/ctxify/issues"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@inquirer/prompts": "^7.10.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "commander": "^12.1.0",
+    "eslint": "^10.0.2",
     "glob": "^11.0.0",
     "js-yaml": "^4.1.0",
+    "prettier": "^3.8.1",
     "tsup": "^8.3.0",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"
   },
   "engines": {

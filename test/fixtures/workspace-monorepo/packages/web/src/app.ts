@@ -1,6 +1,6 @@
-import type { User, ApiResponse } from "@myapp/shared";
+import type { User, ApiResponse } from '@myapp/shared';
 
-const API_BASE = "/api";
+const API_BASE = '/api';
 
 export async function getUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE}/users`);
@@ -14,5 +14,5 @@ export async function getUsers(): Promise<User[]> {
 export function renderUserList(users: User[]): string {
   return users
     .map((user) => `<div class="user-card">${user.name} (${user.email})</div>`)
-    .join("\n");
+    .join('\n');
 }

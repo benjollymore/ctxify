@@ -189,6 +189,88 @@ type: overview
     expect(result.errors.length).toBeGreaterThan(0);
   });
 
+  it('passes for balanced correction markers', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'corrections.md'),
+      `---
+repo: api
+type: corrections
+---
+
+# Corrections
+
+<!-- correction:2025-06-15T10:30:00.000Z -->
+Auth middleware is not global.
+<!-- /correction -->
+
+<!-- correction:2025-06-15T11:00:00.000Z -->
+Database uses UUID, not integer IDs.
+<!-- /correction -->
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('fails for unbalanced correction markers', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'corrections.md'),
+      `---
+repo: api
+type: corrections
+---
+
+# Corrections
+
+<!-- correction:2025-06-15T10:30:00.000Z -->
+Auth middleware is not global.
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes('correction'))).toBe(true);
+  });
+
   it('handles domain-index markers without colon (no false positive)', () => {
     const ctxDir = join(tmpDir, '.ctxify');
     mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });

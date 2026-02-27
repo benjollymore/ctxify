@@ -5,7 +5,7 @@ import { ConfigError } from './errors.js';
 export type OperatingMode = 'single-repo' | 'multi-repo' | 'mono-repo';
 
 export interface MonoRepoOptions {
-  manager?: string;        // 'npm' | 'yarn' | 'pnpm' | 'turborepo'
+  manager?: string; // 'npm' | 'yarn' | 'pnpm' | 'turborepo'
   packageGlobs?: string[]; // from package.json workspaces field
 }
 
@@ -49,7 +49,17 @@ const DEFAULT_OPTIONS: ContextOptions = {
   maxFileSize: 100_000,
   maxDepth: 5,
   includePatterns: [],
-  excludePatterns: ['node_modules', '.git', 'dist', 'build', 'coverage', '__pycache__', '.venv', 'fixtures', '__fixtures__'],
+  excludePatterns: [
+    'node_modules',
+    '.git',
+    'dist',
+    'build',
+    'coverage',
+    '__pycache__',
+    '.venv',
+    'fixtures',
+    '__fixtures__',
+  ],
 };
 
 export function loadConfig(configPath: string): CtxConfig {
@@ -150,8 +160,12 @@ function validateRepos(raw: unknown): RepoEntry[] {
       language: typeof e.language === 'string' ? e.language : undefined,
       framework: typeof e.framework === 'string' ? e.framework : undefined,
       description: typeof e.description === 'string' ? e.description : undefined,
-      include: Array.isArray(e.include) ? e.include.filter((s): s is string => typeof s === 'string') : undefined,
-      exclude: Array.isArray(e.exclude) ? e.exclude.filter((s): s is string => typeof s === 'string') : undefined,
+      include: Array.isArray(e.include)
+        ? e.include.filter((s): s is string => typeof s === 'string')
+        : undefined,
+      exclude: Array.isArray(e.exclude)
+        ? e.exclude.filter((s): s is string => typeof s === 'string')
+        : undefined,
     };
   });
 }

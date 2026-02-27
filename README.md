@@ -18,10 +18,10 @@ Two roles: **ctxify scaffolds**, **your agent fills**.
 
 ```bash
 # Install globally
-npm install -g ctxify
+npm install -g @benjollymore/ctxify
 
 # Or run directly with npx
-npx ctxify init
+npx @benjollymore/ctxify init
 ```
 
 ```bash
@@ -62,6 +62,7 @@ ctxify init --repos ./api ./web
 └── repos/
     └── {name}/
         ├── overview.md         # Repo hub (~30-40 lines): architecture, commands, context file index
+        ├── corrections.md      # Agent-logged corrections (created by ctxify feedback, always loaded)
         └── (agent creates after reading source:)
             ├── patterns.md     # How to build features — the primary deliverable
             └── {domain}.md     # Domain deep dives (one per complex area)
@@ -78,6 +79,7 @@ ctxify init --repos ./api ./web
 | `ctxify validate` | Check shard structural integrity |
 | `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
 | `ctxify domain list` | List registered domain files. Flags: `--repo` |
+| `ctxify feedback <repo>` | Log a correction to `corrections.md`. Flags: `--body` (required) |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
 | `ctxify branch <name>` | Create a branch across all repos (multi-repo only) |
 | `ctxify commit <msg>` | Commit across all repos with changes (multi-repo only) |

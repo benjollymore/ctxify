@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { generateDefaultConfig, serializeConfig, loadConfig } from '../../src/core/config.js';
-import { createBranch, getCurrentBranch, hasChanges, stageAndCommit } from '../../src/utils/git-mutate.js';
+import {
+  createBranch,
+  getCurrentBranch,
+  hasChanges,
+  stageAndCommit,
+} from '../../src/utils/git-mutate.js';
 
 function initGitRepo(dir: string): void {
   mkdirSync(dir, { recursive: true });
@@ -30,10 +35,14 @@ describe('integration: git coordination across multi-repo workspace', () => {
     initGitRepo(join(workspaceDir, 'repo-b'));
 
     // Write multi-repo ctx.yaml
-    const config = generateDefaultConfig(workspaceDir, [
-      { path: 'repo-a', name: 'repo-a' },
-      { path: 'repo-b', name: 'repo-b' },
-    ], 'multi-repo');
+    const config = generateDefaultConfig(
+      workspaceDir,
+      [
+        { path: 'repo-a', name: 'repo-a' },
+        { path: 'repo-b', name: 'repo-b' },
+      ],
+      'multi-repo',
+    );
     writeFileSync(join(workspaceDir, 'ctx.yaml'), serializeConfig(config), 'utf-8');
   });
 
