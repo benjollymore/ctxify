@@ -23,6 +23,13 @@ export interface ScaffoldOptions {
   monoRepoOptions?: MonoRepoOptions;
   force?: boolean;
   agents?: AgentType[];
+  install_method?: 'global' | 'local' | 'npx';
+}
+
+export function detectInstallMethod(argv1 = process.argv[1]): 'global' | 'local' | 'npx' {
+  if (argv1.includes('_npx')) return 'npx';
+  if (argv1.includes('node_modules')) return 'local';
+  return 'global';
 }
 
 export interface ScaffoldResult {
@@ -38,8 +45,30 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   const { workspaceRoot, mode, repos, monoRepoOptions } = options;
   const configPath = join(workspaceRoot, 'ctx.yaml');
 
-  // Generate and write ctx.yaml
-  const config = generateDefaultConfig(workspaceRoot, repos, mode, monoRepoOptions);
+  // Install skills first so we can persist the skills map in ctx.yaml
+  const skills_installed: string[] = [];
+  const skillsMap: Record<string, string> = {};
+  if (options.agents) {
+    for (const agent of options.agents) {
+      const dest = installSkill(workspaceRoot, agent);
+      skills_installed.push(dest);
+      skillsMap[agent] = dest;
+    }
+  }
+
+  // Detect install method (use provided override or auto-detect)
+  const install_method = options.install_method ?? detectInstallMethod();
+
+  // Generate and write ctx.yaml with skills and install_method
+  const config = generateDefaultConfig(
+    workspaceRoot,
+    repos,
+    mode,
+    monoRepoOptions,
+    undefined,
+    Object.keys(skillsMap).length > 0 ? skillsMap : undefined,
+    install_method,
+  );
   writeFileSync(configPath, serializeConfig(config), 'utf-8');
 
   // Parse manifests for each repo
@@ -74,15 +103,6 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
 
   // Ensure .ctxify/ is in .gitignore
   ensureGitignore(workspaceRoot, outputDir);
-
-  // Install skills for each specified agent
-  const skills_installed: string[] = [];
-  if (options.agents) {
-    for (const agent of options.agents) {
-      const dest = installSkill(workspaceRoot, agent);
-      skills_installed.push(dest);
-    }
-  }
 
   return {
     status: 'initialized',

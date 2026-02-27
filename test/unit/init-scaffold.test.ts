@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { scaffoldWorkspace } from '../../src/cli/commands/init.js';
+import { scaffoldWorkspace, detectInstallMethod } from '../../src/cli/commands/init.js';
+import { loadConfig } from '../../src/core/config.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'ctxify-scaffold-'));
@@ -167,5 +168,72 @@ describe('scaffoldWorkspace', () => {
     });
 
     expect(result.config).toBe(join(dir, 'ctx.yaml'));
+  });
+
+  it('persists install_method in ctx.yaml when provided', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      install_method: 'global',
+    });
+
+    const config = loadConfig(join(dir, 'ctx.yaml'));
+    expect(config.install_method).toBe('global');
+  });
+
+  it('persists skills map in ctx.yaml when agents installed', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude', 'codex'],
+    });
+
+    const config = loadConfig(join(dir, 'ctx.yaml'));
+    expect(config.skills).toBeDefined();
+    expect(config.skills!['claude']).toBe('.claude/skills/ctxify/SKILL.md');
+    expect(config.skills!['codex']).toBe('AGENTS.md');
+  });
+
+  it('omits skills from ctx.yaml when no agents installed', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+    });
+
+    const config = loadConfig(join(dir, 'ctx.yaml'));
+    expect(config.skills).toBeUndefined();
+  });
+});
+
+describe('detectInstallMethod', () => {
+  it('detects npx from _npx in argv1', () => {
+    expect(detectInstallMethod('/usr/local/lib/node_modules/.bin/../_npx/ctxify')).toBe('npx');
+  });
+
+  it('detects local from node_modules in argv1', () => {
+    expect(detectInstallMethod('/home/user/project/node_modules/.bin/ctxify')).toBe('local');
+  });
+
+  it('detects global otherwise', () => {
+    expect(detectInstallMethod('/usr/local/bin/ctxify')).toBe('global');
+  });
+
+  it('detects global for homebrew-style path', () => {
+    expect(detectInstallMethod('/opt/homebrew/bin/ctxify')).toBe('global');
   });
 });
