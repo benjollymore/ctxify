@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffoldWorkspace, detectInstallMethod } from '../../src/cli/commands/init.js';
 import { loadConfig } from '../../src/core/config.js';
-import type { SkillScope } from '../../src/core/config.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'ctxify-scaffold-'));

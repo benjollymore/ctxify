@@ -6,7 +6,6 @@ import {
   loadConfig,
   generateDefaultConfig,
   serializeConfig,
-  type SkillEntry,
 } from '../../src/core/config.js';
 import { ConfigError } from '../../src/core/errors.js';
 

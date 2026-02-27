@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { resolveInteractiveOptions } from '../../src/cli/commands/init-interactive.js';
-import type { SkillScope } from '../../src/core/config.js';
 
 describe('resolveInteractiveOptions', () => {
   it('builds single-repo options from answers', () => {
