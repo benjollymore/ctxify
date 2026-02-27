@@ -114,7 +114,7 @@ When you run `ctxify init`, the installed playbook teaches your agent how to:
 
 **Manifests** (parsed in order, first found wins): package.json, go.mod, pyproject.toml, requirements.txt
 
-**Modes**: single-repo, multi-repo, mono-repo (npm/yarn/pnpm/turborepo workspaces)
+**Modes**: single-repo, multi-repo (multiple repositories in shared directory with `ctxify` run from root directory), mono-repo (npm/yarn/pnpm/turborepo workspaces)
 
 ## Development
 
