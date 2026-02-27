@@ -265,7 +265,6 @@ describe('scaffoldWorkspace', () => {
     expect(config.skills!['claude'].scope).toBe('global');
     expect(config.skills!['claude'].path).toBe('~/.claude/skills/ctxify/SKILL.md');
     // Verify files actually landed in fakeHome, not workspaceRoot
-    const { existsSync } = await import('node:fs');
     expect(existsSync(join(fakeHome, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
   });
 

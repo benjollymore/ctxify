@@ -243,7 +243,7 @@ export function registerInitCommand(program: Command): void {
             .filter(([, c]) => {
               const workspacePath = join(c.destDir, c.primaryFilename);
               const globalPath = c.globalDestDir
-                ? `~/${c.globalDestDir}/${c.primaryFilename}`
+                ? join('~', c.globalDestDir, c.primaryFilename)
                 : null;
               return result.skills_installed!.some(
                 (p) => p === workspacePath || p === globalPath,
