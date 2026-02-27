@@ -43,7 +43,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 
 | File | Purpose |
 |------|---------|
-| `config.ts` | Load/validate/serialize `ctx.yaml`. Types: `CtxConfig`, `OperatingMode` (`single-repo` / `multi-repo` / `mono-repo`), `RepoEntry` |
+| `config.ts` | Load/validate/serialize `ctx.yaml`. Types: `CtxConfig` (includes `skills?: Record<string, string>`, `install_method?: 'global' \| 'local' \| 'npx'`), `OperatingMode` (`single-repo` / `multi-repo` / `mono-repo`), `RepoEntry` |
 | `manifest.ts` | Parse repo manifests (package.json → go.mod → pyproject.toml → requirements.txt). Extract language, framework, deps, entry points, key dirs, file count. Exports `ManifestData`, `parseRepoManifest()` |
 | `validate.ts` | Check shard structural integrity: valid frontmatter, balanced segment markers, TODO detection. Exports `validateShards()`, `collectMdFiles()` |
 | `detect.ts` | Auto-detect operating mode from workspace structure. Exports `autoDetectMode()` |
@@ -53,7 +53,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 
 | File | Purpose |
 |------|---------|
-| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent playbooks. Types: `AgentType` (`'claude' \| 'copilot' \| 'cursor' \| 'codex'`), `ScaffoldOptions` (with `agents?: AgentType[]`), `ScaffoldResult` (with `skills_installed?: string[]`). Flags: `--repos`, `--mono`, `--agent <agents...>`, `--force` |
+| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent playbooks. Types: `AgentType` (`'claude' \| 'copilot' \| 'cursor' \| 'codex'`), `ScaffoldOptions` (with `agents?: AgentType[]`, `install_method?: 'global' \| 'local' \| 'npx'`), `ScaffoldResult` (with `skills_installed?: string[]`). Exports `detectInstallMethod(argv1?)` — detects global/local/npx from `process.argv[1]`. Flags: `--repos`, `--mono`, `--agent <agents...>`, `--force` |
 | `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Multi-select agent checkbox, confirms mode, confirms repos. Returns `ScaffoldOptions` |
 | `status.ts` | JSON status report: index exists, repo list, shard dirs, TODO count |
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
@@ -62,6 +62,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `clean.ts` | Remove .ctxify/ and ctx.yaml from workspace, respects custom outputDir |
 | `domain.ts` | `domain add <repo> <domain>` scaffolds domain file + updates overview.md index. `domain list` scans for domain files. Flags: `--tags`, `--description`, `--repo` |
 | `feedback.ts` | `feedback <repo> --body "..."` appends a correction entry to `repos/{name}/corrections.md`, creating the file if needed. JSON output with `status`, `created_file`, `timestamp` |
+| `upgrade.ts` | `upgrade` upgrades ctxify using the `install_method` from ctx.yaml (global/local/npx) and reinstalls all tracked skills. Exports `runUpgrade(workspaceRoot, opts?)` with injectable `execFn` for testability. `--dry-run` flag shows what would happen. |
 
 ### `src/templates/` — markdown generators
 
@@ -85,6 +86,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `monorepo.ts` | `detectMonoRepo()` — pnpm/yarn/npm/turborepo workspace detection, package glob resolution |
 | `frontmatter.ts` | `parseFrontmatter()` — extract YAML between `---` delimiters at file start |
 | `segments.ts` | `extractSegments()` — extract content between `<!-- tag:attrs -->...<!-- /tag -->` markers, with optional attribute filtering |
+| `version-check.ts` | `checkForUpdate(currentVersion, opts?)` — check npm registry for newer version, cache result for 6h at `~/.ctxify/version-check.json`, cap fetch at 500ms, fail silently. `invalidateVersionCache()` — delete cache after upgrade. |
 
 ### `src/cli/` — CLI utilities
 
@@ -109,6 +111,8 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/domain.test.ts` | Domain template generator, domain add (scaffold, idempotency, validation), domain list |
 | `unit/feedback.test.ts` | Corrections template generator, feedback command (create, append, validation, unknown repo) |
 | `unit/detect.test.ts` | Auto-detect mode: single-repo, multi-repo, mono-repo |
+| `unit/version-check.test.ts` | checkForUpdate: cache hit, cache miss, TTL expiry, timeout, error handling; invalidateVersionCache |
+| `unit/upgrade.test.ts` | runUpgrade: dry-run, per-method npm args, skills reinstall, no ctx.yaml fallback |
 | `integration/init.test.ts` | Full init flow: single/multi/mono-repo scaffolding |
 | `integration/git-commands.test.ts` | Multi-repo branch and commit coordination |
 | `integration/status.test.ts` | Status without config, status after init |
