@@ -41,6 +41,10 @@ For each `repos/{name}/overview.md`:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Annotate pre-filled key directories. Describe the request/data flow (e.g., "Route → Validation → Controller → Service → Model"). Note DI approach, ORM, testing framework. 10-20 lines total.
 - **Domain files**: Identify 3-5 domains to document. For each, run `ctxify domain add <repo> <domain> --tags tag1,tag2` — this scaffolds the file and registers it in the domain index. Do NOT list domains manually without creating their files first.
+- **Anti-patterns**: Only if you spot a systemic issue that would cause real harm (data loss, silent error swallowing in a critical path, missing auth at an obvious boundary). Max 1-2 per repo. See Section 7 for the full bar before logging anything.
+  ```bash
+  ctxify feedback <repo> --type antipattern --body "Description" --source "file.ts:line"
+  ```
 
 ### Pass 2: Create patterns.md for each repo (THE PRIMARY DELIVERABLE)
 
@@ -64,6 +68,8 @@ Content (20-50 lines total):
 
 **Reference over duplication:** Don't include code snippets that will become stale. Use `file:line` references pointing to authoritative source locations. Only use inline code for patterns repeated across many files where no single canonical source exists.
 
+If you encounter a qualifying anti-pattern (see Section 7 bar), log it. Most code smells do not qualify.
+
 ### Pass 3: Fill domain file TODOs
 
 Domain files were scaffolded in Pass 1 via `ctxify domain add`. Now fill their TODOs.
@@ -75,6 +81,8 @@ For each `repos/{name}/{domain}.md`, read entry points + 2-3 relevant source fil
 - **Cross-repo**: How this domain spans repos (e.g., backend model + frontend form)
 
 Keep each file 50-150 lines total.
+
+If you encounter a qualifying anti-pattern (see Section 7 bar), log it. Most code smells do not qualify.
 
 ### Pass 4: Fill index.md
 
@@ -106,6 +114,8 @@ These rules are hard constraints, not suggestions:
 9. **Do NOT inline patterns in overview.md.** Patterns belong in `patterns.md`. Overview is the hub, not the content.
 
 10. **Do NOT list a domain in overview.md without creating it.** In Pass 1, run `ctxify domain add <repo> <domain>` for every domain you identify. `ctxify validate` will error if domain files are referenced but missing.
+
+11. **Do NOT log anti-patterns liberally.** Apply the three-question bar from Section 7 strictly. Max 2 per repo. FIXME comments, style issues, and isolated oddities do not qualify.
 
 ## 5. Updating
 
@@ -159,3 +169,36 @@ ctxify feedback <repo> --body "## Wrong assumption about auth middleware
 corrections.md is loaded alongside overview.md before every task.
 
 **Do NOT file for:** stale TODOs (fill them), typos (fix directly), new patterns (add to patterns.md).
+
+## Anti-patterns (proactive)
+
+Unlike corrections (which fix wrong context), anti-patterns are proactive — log issues a future agent should know before touching the area, even when everything else is working.
+
+**The bar: ask yourself all three questions before logging.**
+1. **Broad impact** — does this affect multiple callers, flows, or engineers (not just one isolated spot)?
+2. **Learnable** — would a future agent know to avoid this, or fix it, based on the logged entry?
+3. **Real harm** — does this cause actual bugs, data loss, silent failures, or security issues in production?
+
+If the answer to any of the three is no, do not log it.
+
+**What qualifies (examples that meet all three):**
+- Silent catch that swallows errors in a payment or auth critical path
+- Missing auth check at a route boundary that many features rely on
+- Sync/blocking call inside an async hot path that will cause timeouts under load
+- Retry logic that double-charges or double-writes without idempotency guard
+
+**Do NOT log:**
+- FIXME/HACK/XXX comments (they're already in the source — the agent can read them)
+- Style inconsistencies or naming issues
+- Isolated one-off oddities that don't recur elsewhere
+- Anything a future agent can spot in 30 seconds by reading the file
+- Technical debt that is known and accepted
+
+**Hard cap: max 2 per repo per session.** If you find yourself logging more, you're cataloging code smells, not capturing high-signal context. Stop.
+
+```bash
+ctxify feedback api \
+  --type antipattern \
+  --body "Silent catch swallows payment errors — future agents: never add catch-all here without re-throwing" \
+  --source "src/payments/handler.ts:42"
+```
