@@ -308,8 +308,256 @@ type: overview
       'utf-8',
     );
 
+    // Create the referenced domain file so the existence check passes
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'payments.md'),
+      `---
+repo: api
+type: domain
+domain: payments
+---
+
+# Payments
+`,
+      'utf-8',
+    );
+
     const result = validateShards(tmpDir);
 
     expect(result.errors).toHaveLength(0);
+  });
+
+  describe('domain file existence', () => {
+    it('errors when domain file referenced in overview.md is missing', () => {
+      const ctxDir = join(tmpDir, '.ctxify');
+      mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+      writeFileSync(
+        join(ctxDir, 'index.md'),
+        `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'api', 'overview.md'),
+        `---
+repo: api
+type: overview
+---
+
+# api
+
+<!-- domain-index -->
+- \`auth.md\` — Authentication
+<!-- /domain-index -->
+`,
+        'utf-8',
+      );
+
+      const result = validateShards(tmpDir);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.includes('auth.md'))).toBe(true);
+    });
+
+    it('passes when all referenced domain files exist', () => {
+      const ctxDir = join(tmpDir, '.ctxify');
+      mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+      writeFileSync(
+        join(ctxDir, 'index.md'),
+        `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'api', 'overview.md'),
+        `---
+repo: api
+type: overview
+---
+
+# api
+
+<!-- domain-index -->
+- \`auth.md\` — Authentication
+<!-- /domain-index -->
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'api', 'auth.md'),
+        `---
+repo: api
+type: domain
+domain: auth
+---
+
+# Auth
+`,
+        'utf-8',
+      );
+
+      const result = validateShards(tmpDir);
+
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('ignores template placeholder entries', () => {
+      const ctxDir = join(tmpDir, '.ctxify');
+      mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+      writeFileSync(
+        join(ctxDir, 'index.md'),
+        `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'api', 'overview.md'),
+        `---
+repo: api
+type: overview
+---
+
+# api
+
+<!-- domain-index -->
+- \`{domain}.md\` — domain description
+<!-- /domain-index -->
+`,
+        'utf-8',
+      );
+
+      const result = validateShards(tmpDir);
+
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('passes when overview.md has no domain-index section', () => {
+      const ctxDir = join(tmpDir, '.ctxify');
+      mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+      writeFileSync(
+        join(ctxDir, 'index.md'),
+        `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'api', 'overview.md'),
+        `---
+repo: api
+type: overview
+---
+
+# api
+
+No domain index here.
+`,
+        'utf-8',
+      );
+
+      const result = validateShards(tmpDir);
+
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('errors for each missing file across multiple repos', () => {
+      const ctxDir = join(tmpDir, '.ctxify');
+      mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+      mkdirSync(join(ctxDir, 'repos', 'frontend'), { recursive: true });
+
+      writeFileSync(
+        join(ctxDir, 'index.md'),
+        `---
+ctxify: "2.0"
+mode: multi-repo
+repos:
+  - api
+  - frontend
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'api', 'overview.md'),
+        `---
+repo: api
+type: overview
+---
+
+# api
+
+<!-- domain-index -->
+- \`auth.md\` — Authentication
+<!-- /domain-index -->
+`,
+        'utf-8',
+      );
+
+      writeFileSync(
+        join(ctxDir, 'repos', 'frontend', 'overview.md'),
+        `---
+repo: frontend
+type: overview
+---
+
+# frontend
+
+<!-- domain-index -->
+- \`dashboard.md\` — Dashboard
+<!-- /domain-index -->
+`,
+        'utf-8',
+      );
+
+      const result = validateShards(tmpDir);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.includes('auth.md'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('dashboard.md'))).toBe(true);
+    });
   });
 });
