@@ -18,10 +18,10 @@ Two roles: **ctxify scaffolds**, **your agent fills**.
 
 ```bash
 # Install globally
-npm install -g ctxify
+npm install -g @benjollymore/ctxify
 
 # Or run directly with npx
-npx ctxify init
+npx @benjollymore/ctxify init
 ```
 
 ```bash

@@ -1,5 +1,5 @@
 {
-  "name": "ctxify",
+  "name": "@benjollymore/ctxify",
   "version": "0.3.2",
   "description": "Turbocharged workspace context for AI coding agents",
   "type": "module",
