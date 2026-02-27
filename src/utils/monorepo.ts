@@ -4,7 +4,7 @@ import { glob } from 'glob';
 import { readJsonFile, readFileIfExists } from './fs.js';
 import { parseYaml } from './yaml.js';
 
-export interface WorkspacePackage {
+interface WorkspacePackage {
   name: string;
   path: string;         // absolute
   relativePath: string; // relative to root
@@ -12,7 +12,7 @@ export interface WorkspacePackage {
   description?: string;
 }
 
-export interface MonoRepoDetection {
+interface MonoRepoDetection {
   detected: boolean;
   manager: 'npm' | 'yarn' | 'pnpm' | 'turborepo' | null;
   packageGlobs: string[];

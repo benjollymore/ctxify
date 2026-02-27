@@ -6,7 +6,7 @@ import type { RepoEntry, OperatingMode, MonoRepoOptions } from '../../core/confi
 import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { autoDetectMode } from '../../core/detect.js';
-import { findGitRoots, getHeadSha } from '../../utils/git.js';
+import { findGitRoots } from '../../utils/git.js';
 import type { RepoTemplateData } from '../../templates/index-md.js';
 
 import { generateIndexTemplate } from '../../templates/index-md.js';
@@ -53,17 +53,6 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
       ...manifest,
     };
   });
-
-  // Get git SHAs (best-effort)
-  const shas: Record<string, string> = {};
-  for (const entry of repos) {
-    try {
-      const repoAbsPath = resolve(workspaceRoot, entry.path);
-      shas[entry.name] = await getHeadSha(repoAbsPath);
-    } catch {
-      // Not all repos may have git
-    }
-  }
 
   // Generate all templates and write to .ctxify/
   const outputRoot = join(workspaceRoot, outputDir);
@@ -186,7 +175,17 @@ export function registerInitCommand(program: Command): void {
           }
         }
 
-        const agents = options?.agent as AgentType[] | undefined;
+        let agents: AgentType[] | undefined;
+        if (options?.agent) {
+          const validAgents = Object.keys(AGENT_CONFIGS);
+          for (const name of options.agent) {
+            if (!validAgents.includes(name)) {
+              console.log(JSON.stringify({ error: `Unknown agent "${name}". Valid agents: ${validAgents.join(', ')}` }));
+              process.exit(1);
+            }
+          }
+          agents = options.agent as AgentType[];
+        }
         scaffoldOptions = { workspaceRoot, mode, repos, monoRepoOptions, force: options?.force, agents };
       }
 
@@ -229,7 +228,7 @@ function ensureGitignore(workspaceRoot: string, outputDir: string): void {
   }
 }
 
-function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
+export function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
   const gitRoots = findGitRoots(workspaceRoot, 3);
   const workspaceAbs = resolve(workspaceRoot);
   const subRepos = gitRoots.filter((root) => resolve(root) !== workspaceAbs);

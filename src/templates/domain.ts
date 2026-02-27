@@ -2,7 +2,7 @@ import { dumpYaml } from '../utils/yaml.js';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-export interface DomainTemplateData {
+interface DomainTemplateData {
   repo: string;
   domain: string;
   tags?: string[];
