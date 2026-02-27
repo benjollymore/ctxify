@@ -10,7 +10,15 @@ function makeTmpDir(): string {
 }
 
 function writeCtxYaml(dir: string, overrides: Record<string, unknown> = {}): void {
-  const config = generateDefaultConfig(dir, [], 'single-repo', undefined, undefined, undefined, undefined);
+  const config = generateDefaultConfig(
+    dir,
+    [],
+    'single-repo',
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+  );
   const raw = { ...JSON.parse(JSON.stringify(config)), ...overrides };
   writeFileSync(join(dir, 'ctx.yaml'), serializeConfig(raw as typeof config), 'utf-8');
 }

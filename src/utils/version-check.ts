@@ -41,7 +41,11 @@ function readCache(cacheFile: string): VersionCache | null {
 function writeCache(cacheFile: string, latest: string): void {
   try {
     mkdirSync(dirname(cacheFile), { recursive: true });
-    writeFileSync(cacheFile, JSON.stringify({ checked_at: new Date().toISOString(), latest }), 'utf-8');
+    writeFileSync(
+      cacheFile,
+      JSON.stringify({ checked_at: new Date().toISOString(), latest }),
+      'utf-8',
+    );
   } catch {
     // Non-fatal — cache write failure should not block commands
   }

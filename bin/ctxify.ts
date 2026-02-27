@@ -59,9 +59,7 @@ program.hook('preAction', async () => {
     const hint = process.argv[1]?.includes('_npx')
       ? `run npx @benjollymore/ctxify@latest to use the latest version`
       : `run ctxify upgrade to update`;
-    console.error(
-      `warn: ctxify is out of date (latest v${latest}, on v${pkg.version}). ${hint}`,
-    );
+    console.error(`warn: ctxify is out of date (latest v${latest}, on v${pkg.version}). ${hint}`);
   }
 });
 

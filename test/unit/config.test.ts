@@ -312,14 +312,9 @@ monoRepo:
   describe('skills and install_method fields', () => {
     it('roundtrips skills field through serialize and load', () => {
       const repos = [{ path: '.', name: 'app' }];
-      const config = generateDefaultConfig(
-        '/tmp/ws',
-        repos,
-        'single-repo',
-        undefined,
-        undefined,
-        { claude: '.claude/skills/ctxify/SKILL.md' },
-      );
+      const config = generateDefaultConfig('/tmp/ws', repos, 'single-repo', undefined, undefined, {
+        claude: '.claude/skills/ctxify/SKILL.md',
+      });
 
       const serialized = serializeConfig(config);
       const configPath = join(tmpDir, 'ctx-skills.yaml');
