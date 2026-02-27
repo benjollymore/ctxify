@@ -217,7 +217,9 @@ function validateRelationships(raw: unknown): Relationship[] {
 function validateSkills(raw: unknown): Record<string, SkillEntry> | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new ConfigError('"skills" must be an object mapping agent names to paths or skill entries');
+    throw new ConfigError(
+      '"skills" must be an object mapping agent names to paths or skill entries',
+    );
   }
   const o = raw as Record<string, unknown>;
   const result: Record<string, SkillEntry> = {};

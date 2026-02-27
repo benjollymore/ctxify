@@ -20,7 +20,7 @@ export interface UpgradeResult {
 export interface UpgradeOptions {
   dryRun?: boolean;
   execFn?: (args: string[], opts?: { cwd?: string }) => void;
-  homeDir?: string;  // injectable for testing global reinstall
+  homeDir?: string; // injectable for testing global reinstall
 }
 
 export async function runUpgrade(

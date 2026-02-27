@@ -2,7 +2,13 @@ import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
-import type { RepoEntry, OperatingMode, MonoRepoOptions, SkillScope, SkillEntry } from '../../core/config.js';
+import type {
+  RepoEntry,
+  OperatingMode,
+  MonoRepoOptions,
+  SkillScope,
+  SkillEntry,
+} from '../../core/config.js';
 import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { autoDetectMode } from '../../core/detect.js';
@@ -245,9 +251,7 @@ export function registerInitCommand(program: Command): void {
               const globalPath = c.globalDestDir
                 ? join('~', c.globalDestDir, c.primaryFilename)
                 : null;
-              return result.skills_installed!.some(
-                (p) => p === workspacePath || p === globalPath,
-              );
+              return result.skills_installed!.some((p) => p === workspacePath || p === globalPath);
             })
             .map(([, c]) => c.nextStepHint);
           if (hints.length > 0) {

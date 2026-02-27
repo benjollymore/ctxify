@@ -140,9 +140,7 @@ export function installSkill(
   }
 
   if (scope === 'global' && !config.globalDestDir) {
-    throw new Error(
-      `Agent "${agent}" does not support global scope installation.`,
-    );
+    throw new Error(`Agent "${agent}" does not support global scope installation.`);
   }
 
   const skillFiles = listSkillSourceFiles();

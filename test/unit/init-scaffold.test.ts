@@ -201,7 +201,10 @@ describe('scaffoldWorkspace', () => {
 
     const config = loadConfig(join(dir, 'ctx.yaml'));
     expect(config.skills).toBeDefined();
-    expect(config.skills!['claude']).toEqual({ path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' });
+    expect(config.skills!['claude']).toEqual({
+      path: '.claude/skills/ctxify/SKILL.md',
+      scope: 'workspace',
+    });
     expect(config.skills!['codex']).toEqual({ path: 'AGENTS.md', scope: 'workspace' });
   });
 
