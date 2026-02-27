@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { loadConfig } from '../../core/config.js';
+import type { SkillEntry } from '../../core/config.js';
 import { installSkill } from '../install-skill.js';
 import { invalidateVersionCache } from '../../utils/version-check.js';
 
@@ -30,7 +31,7 @@ export async function runUpgrade(
   // Load ctx.yaml if available to get install_method and skills
   const configPath = join(workspaceRoot, 'ctx.yaml');
   let install_method: 'global' | 'local' | 'npx' = 'global';
-  let skillsMap: Record<string, string> = {};
+  let skillsMap: Record<string, SkillEntry> = {};
 
   if (existsSync(configPath)) {
     try {
@@ -67,7 +68,7 @@ export async function runUpgrade(
       install_method,
       npm_command: npmArgs,
       ...(npx_note ? { npx_note } : {}),
-      skills_reinstalled: Object.values(skillsMap),
+      skills_reinstalled: Object.values(skillsMap).map((e) => e.path),
     };
   }
 

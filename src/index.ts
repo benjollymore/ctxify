@@ -6,6 +6,8 @@ export type {
   ContextOptions,
   OperatingMode,
   MonoRepoOptions,
+  SkillScope,
+  SkillEntry,
 } from './core/config.js';
 export { loadConfig, generateDefaultConfig, serializeConfig } from './core/config.js';
 

@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { loadConfig, generateDefaultConfig, serializeConfig } from '../../src/core/config.js';
+import {
+  loadConfig,
+  generateDefaultConfig,
+  serializeConfig,
+  type SkillEntry,
+} from '../../src/core/config.js';
 import { ConfigError } from '../../src/core/errors.js';
 
 describe('config', () => {
@@ -313,7 +318,7 @@ monoRepo:
     it('roundtrips skills field through serialize and load', () => {
       const repos = [{ path: '.', name: 'app' }];
       const config = generateDefaultConfig('/tmp/ws', repos, 'single-repo', undefined, undefined, {
-        claude: '.claude/skills/ctxify/SKILL.md',
+        claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' },
       });
 
       const serialized = serializeConfig(config);
@@ -321,7 +326,9 @@ monoRepo:
       writeFileSync(configPath, serialized, 'utf-8');
 
       const loaded = loadConfig(configPath);
-      expect(loaded.skills).toEqual({ claude: '.claude/skills/ctxify/SKILL.md' });
+      expect(loaded.skills).toEqual({
+        claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' },
+      });
     });
 
     it('roundtrips install_method field through serialize and load', () => {
@@ -386,6 +393,83 @@ install_method: kubernetes
       writeFileSync(configPath, yaml, 'utf-8');
       expect(() => loadConfig(configPath)).toThrow(ConfigError);
       expect(() => loadConfig(configPath)).toThrow(/install_method/);
+    });
+
+    it('roundtrips skills field with new SkillEntry format', () => {
+      const repos = [{ path: '.', name: 'app' }];
+      const config = generateDefaultConfig('/tmp/ws', repos, 'single-repo', undefined, undefined, {
+        claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' },
+      });
+
+      const serialized = serializeConfig(config);
+      const configPath = join(tmpDir, 'ctx-skill-entry.yaml');
+      writeFileSync(configPath, serialized, 'utf-8');
+
+      const loaded = loadConfig(configPath);
+      expect(loaded.skills).toEqual({
+        claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' },
+      });
+    });
+
+    it('normalizes old string skills format to SkillEntry with scope workspace', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+skills:
+  claude: ".claude/skills/ctxify/SKILL.md"
+`;
+      const configPath = join(tmpDir, 'ctx-old-skills.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.skills).toEqual({
+        claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' },
+      });
+    });
+
+    it('accepts global scope in SkillEntry', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+skills:
+  claude:
+    path: ".claude/skills/ctxify/SKILL.md"
+    scope: global
+`;
+      const configPath = join(tmpDir, 'ctx-global-scope.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.skills).toEqual({
+        claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'global' },
+      });
+    });
+
+    it('rejects invalid scope value in SkillEntry', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+skills:
+  claude:
+    path: ".claude/skills/ctxify/SKILL.md"
+    scope: invalid
+`;
+      const configPath = join(tmpDir, 'ctx-invalid-scope.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      expect(() => loadConfig(configPath)).toThrow(ConfigError);
+      expect(() => loadConfig(configPath)).toThrow(/scope/);
+    });
+
+    it('rejects SkillEntry missing path field', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+skills:
+  claude:
+    scope: workspace
+`;
+      const configPath = join(tmpDir, 'ctx-missing-path.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      expect(() => loadConfig(configPath)).toThrow(ConfigError);
+      expect(() => loadConfig(configPath)).toThrow(/path/);
     });
   });
 });

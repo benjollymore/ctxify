@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
-import type { RepoEntry, OperatingMode, MonoRepoOptions } from '../../core/config.js';
+import type { RepoEntry, OperatingMode, MonoRepoOptions, SkillEntry } from '../../core/config.js';
 import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { autoDetectMode } from '../../core/detect.js';
@@ -47,12 +47,12 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
 
   // Install skills first so we can persist the skills map in ctx.yaml
   const skills_installed: string[] = [];
-  const skillsMap: Record<string, string> = {};
+  const skillsMap: Record<string, SkillEntry> = {};
   if (options.agents) {
     for (const agent of options.agents) {
       const dest = installSkill(workspaceRoot, agent);
       skills_installed.push(dest);
-      skillsMap[agent] = dest;
+      skillsMap[agent] = { path: dest, scope: 'workspace' };
     }
   }
 
