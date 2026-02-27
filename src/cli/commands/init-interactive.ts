@@ -2,7 +2,7 @@ import { select, confirm, checkbox } from '@inquirer/prompts';
 import { basename } from 'node:path';
 import { autoDetectMode } from '../../core/detect.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
-import type { OperatingMode, RepoEntry, MonoRepoOptions } from '../../core/config.js';
+import type { SkillScope, OperatingMode, RepoEntry, MonoRepoOptions } from '../../core/config.js';
 import type { AgentType, ScaffoldOptions } from './init.js';
 import { buildMultiRepoEntries } from './init.js';
 import { AGENT_CONFIGS } from '../install-skill.js';
@@ -10,6 +10,7 @@ import { AGENT_CONFIGS } from '../install-skill.js';
 export interface InteractiveAnswers {
   workspaceRoot: string;
   agents?: AgentType[];
+  agentScopes?: Record<string, SkillScope>;
   confirmedMode: OperatingMode;
   repos: RepoEntry[];
   monoRepoOptions?: MonoRepoOptions;
@@ -26,6 +27,7 @@ export function resolveInteractiveOptions(answers: InteractiveAnswers): Scaffold
     repos: answers.repos,
     monoRepoOptions: answers.monoRepoOptions,
     agents: answers.agents,
+    agentScopes: answers.agentScopes,
   };
 }
 
@@ -45,6 +47,34 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     choices: agentChoices,
   });
   const agents: AgentType[] | undefined = selectedAgents.length > 0 ? selectedAgents : undefined;
+
+  // Step 1.5: Per-agent scope selection (only for agents that support global install)
+  let agentScopes: Record<string, SkillScope> | undefined;
+  if (agents && agents.length > 0) {
+    const scopeMap: Record<string, SkillScope> = {};
+    for (const agent of agents) {
+      const agentCfg = AGENT_CONFIGS[agent];
+      if (agentCfg.globalDestDir) {
+        const scope = await select<SkillScope>({
+          message: `Where should ${agentCfg.displayName} skills be installed?`,
+          choices: [
+            {
+              name: `This workspace (${agentCfg.destDir}/)`,
+              value: 'workspace' as const,
+            },
+            {
+              name: `Global (~/${agentCfg.globalDestDir}/ — available in all projects)`,
+              value: 'global' as const,
+            },
+          ],
+        });
+        scopeMap[agent] = scope;
+      } else {
+        scopeMap[agent] = 'workspace';
+      }
+    }
+    agentScopes = scopeMap;
+  }
 
   // Step 2: Auto-detect and confirm mode
   const detection = autoDetectMode(workspaceRoot);
@@ -117,6 +147,7 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
   return resolveInteractiveOptions({
     workspaceRoot,
     agents,
+    agentScopes,
     confirmedMode: mode,
     repos,
     monoRepoOptions,

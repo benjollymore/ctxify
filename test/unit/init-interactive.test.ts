@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveInteractiveOptions } from '../../src/cli/commands/init-interactive.js';
+import type { SkillScope } from '../../src/core/config.js';
 
 describe('resolveInteractiveOptions', () => {
   it('builds single-repo options from answers', () => {
@@ -90,5 +91,28 @@ describe('resolveInteractiveOptions', () => {
     });
 
     expect(result.agents).toEqual(['claude', 'cursor', 'copilot']);
+  });
+
+  it('passes through agentScopes when provided', () => {
+    const result = resolveInteractiveOptions({
+      workspaceRoot: '/tmp/test',
+      agents: ['claude', 'cursor'],
+      agentScopes: { claude: 'global', cursor: 'workspace' },
+      confirmedMode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+    });
+
+    expect(result.agentScopes).toEqual({ claude: 'global', cursor: 'workspace' });
+  });
+
+  it('sets agentScopes to undefined when not provided', () => {
+    const result = resolveInteractiveOptions({
+      workspaceRoot: '/tmp/test',
+      agents: ['claude'],
+      confirmedMode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+    });
+
+    expect(result.agentScopes).toBeUndefined();
   });
 });
