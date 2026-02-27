@@ -42,6 +42,8 @@ export interface CtxConfig {
   repos: RepoEntry[];
   relationships: Relationship[];
   options: ContextOptions;
+  skills?: Record<string, string>;
+  install_method?: 'global' | 'local' | 'npx';
 }
 
 const DEFAULT_OPTIONS: ContextOptions = {
@@ -101,6 +103,8 @@ function validateConfig(raw: unknown): CtxConfig {
   const repos = validateRepos(obj.repos);
   const relationships = validateRelationships(obj.relationships);
   const options = validateOptions(obj.options);
+  const skills = validateSkills(obj.skills);
+  const install_method = validateInstallMethod(obj.install_method);
 
   return {
     version: obj.version,
@@ -110,6 +114,8 @@ function validateConfig(raw: unknown): CtxConfig {
     repos,
     relationships,
     options,
+    ...(skills ? { skills } : {}),
+    ...(install_method ? { install_method } : {}),
   };
 }
 
@@ -201,6 +207,32 @@ function validateRelationships(raw: unknown): Relationship[] {
   });
 }
 
+function validateSkills(raw: unknown): Record<string, string> | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new ConfigError('"skills" must be an object mapping agent names to paths');
+  }
+  const o = raw as Record<string, unknown>;
+  const result: Record<string, string> = {};
+  for (const [key, val] of Object.entries(o)) {
+    if (typeof val !== 'string') {
+      throw new ConfigError(`skills.${key} must be a string`);
+    }
+    result[key] = val;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function validateInstallMethod(raw: unknown): 'global' | 'local' | 'npx' | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (raw !== 'global' && raw !== 'local' && raw !== 'npx') {
+    throw new ConfigError(
+      `"install_method" must be one of: global, local, npx (got "${String(raw)}")`,
+    );
+  }
+  return raw;
+}
+
 function validateOptions(raw: unknown): ContextOptions {
   if (raw === undefined || raw === null) return { ...DEFAULT_OPTIONS };
   if (typeof raw !== 'object') {
@@ -226,6 +258,8 @@ export function generateDefaultConfig(
   mode: OperatingMode = 'multi-repo',
   monoRepoOptions?: MonoRepoOptions,
   relationships?: Relationship[],
+  skills?: Record<string, string>,
+  install_method?: 'global' | 'local' | 'npx',
 ): CtxConfig {
   return {
     version: '1',
@@ -235,6 +269,8 @@ export function generateDefaultConfig(
     repos,
     relationships: relationships ?? [],
     options: { ...DEFAULT_OPTIONS },
+    ...(skills ? { skills } : {}),
+    ...(install_method ? { install_method } : {}),
   };
 }
 

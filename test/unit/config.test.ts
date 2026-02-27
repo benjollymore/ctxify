@@ -308,4 +308,84 @@ monoRepo:
       expect(loaded.monoRepo!.packageGlobs).toEqual(['packages/*']);
     });
   });
+
+  describe('skills and install_method fields', () => {
+    it('roundtrips skills field through serialize and load', () => {
+      const repos = [{ path: '.', name: 'app' }];
+      const config = generateDefaultConfig('/tmp/ws', repos, 'single-repo', undefined, undefined, {
+        claude: '.claude/skills/ctxify/SKILL.md',
+      });
+
+      const serialized = serializeConfig(config);
+      const configPath = join(tmpDir, 'ctx-skills.yaml');
+      writeFileSync(configPath, serialized, 'utf-8');
+
+      const loaded = loadConfig(configPath);
+      expect(loaded.skills).toEqual({ claude: '.claude/skills/ctxify/SKILL.md' });
+    });
+
+    it('roundtrips install_method field through serialize and load', () => {
+      const config = generateDefaultConfig(
+        '/tmp/ws',
+        [],
+        'single-repo',
+        undefined,
+        undefined,
+        undefined,
+        'global',
+      );
+
+      const serialized = serializeConfig(config);
+      const configPath = join(tmpDir, 'ctx-install-method.yaml');
+      writeFileSync(configPath, serialized, 'utf-8');
+
+      const loaded = loadConfig(configPath);
+      expect(loaded.install_method).toBe('global');
+    });
+
+    it('accepts all valid install_method values', () => {
+      for (const method of ['global', 'local', 'npx'] as const) {
+        const config = generateDefaultConfig(
+          '/tmp/ws',
+          [],
+          'single-repo',
+          undefined,
+          undefined,
+          undefined,
+          method,
+        );
+        const serialized = serializeConfig(config);
+        const configPath = join(tmpDir, `ctx-${method}.yaml`);
+        writeFileSync(configPath, serialized, 'utf-8');
+        const loaded = loadConfig(configPath);
+        expect(loaded.install_method).toBe(method);
+      }
+    });
+
+    it('both fields are optional — old ctx.yaml without them loads fine', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+repos: []
+relationships: []
+`;
+      const configPath = join(tmpDir, 'ctx-no-new-fields.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.skills).toBeUndefined();
+      expect(config.install_method).toBeUndefined();
+    });
+
+    it('rejects invalid install_method value', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+install_method: kubernetes
+`;
+      const configPath = join(tmpDir, 'ctx-bad-method.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      expect(() => loadConfig(configPath)).toThrow(ConfigError);
+      expect(() => loadConfig(configPath)).toThrow(/install_method/);
+    });
+  });
 });
