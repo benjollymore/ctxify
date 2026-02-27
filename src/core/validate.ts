@@ -12,7 +12,7 @@ export interface ValidationResult {
 
 // ── Supported segment tags ─────────────────────────────────────────────
 
-const SEGMENT_TAGS = ['endpoint', 'type', 'env', 'model', 'question', 'domain-index'];
+const SEGMENT_TAGS = ['endpoint', 'type', 'env', 'model', 'question', 'domain-index', 'correction'];
 
 // ── Public API ─────────────────────────────────────────────────────────
 
@@ -73,7 +73,9 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
  *   -->            ← standalone closing on its own line
  */
 function stripTodoBlocks(content: string): string {
-  return content.replace(/<!-- TODO:[\s\S]*?\n-->/g, '');
+  // Only match multi-line TODO blocks where --> is NOT on the same line as <!-- TODO:
+  // The negative lookahead (?:(?!-->).)* ensures we don't span past a single-line TODO's -->
+  return content.replace(/<!-- TODO:(?:(?!-->).)*\n[\s\S]*?\n-->/g, '');
 }
 
 export function collectMdFiles(dir: string): string[] {

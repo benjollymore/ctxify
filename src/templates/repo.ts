@@ -110,6 +110,9 @@ After reading the codebase, create these sibling files in this directory:
 Include: route/controller structure, validation approach, testing patterns, naming
 conventions, gotchas and tips. 20-50 lines with brief code examples.
 
+**\`corrections.md\`** — Agent-logged corrections (created by \`ctxify feedback\`).
+Always loaded — prevents repeating past mistakes.
+
 **Domain files** — One \`{domain}.md\` per complex domain area (3-5 domains).
 Each covers: key concepts, workflow/status flows, key files (5-10 with descriptions),
 domain-specific patterns, cross-repo interactions. 50-150 lines each.

@@ -10,7 +10,7 @@ The key insight: mechanical extraction (parsing package.json, counting files, de
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 140 tests, 16 files
+npm test             # vitest run — 151 tests, 17 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -25,7 +25,7 @@ npx vitest run test/unit/validate.test.ts
 ```
 bin/ctxify.ts                    CLI entry (Commander.js, registers commands)
     ↓
-src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain)
+src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain, feedback)
     ↓
 src/core/*.ts                    Business logic (config, manifest, validate, detect)
 src/templates/*.ts               Markdown template generators
@@ -59,6 +59,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `commit.ts` | Commit across all repos with changes (multi-repo only) |
 | `clean.ts` | Remove .ctxify/ and ctx.yaml from workspace, respects custom outputDir |
 | `domain.ts` | `domain add <repo> <domain>` scaffolds domain file + updates overview.md index. `domain list` scans for domain files. Flags: `--tags`, `--description`, `--repo` |
+| `feedback.ts` | `feedback <repo> --body "..."` appends a correction entry to `repos/{name}/corrections.md`, creating the file if needed. JSON output with `status`, `created_file`, `timestamp` |
 
 ### `src/templates/` — markdown generators
 
@@ -69,6 +70,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `index-md.ts` | `.ctxify/index.md` — workspace overview with frontmatter, repo table, relationship/command TODOs |
 | `repo.ts` | `.ctxify/repos/{name}/overview.md` — lightweight hub: curated dirs, essential scripts, context file index pointing to patterns.md + domain files. Exports `filterEssentialScripts()` |
 | `domain.ts` | `.ctxify/repos/{name}/{domain}.md` — domain file template with frontmatter and TODO placeholders. Exports `generateDomainTemplate()` |
+| `corrections.ts` | `.ctxify/repos/{name}/corrections.md` — corrections file template with frontmatter. Exports `generateCorrectionsTemplate()`, `formatCorrectionEntry()` |
 
 ### `src/utils/` — shared utilities
 
@@ -103,6 +105,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/install-skill.test.ts` | Skill installer: copy, version header, directory creation, overwrite |
 | `unit/init-interactive.test.ts` | resolveInteractiveOptions: mode mapping, agent pass-through |
 | `unit/domain.test.ts` | Domain template generator, domain add (scaffold, idempotency, validation), domain list |
+| `unit/feedback.test.ts` | Corrections template generator, feedback command (create, append, validation, unknown repo) |
 | `unit/detect.test.ts` | Auto-detect mode: single-repo, multi-repo, mono-repo |
 | `integration/init.test.ts` | Full init flow: single/multi/mono-repo scaffolding |
 | `integration/git-commands.test.ts` | Multi-repo branch and commit coordination |
@@ -147,7 +150,7 @@ HTML comments invisible to markdown renderers, parseable by `extractSegments()`:
 <!-- /endpoint -->
 ```
 
-Tags: `endpoint`, `type`, `env`, `model`, `question`, `domain-index`. Attributes are colon-separated after the tag name.
+Tags: `endpoint`, `type`, `env`, `model`, `question`, `domain-index`, `correction`. Attributes are colon-separated after the tag name.
 
 ### YAML frontmatter for structured metadata
 
@@ -201,6 +204,7 @@ After `ctxify init`, the `.ctxify/` directory contains:
 └── repos/
     └── {name}/
         ├── overview.md         # Repo hub (~30-40 lines): description, architecture, commands, context file index
+        ├── corrections.md      # Agent-logged corrections (created by ctxify feedback, always loaded)
         └── (agent creates after reading source:)
             ├── patterns.md     # How to build features — the primary deliverable
             └── {domain}.md     # Domain deep dives (one per complex area)

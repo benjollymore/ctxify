@@ -205,7 +205,7 @@ export function registerDomainCommand(program: Command): void {
         }
 
         for (const entry of entries) {
-          if (!entry.endsWith('.md') || entry === 'overview.md' || entry === 'patterns.md') {
+          if (!entry.endsWith('.md') || entry === 'overview.md' || entry === 'patterns.md' || entry === 'corrections.md') {
             continue;
           }
 
