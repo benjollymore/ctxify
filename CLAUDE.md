@@ -8,6 +8,8 @@ The key insight: mechanical extraction (parsing package.json, counting files, de
 
 ## Quick reference
 
+Default branch is `main`. PRs target `main`.
+
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
 npm test             # vitest run — 151 tests, 17 files
