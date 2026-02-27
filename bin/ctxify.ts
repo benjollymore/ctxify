@@ -26,6 +26,7 @@ import { registerCleanCommand } from '../src/cli/commands/clean.js';
 import { registerDomainCommand } from '../src/cli/commands/domain.js';
 import { registerFeedbackCommand } from '../src/cli/commands/feedback.js';
 import { registerUpgradeCommand } from '../src/cli/commands/upgrade.js';
+import { registerPatternsCommand } from '../src/cli/commands/patterns.js';
 import { checkForUpdate } from '../src/utils/version-check.js';
 
 function findPackageJson(): { version: string } {
@@ -70,6 +71,7 @@ registerBranchCommand(program);
 registerCommitCommand(program);
 registerCleanCommand(program);
 registerDomainCommand(program);
+registerPatternsCommand(program);
 registerFeedbackCommand(program);
 registerUpgradeCommand(program);
 
