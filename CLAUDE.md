@@ -1,6 +1,6 @@
 # ctxify
 
-Context layer for AI coding agents. A turbocharged CLAUDE.md for multi-repo workspaces.
+Turbocharged workspace context for AI coding agents.
 
 ctxify is a **scaffolder + validator**, not an analyzer. `ctxify init` detects repos, parses manifests (language, framework, deps, entry points), and scaffolds `.ctxify/` with CLAUDE.md-style markdown templates. The calling agent reads source code and fills in semantic content: architecture descriptions, coding patterns, domain knowledge, cross-repo relationships. `ctxify validate` checks structural integrity of the filled shards.
 
@@ -10,7 +10,7 @@ The key insight: mechanical extraction (parsing package.json, counting files, de
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 107 tests, 10 files
+npm test             # vitest run — 140 tests, 16 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -57,6 +57,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
 | `branch.ts` | Create branch across all repos (multi-repo only) |
 | `commit.ts` | Commit across all repos with changes (multi-repo only) |
+| `clean.ts` | Remove .ctxify/ and ctx.yaml from workspace, respects custom outputDir |
 | `domain.ts` | `domain add <repo> <domain>` scaffolds domain file + updates overview.md index. `domain list` scans for domain files. Flags: `--tags`, `--description`, `--repo` |
 
 ### `src/templates/` — markdown generators
@@ -67,14 +68,14 @@ Each file exports a pure function that takes mechanical data and returns a markd
 |------|-----------|
 | `index-md.ts` | `.ctxify/index.md` — workspace overview with frontmatter, repo table, relationship/command TODOs |
 | `repo.ts` | `.ctxify/repos/{name}/overview.md` — lightweight hub: curated dirs, essential scripts, context file index pointing to patterns.md + domain files. Exports `filterEssentialScripts()` |
-| `domain.ts` | `.ctxify/repos/{name}/{domain}.md` — domain file template with frontmatter and TODO placeholders. Exports `generateDomainTemplate()`, `DomainTemplateData` |
+| `domain.ts` | `.ctxify/repos/{name}/{domain}.md` — domain file template with frontmatter and TODO placeholders. Exports `generateDomainTemplate()` |
 
 ### `src/utils/` — shared utilities
 
 | File | Purpose |
 |------|---------|
-| `fs.ts` | `readFileIfExists()`, `readJsonFile()`, `isFile()`, `isDirectory()`, `findFiles()`, `listDirs()` |
-| `git.ts` | Read-only git: `isGitRepo()`, `getHeadSha()`, `getDiff()`, `getTrackedFiles()`, `findGitRoots()` |
+| `fs.ts` | `readFileIfExists()`, `readJsonFile()`, `isFile()`, `isDirectory()` |
+| `git.ts` | `findGitRoots()` — synchronous git root discovery |
 | `git-mutate.ts` | Write git: `createBranch()`, `hasChanges()`, `stageAndCommit()`, `getCurrentBranch()` |
 | `yaml.ts` | `parseYaml()`, `dumpYaml()` — wrappers around js-yaml |
 | `monorepo.ts` | `detectMonoRepo()` — pnpm/yarn/npm/turborepo workspace detection, package glob resolution |
@@ -102,8 +103,11 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/install-skill.test.ts` | Skill installer: copy, version header, directory creation, overwrite |
 | `unit/init-interactive.test.ts` | resolveInteractiveOptions: mode mapping, agent pass-through |
 | `unit/domain.test.ts` | Domain template generator, domain add (scaffold, idempotency, validation), domain list |
+| `unit/detect.test.ts` | Auto-detect mode: single-repo, multi-repo, mono-repo |
 | `integration/init.test.ts` | Full init flow: single/multi/mono-repo scaffolding |
 | `integration/git-commands.test.ts` | Multi-repo branch and commit coordination |
+| `integration/status.test.ts` | Status without config, status after init |
+| `integration/clean.test.ts` | Clean removes .ctxify/ + ctx.yaml, clean when nothing exists, clean with custom outputDir |
 
 ## Key patterns
 
@@ -206,6 +210,7 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 
 ## Current state
 
+- **v0.3.1** — dead code removal, bug fixes, publish hygiene, new tests
 - **v0.3.0** — domain registration (`ctxify domain add/list`), npm publish readiness
 - **v0.2.0** — multi-agent support (claude, copilot, cursor, codex), interactive init with multi-select
 - **Supported manifests**: package.json (JS/TS), go.mod (Go), pyproject.toml (Python), requirements.txt (Python fallback)
@@ -214,7 +219,6 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 
 ## Known gaps and future work
 
-- No integration tests for `status` and `validate` CLI commands (unit tests exist for the core logic)
 - `discoverEntryPoints` in manifest.ts re-reads package.json that the caller already parsed
 - `validateShards` reads each file twice (once for segment markers, once for TODOs)
 - No `ctxify update` / `ctxify refresh` command to re-scaffold without losing agent-filled content
