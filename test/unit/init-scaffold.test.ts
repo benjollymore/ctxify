@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffoldWorkspace, detectInstallMethod } from '../../src/cli/commands/init.js';
 import { loadConfig } from '../../src/core/config.js';
+import type { SkillScope } from '../../src/core/config.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'ctxify-scaffold-'));
@@ -217,6 +218,71 @@ describe('scaffoldWorkspace', () => {
 
     const config = loadConfig(join(dir, 'ctx.yaml'));
     expect(config.skills).toBeUndefined();
+  });
+
+  it('persists skill scope in ctx.yaml when agents have explicit scopes', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude', 'cursor'],
+      agentScopes: { claude: 'workspace', cursor: 'workspace' },
+    });
+
+    const config = loadConfig(join(dir, 'ctx.yaml'));
+    expect(config.skills!['claude']).toEqual({
+      path: '.claude/skills/ctxify/SKILL.md',
+      scope: 'workspace',
+    });
+    expect(config.skills!['cursor']).toEqual({
+      path: '.cursor/rules/ctxify.md',
+      scope: 'workspace',
+    });
+  });
+
+  it('persists global scope for claude installed globally', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    const fakeHome = makeTmpDir();
+    tmpDirs.push(fakeHome);
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude'],
+      agentScopes: { claude: 'global' },
+      homeDir: fakeHome,
+    });
+
+    const config = loadConfig(join(dir, 'ctx.yaml'));
+    expect(config.skills!['claude'].scope).toBe('global');
+    expect(config.skills!['claude'].path).toBe('~/.claude/skills/ctxify/SKILL.md');
+    // Verify files actually landed in fakeHome, not workspaceRoot
+    const { existsSync } = await import('node:fs');
+    expect(existsSync(join(fakeHome, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
+  });
+
+  it('defaults to workspace scope when agentScopes not provided', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude'],
+    });
+
+    const config = loadConfig(join(dir, 'ctx.yaml'));
+    expect(config.skills!['claude'].scope).toBe('workspace');
   });
 });
 

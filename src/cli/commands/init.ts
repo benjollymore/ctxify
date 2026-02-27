@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
-import type { RepoEntry, OperatingMode, MonoRepoOptions, SkillEntry } from '../../core/config.js';
+import type { RepoEntry, OperatingMode, MonoRepoOptions, SkillScope, SkillEntry } from '../../core/config.js';
 import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { autoDetectMode } from '../../core/detect.js';
@@ -24,6 +24,8 @@ export interface ScaffoldOptions {
   force?: boolean;
   agents?: AgentType[];
   install_method?: 'global' | 'local' | 'npx';
+  agentScopes?: Record<string, SkillScope>;
+  homeDir?: string;
 }
 
 export function detectInstallMethod(argv1 = process.argv[1]): 'global' | 'local' | 'npx' {
@@ -50,9 +52,10 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   const skillsMap: Record<string, SkillEntry> = {};
   if (options.agents) {
     for (const agent of options.agents) {
-      const dest = installSkill(workspaceRoot, agent);
+      const scope = options.agentScopes?.[agent] ?? 'workspace';
+      const dest = installSkill(workspaceRoot, agent, scope, options.homeDir);
       skills_installed.push(dest);
-      skillsMap[agent] = { path: dest, scope: 'workspace' };
+      skillsMap[agent] = { path: dest, scope };
     }
   }
 
@@ -236,9 +239,17 @@ export function registerInitCommand(program: Command): void {
         // 5. Next step hint (stderr so it doesn't pollute JSON output)
         if (result.skills_installed && result.skills_installed.length > 0) {
           // Derive hints from installed destination paths
-          const hints = Object.values(AGENT_CONFIGS)
-            .filter((c) => result.skills_installed!.includes(join(c.destDir, c.primaryFilename)))
-            .map((c) => c.nextStepHint);
+          const hints = Object.entries(AGENT_CONFIGS)
+            .filter(([, c]) => {
+              const workspacePath = join(c.destDir, c.primaryFilename);
+              const globalPath = c.globalDestDir
+                ? `~/${c.globalDestDir}/${c.primaryFilename}`
+                : null;
+              return result.skills_installed!.some(
+                (p) => p === workspacePath || p === globalPath,
+              );
+            })
+            .map(([, c]) => c.nextStepHint);
           if (hints.length > 0) {
             console.error(
               `\n✓ Context scaffolded. Next steps:\n${hints.map((h) => `  • ${h}`).join('\n')}`,
