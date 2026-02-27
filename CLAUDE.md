@@ -43,7 +43,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 
 | File | Purpose |
 |------|---------|
-| `config.ts` | Load/validate/serialize `ctx.yaml`. Types: `CtxConfig` (includes `skills?: Record<string, string>`, `install_method?: 'global' \| 'local' \| 'npx'`), `OperatingMode` (`single-repo` / `multi-repo` / `mono-repo`), `RepoEntry` |
+| `config.ts` | Load/validate/serialize `ctx.yaml`. Types: `CtxConfig` (includes `skills?: Record<string, SkillEntry>`, `install_method?: 'global' \| 'local' \| 'npx'`), `SkillScope` (`'workspace' \| 'global'`), `SkillEntry` (`{ path: string; scope: SkillScope }`), `OperatingMode` (`single-repo` / `multi-repo` / `mono-repo`), `RepoEntry` |
 | `manifest.ts` | Parse repo manifests (package.json → go.mod → pyproject.toml → requirements.txt). Extract language, framework, deps, entry points, key dirs, file count. Exports `ManifestData`, `parseRepoManifest()` |
 | `validate.ts` | Check shard structural integrity: valid frontmatter, balanced segment markers, TODO detection. Exports `validateShards()`, `collectMdFiles()` |
 | `detect.ts` | Auto-detect operating mode from workspace structure. Exports `autoDetectMode()` |
@@ -53,7 +53,7 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 
 | File | Purpose |
 |------|---------|
-| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent playbooks. Types: `AgentType` (`'claude' \| 'copilot' \| 'cursor' \| 'codex'`), `ScaffoldOptions` (with `agents?: AgentType[]`, `install_method?: 'global' \| 'local' \| 'npx'`), `ScaffoldResult` (with `skills_installed?: string[]`). Exports `detectInstallMethod(argv1?)` — detects global/local/npx from `process.argv[1]`. Flags: `--repos`, `--mono`, `--agent <agents...>`, `--force` |
+| `init.ts` | Interactive (default) or flag-driven scaffolder. Detects repos, parses manifests, generates index.md + repos/{name}/overview.md, optionally installs agent playbooks. Types: `AgentType` (`'claude' \| 'copilot' \| 'cursor' \| 'codex'`), `ScaffoldOptions` (with `agents?: AgentType[]`, `install_method?: 'global' \| 'local' \| 'npx'`, `agentScopes?: Record<string, SkillScope>`, `homeDir?: string`), `ScaffoldResult` (with `skills_installed?: string[]`). Exports `detectInstallMethod(argv1?)` — detects global/local/npx from `process.argv[1]`. Flags: `--repos`, `--mono`, `--agent <agents...>`, `--force` |
 | `init-interactive.ts` | Interactive prompt flow using @inquirer/prompts. Multi-select agent checkbox, confirms mode, confirms repos. Returns `ScaffoldOptions` |
 | `status.ts` | JSON status report: index exists, repo list, shard dirs, TODO count |
 | `validate.ts` | CLI wrapper for `validateShards()`. Exits 1 on failure |
@@ -94,7 +94,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 
 | File | Purpose |
 |------|---------|
-| `install-skill.ts` | `AgentConfig` interface (`destDir`, `primaryFilename`, `skillFrontmatter`, `singleFile`, `combinedFrontmatter`), `AGENT_CONFIGS` registry (claude, copilot, cursor, codex). Multi-file agents (claude, cursor) install each skill as a separate file; single-file agents (copilot, codex) concatenate all skills. `installSkill()` returns primary file path. `getSkillSourceDir()` finds skills/ package root. `listSkillSourceFiles()` returns `[{filename, sourcePath}]` ordered SKILL.md-first then alphabetical. `getPrimarySkillSourcePath()` / `getPlaybookSourcePath()` (compat alias) |
+| `install-skill.ts` | `AgentConfig` interface (`destDir`, `globalDestDir?: string`, `primaryFilename`, `skillFrontmatter`, `singleFile`, `combinedFrontmatter`), `AGENT_CONFIGS` registry (claude, copilot, cursor, codex). Multi-file agents (claude, cursor) install each skill as a separate file; single-file agents (copilot, codex) concatenate all skills. `installSkill()` accepts `scope` ('workspace' \| 'global') and `homeDir` parameters, returns primary file path. `getSkillSourceDir()` finds skills/ package root. `listSkillSourceFiles()` returns `[{filename, sourcePath}]` ordered SKILL.md-first then alphabetical. `getPrimarySkillSourcePath()` / `getPlaybookSourcePath()` (compat alias) |
 
 ### `test/`
 
