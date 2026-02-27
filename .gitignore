@@ -2,7 +2,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 .ctxify/
-.claude/
+.claude/*
+!.claude/CLAUDE.md
 .qodo/
 ctx.yaml
 coverage/
