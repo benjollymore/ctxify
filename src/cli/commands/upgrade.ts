@@ -88,6 +88,7 @@ export async function runUpgrade(
   const skills_reinstalled: string[] = [];
   for (const [agent] of Object.entries(skillsMap)) {
     try {
+      // TODO(Task 5): pass entry.scope and opts.homeDir once installSkill accepts scope
       const dest = installSkill(workspaceRoot, agent);
       skills_reinstalled.push(dest);
     } catch {

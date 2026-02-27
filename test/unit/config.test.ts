@@ -417,12 +417,14 @@ version: "1"
 workspace: /tmp/ws
 skills:
   claude: ".claude/skills/ctxify/SKILL.md"
+  codex: "AGENTS.md"
 `;
       const configPath = join(tmpDir, 'ctx-old-skills.yaml');
       writeFileSync(configPath, yaml, 'utf-8');
       const config = loadConfig(configPath);
       expect(config.skills).toEqual({
         claude: { path: '.claude/skills/ctxify/SKILL.md', scope: 'workspace' },
+        codex: { path: 'AGENTS.md', scope: 'workspace' },
       });
     });
 
