@@ -229,6 +229,19 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 - No support for Cargo.toml (Rust) manifest parsing — only framework detection via deps
 - `git add -A` in `stageAndCommit` stages everything including potentially unrelated files
 
+## README hygiene
+
+Keep `README.md` in sync when making changes. The README is user-facing documentation — it must reflect current behaviour, not aspirational or stale state.
+
+**Update README when:**
+- Adding or removing a CLI command — update the Commands table
+- Changing flags on an existing command — update the relevant row
+- Changing how skills are installed (agent destinations, file count, format) — update the Supported agents table
+- Adding a significant new workflow or feature — add or update the relevant section
+- Changing the test count in Quick reference — update `npm test` line
+
+**Do not** add sections for every internal refactor or test change. README covers user-visible behaviour only.
+
 ## Commit conventions
 
 ```
