@@ -140,4 +140,44 @@ describe('runUpgrade', () => {
     expect(calls[0]).toEqual(['install', '-g', '@benjollymore/ctxify@latest']);
     expect(result.skills_reinstalled).toEqual([]);
   });
+
+  it('reinstalls skills with correct scope from new SkillEntry format — global scope goes to homeDir', async () => {
+    const fakeHome = mkdtempSync(join(tmpdir(), 'ctxify-upgrade-home-'));
+
+    writeCtxYaml(tmpDir, {
+      install_method: 'global',
+      skills: {
+        claude: { path: '~/.claude/skills/ctxify/SKILL.md', scope: 'global' },
+      },
+    });
+
+    const calls: string[][] = [];
+    const result = await runUpgrade(tmpDir, {
+      execFn: (args) => calls.push(args),
+      homeDir: fakeHome,
+    });
+
+    expect(result.status).toBe('upgraded');
+    expect(result.skills_reinstalled).toContain('~/.claude/skills/ctxify/SKILL.md');
+    expect(existsSync(join(fakeHome, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
+
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  it('backward compat: old string skills format reinstalls to workspace', async () => {
+    writeCtxYaml(tmpDir, {
+      install_method: 'global',
+      skills: { claude: '.claude/skills/ctxify/SKILL.md' },
+    });
+    mkdirSync(join(tmpDir, '.claude', 'skills', 'ctxify'), { recursive: true });
+
+    const calls: string[][] = [];
+    const result = await runUpgrade(tmpDir, {
+      execFn: (args) => calls.push(args),
+    });
+
+    expect(result.status).toBe('upgraded');
+    expect(result.skills_reinstalled).toContain('.claude/skills/ctxify/SKILL.md');
+    expect(existsSync(join(tmpDir, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
+  });
 });

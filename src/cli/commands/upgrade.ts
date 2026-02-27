@@ -20,13 +20,14 @@ export interface UpgradeResult {
 export interface UpgradeOptions {
   dryRun?: boolean;
   execFn?: (args: string[], opts?: { cwd?: string }) => void;
+  homeDir?: string;  // injectable for testing global reinstall
 }
 
 export async function runUpgrade(
   workspaceRoot: string,
   opts: UpgradeOptions = {},
 ): Promise<UpgradeResult> {
-  const { dryRun = false, execFn } = opts;
+  const { dryRun = false, execFn, homeDir } = opts;
 
   // Load ctx.yaml if available to get install_method and skills
   const configPath = join(workspaceRoot, 'ctx.yaml');
@@ -86,10 +87,9 @@ export async function runUpgrade(
 
   // Reinstall skills
   const skills_reinstalled: string[] = [];
-  for (const [agent] of Object.entries(skillsMap)) {
+  for (const [agent, entry] of Object.entries(skillsMap)) {
     try {
-      // TODO(Task 5): use entry.scope and opts.homeDir here
-      const dest = installSkill(workspaceRoot, agent);
+      const dest = installSkill(workspaceRoot, agent, entry.scope, homeDir);
       skills_reinstalled.push(dest);
     } catch {
       // Non-fatal — if agent is unknown or skill install fails, continue
