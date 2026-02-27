@@ -214,15 +214,6 @@ After `ctxify init`, the `.ctxify/` directory contains:
 
 Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The playbook at `skills/PLAYBOOK.md` guides this workflow (installed to agent-specific paths by `ctxify init --agent`).
 
-## Current state
-
-- **v0.3.1** — dead code removal, bug fixes, publish hygiene, new tests
-- **v0.3.0** — domain registration (`ctxify domain add/list`), npm publish readiness
-- **v0.2.0** — multi-agent support (claude, copilot, cursor, codex), interactive init with multi-select
-- **Supported manifests**: package.json (JS/TS), go.mod (Go), pyproject.toml (Python), requirements.txt (Python fallback)
-- **Supported modes**: single-repo, multi-repo, mono-repo (npm/yarn/pnpm/turborepo workspaces)
-- **Supported agents**: Claude Code, GitHub Copilot, Cursor, OpenAI Codex — same playbook, different destination paths and frontmatter
-
 ## Known gaps and future work
 
 - `discoverEntryPoints` in manifest.ts re-reads package.json that the caller already parsed

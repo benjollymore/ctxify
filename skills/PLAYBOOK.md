@@ -6,6 +6,7 @@
 Check for `.ctxify/index.md` at workspace root.
 - **Found** → Read it. Go to section 3.
 - **Not found** → Check for `ctx.yaml`. If exists, run `ctxify init`. If neither, go to section 2.
+Do not look for context files inside individual repos unless they are referenced from .ctxify/.
 
 ## 2. First-time Setup
 
@@ -39,7 +40,7 @@ You are writing the mental model a senior engineer carries in their head. Work i
 For each `repos/{name}/overview.md`:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Annotate pre-filled key directories. Describe the request/data flow (e.g., "Route → Validation → Controller → Service → Model"). Note DI approach, ORM, testing framework. 10-20 lines total.
-- **Context TODO**: List the domains you'll document (e.g., `pickups.md` — pickup lifecycle and scheduling).
+- **Context TODO**: List the domains you'll document (e.g., `calendar.md` — calendar lifecycle and scheduling).
 
 ### Pass 2: Create patterns.md for each repo (THE PRIMARY DELIVERABLE)
 
@@ -47,7 +48,7 @@ Read 3-5 key source files to understand patterns. Create `repos/{name}/patterns.
 
 ```yaml
 ---
-repo: express
+repo: backend
 type: patterns
 ---
 ```
@@ -72,10 +73,10 @@ Only for domains complex enough to warrant their own file. Read entry points + 2
 
 ```yaml
 ---
-repo: express
+repo: backend
 type: domain
-domain: processed-fluids
-tags: [dropoff, pickup, route-session]
+domain: calendar
+tags: [appointment, meeting, out-of-office]
 ---
 ```
 
