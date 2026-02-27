@@ -113,6 +113,20 @@ When you run `ctxify init`, the installed skills teach your agent how to:
 4. Fill cross-repo workflows in index.md
 5. Log corrections with `ctxify feedback <repo>` when context guidance was wrong
 
+## Keeping ctxify and skills up to date
+
+```bash
+ctxify upgrade
+```
+
+Upgrades ctxify using the install method recorded in `ctx.yaml` at init time (global npm, local npm, or npx), then reinstalls all agent skills that were originally installed. Run it from your workspace root.
+
+```bash
+ctxify upgrade --dry-run   # show what would happen without executing
+```
+
+The install method and installed agents are persisted in `ctx.yaml` automatically on `ctxify init`, so `upgrade` requires no flags.
+
 ## Supported manifests and modes
 
 **Manifests** (parsed in order, first found wins): package.json, go.mod, pyproject.toml, requirements.txt
