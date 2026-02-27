@@ -109,7 +109,7 @@ export function collectMdFiles(dir: string): string[] {
 function checkSegmentMarkers(content: string, relativePath: string, errors: string[]): void {
   for (const tag of SEGMENT_TAGS) {
     // Match opening markers: <!-- tag:... -->
-    const openPattern = new RegExp(`<!--\\s*${tag}:`, 'g');
+    const openPattern = new RegExp(`<!--\\s*${tag}[:\\s]`, 'g');
     // Match closing markers: <!-- /tag -->
     const closePattern = new RegExp(`<!--\\s*/${tag}\\s*-->`, 'g');
 

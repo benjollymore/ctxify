@@ -1,6 +1,7 @@
 import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { parseYaml } from '../../utils/yaml.js';
 
 export function registerCleanCommand(program: Command): void {
   program
@@ -9,13 +10,27 @@ export function registerCleanCommand(program: Command): void {
     .action((dir?: string) => {
       const workspaceRoot = resolve(dir || '.');
       const configPath = join(workspaceRoot, 'ctx.yaml');
-      const outputDir = join(workspaceRoot, '.ctxify');
 
+      // Read outputDir from config before deleting anything
+      let outputDirName = '.ctxify';
+      if (existsSync(configPath)) {
+        try {
+          const raw = parseYaml<Record<string, unknown>>(readFileSync(configPath, 'utf-8'));
+          const options = raw?.options as Record<string, unknown> | undefined;
+          if (typeof options?.outputDir === 'string') {
+            outputDirName = options.outputDir;
+          }
+        } catch {
+          // Fall back to default if config is unparseable
+        }
+      }
+
+      const outputDir = join(workspaceRoot, outputDirName);
       const removed: string[] = [];
 
       if (existsSync(outputDir)) {
         rmSync(outputDir, { recursive: true, force: true });
-        removed.push('.ctxify/');
+        removed.push(outputDirName.endsWith('/') ? outputDirName : outputDirName + '/');
       }
 
       if (existsSync(configPath)) {
