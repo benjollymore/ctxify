@@ -45,7 +45,7 @@ describe('getContextHookOutput', () => {
     mkdirSync(join(tmpDir, '.ctxify', 'repos', 'my-app'), { recursive: true });
 
     const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('/ctxify-startup');
+    expect(output).toContain('Invoke /ctxify to');
     expect(output).toContain('ctxify workspace detected');
   });
 
@@ -61,7 +61,7 @@ describe('getContextHookOutput', () => {
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain('Do not use var.');
-    expect(output).toContain('/ctxify-startup');
+    expect(output).toContain('Invoke /ctxify to');
   });
 
   it('handles multiple repos with corrections', () => {
@@ -87,7 +87,7 @@ describe('getContextHookOutput', () => {
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain('API correction: use POST not PUT.');
     expect(output).toContain('Web correction: prefer flex over grid.');
-    expect(output).toContain('/ctxify-startup');
+    expect(output).toContain('Invoke /ctxify to');
   });
 
   it('handles custom outputDir from ctx.yaml', () => {
@@ -98,7 +98,7 @@ describe('getContextHookOutput', () => {
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain('Custom dir correction.');
-    expect(output).toContain('/ctxify-startup');
+    expect(output).toContain('Invoke /ctxify to');
   });
 
   it('outputs rules content when rules.md exists', () => {
@@ -113,7 +113,7 @@ describe('getContextHookOutput', () => {
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain('Do not fragment CSS.');
-    expect(output).toContain('/ctxify-startup');
+    expect(output).toContain('Invoke /ctxify to');
   });
 
   it('outputs both corrections and rules when both exist', () => {
@@ -146,7 +146,7 @@ describe('getContextHookOutput', () => {
     const output = getContextHookOutput(tmpDir);
     // Should only have the nudge, no corrections content
     expect(output).toBe(
-      'ctxify workspace detected. Invoke /ctxify-startup to initialize context for this session.',
+      'ctxify workspace detected. Invoke /ctxify to initialize context for this session.',
     );
   });
 
@@ -159,7 +159,7 @@ describe('getContextHookOutput', () => {
     const output = getContextHookOutput(tmpDir);
     // Should only have the nudge, no empty corrections
     expect(output).toBe(
-      'ctxify workspace detected. Invoke /ctxify-startup to initialize context for this session.',
+      'ctxify workspace detected. Invoke /ctxify to initialize context for this session.',
     );
   });
 });

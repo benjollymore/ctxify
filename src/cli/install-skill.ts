@@ -33,7 +33,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     satelliteFilename: 'SKILL.md',
     skillFrontmatter: ({ name, description }) =>
       `---\nname: ${name}\ndescription: ${description}\n---`,
-    nextStepHint: 'open Claude Code and run /ctxify',
+    nextStepHint: 'open Claude Code — context loads automatically on session start',
     globalDestDir: '.claude/skills/ctxify',
   },
   copilot: {
