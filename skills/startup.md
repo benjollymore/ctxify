@@ -1,9 +1,19 @@
 ---
 name: ctxify:startup
-description: Use when starting work in any ctxify-managed workspace. Detects context scaffolding, runs init if needed, and hands off to focused skills.
+description: Use at session start in a ctxify workspace to detect whether context files are filled or need to be written, then hand off to the appropriate skill.
 ---
 
 # ctxify:startup — Session Start
+
+## Hard Gate
+
+ALWAYS run this check before starting any task in a ctxify workspace. Do not skip to reading-context directly — this skill ensures context is in a usable state first.
+
+## Step 0: Check for workspace initialisation
+
+Check whether `.ctxify/index.md` exists at the workspace root.
+
+If it does **not** exist: stop here. Tell the user to run `ctxify init` first, or follow the **ctxify** orientation skill. Do not proceed until the workspace is initialised.
 
 ## Step 1: Read workspace context files
 
@@ -27,3 +37,6 @@ Tell the user:
 > "The ctxify context files for this workspace have unfilled templates — architecture, patterns, and conventions haven't been documented yet. Would you like me to fill them now? I'll read the codebase and document what I find using **/ctxify-filling-context**."
 
 Wait for the user to respond before doing anything else.
+
+- **If yes** → invoke **ctxify:filling-context** to read the codebase and fill in the templates.
+- **If no** → proceed as if context is filled: load the existing files and note that TODO markers indicate sections that are still unfilled.
