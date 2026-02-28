@@ -426,10 +426,7 @@ describe('feedback command', () => {
       join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
       'utf-8',
     );
-    const rulesContent = readFileSync(
-      join(dir, '.ctxify', 'repos', 'api', 'rules.md'),
-      'utf-8',
-    );
+    const rulesContent = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'rules.md'), 'utf-8');
     expect(correctionsContent).toContain('A correction');
     expect(correctionsContent).not.toContain('A rule');
     expect(rulesContent).toContain('A rule');
