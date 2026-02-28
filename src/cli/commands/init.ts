@@ -33,6 +33,8 @@ export interface ScaffoldOptions {
   install_method?: 'global' | 'local' | 'npx';
   agentScopes?: Record<string, SkillScope>;
   homeDir?: string;
+  /** Install Claude Code SessionStart hook. Defaults to true when claude agent is selected. */
+  hook?: boolean;
 }
 
 export function detectInstallMethod(argv1 = process.argv[1]): 'global' | 'local' | 'npx' {
@@ -67,9 +69,9 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     }
   }
 
-  // Install Claude Code SessionStart hook
+  // Install Claude Code SessionStart hook (opt-out with hook: false)
   const hooks_installed: string[] = [];
-  if (options.agents?.includes('claude')) {
+  if (options.hook !== false && options.agents?.includes('claude')) {
     const scope = options.agentScopes?.['claude'] ?? 'workspace';
     const install_method_for_hook = options.install_method ?? detectInstallMethod();
     const hookCmd = installClaudeHook(
@@ -148,10 +150,21 @@ export function registerInitCommand(program: Command): void {
       'Install playbook for specified agents (claude, copilot, cursor, codex)',
     )
     .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
+    .option(
+      '--hook',
+      'Install Claude Code SessionStart hook to auto-load context (default: true with --agent claude)',
+    )
+    .option('--no-hook', 'Skip installing the Claude Code SessionStart hook')
     .action(
       async (
         dir?: string,
-        options?: { repos?: string[]; mono?: boolean; agent?: string[]; force?: boolean },
+        options?: {
+          repos?: string[];
+          mono?: boolean;
+          agent?: string[];
+          force?: boolean;
+          hook?: boolean;
+        },
       ) => {
         const workspaceRoot = resolve(dir || '.');
         const configPath = join(workspaceRoot, 'ctx.yaml');
@@ -247,6 +260,7 @@ export function registerInitCommand(program: Command): void {
             monoRepoOptions,
             force: options?.force,
             agents,
+            hook: options?.hook,
           };
         }
 

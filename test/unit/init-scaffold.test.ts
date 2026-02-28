@@ -363,6 +363,27 @@ describe('scaffoldWorkspace', () => {
     expect(settings.permissions).toEqual({ allow: ['Read'] });
     expect(settings.hooks.SessionStart).toHaveLength(1);
   });
+
+  it('skips hook installation when hook: false', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    const result = await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude'],
+      install_method: 'global',
+      hook: false,
+    });
+
+    expect(result.hooks_installed).toBeUndefined();
+    // Skills should still be installed
+    expect(result.skills_installed).toBeDefined();
+    // No settings.json should be created for hooks
+    expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
+  });
 });
 
 describe('detectInstallMethod', () => {
