@@ -10,6 +10,7 @@ import {
   formatAntiPatternEntry,
   ANTI_PATTERNS_SECTION_HEADER,
 } from '../../src/templates/corrections.js';
+import { generateRulesTemplate, formatRuleEntry } from '../../src/templates/rules.js';
 import { generateRepoTemplate } from '../../src/templates/repo.js';
 import { serializeConfig } from '../../src/core/config.js';
 import { validateShards } from '../../src/core/validate.js';
@@ -142,6 +143,51 @@ describe('formatAntiPatternEntry', () => {
 describe('ANTI_PATTERNS_SECTION_HEADER', () => {
   it('contains the # Anti-Patterns heading', () => {
     expect(ANTI_PATTERNS_SECTION_HEADER).toContain('# Anti-Patterns');
+  });
+});
+
+// ── Rules template tests ─────────────────────────────────────────────────
+
+describe('generateRulesTemplate', () => {
+  it('generates rules file with correct frontmatter', () => {
+    const output = generateRulesTemplate({ repo: 'api' });
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.repo).toBe('api');
+    expect(fm!.type).toBe('rules');
+  });
+
+  it('contains heading', () => {
+    const output = generateRulesTemplate({ repo: 'api' });
+    expect(output).toContain('# Rules');
+  });
+});
+
+describe('formatRuleEntry', () => {
+  it('wraps body with rule markers', () => {
+    const ts = '2025-06-15T10:30:00.000Z';
+    const entry = formatRuleEntry({ body: 'Do not fragment CSS', timestamp: ts });
+    expect(entry).toContain(`<!-- rule:${ts} -->`);
+    expect(entry).toContain('Do not fragment CSS');
+    expect(entry).toContain('<!-- /rule -->');
+  });
+
+  it('appends source inline when provided', () => {
+    const entry = formatRuleEntry({
+      body: 'Never catch-all here',
+      source: 'src/payments/handler.ts:42',
+      timestamp: '2025-06-15T10:30:00.000Z',
+    });
+    expect(entry).toContain('Never catch-all here — `src/payments/handler.ts:42`');
+  });
+
+  it('omits source suffix when not provided', () => {
+    const entry = formatRuleEntry({
+      body: 'Always use bun',
+      timestamp: '2025-06-15T10:30:00.000Z',
+    });
+    expect(entry).not.toContain(' — `');
+    expect(entry).toContain('Always use bun');
   });
 });
 
