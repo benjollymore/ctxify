@@ -72,7 +72,12 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   if (options.agents?.includes('claude')) {
     const scope = options.agentScopes?.['claude'] ?? 'workspace';
     const install_method_for_hook = options.install_method ?? detectInstallMethod();
-    const hookCmd = installClaudeHook(workspaceRoot, install_method_for_hook, scope, options.homeDir);
+    const hookCmd = installClaudeHook(
+      workspaceRoot,
+      install_method_for_hook,
+      scope,
+      options.homeDir,
+    );
     hooks_installed.push(hookCmd);
   }
 

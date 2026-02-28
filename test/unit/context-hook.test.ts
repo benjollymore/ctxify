@@ -78,7 +78,11 @@ describe('getContextHookOutput', () => {
     mkdirSync(webDir, { recursive: true });
 
     writeFileSync(join(apiDir, 'corrections.md'), 'API correction: use POST not PUT.', 'utf-8');
-    writeFileSync(join(webDir, 'corrections.md'), 'Web correction: prefer flex over grid.', 'utf-8');
+    writeFileSync(
+      join(webDir, 'corrections.md'),
+      'Web correction: prefer flex over grid.',
+      'utf-8',
+    );
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain('API correction: use POST not PUT.');

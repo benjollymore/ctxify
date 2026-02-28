@@ -104,11 +104,7 @@ function buildCommand(installMethod: 'global' | 'local' | 'npx'): string {
   return 'ctxify context-hook';
 }
 
-function resolveSettingsPath(
-  workspaceRoot: string,
-  scope: SkillScope,
-  homeDir?: string,
-): string {
+function resolveSettingsPath(workspaceRoot: string, scope: SkillScope, homeDir?: string): string {
   if (scope === 'global') {
     return join(homeDir ?? homedir(), '.claude', 'settings.json');
   }

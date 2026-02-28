@@ -31,9 +31,7 @@ describe('mergeHookIntoSettings', () => {
   it('preserves non-ctxify hooks', () => {
     const existing = JSON.stringify({
       hooks: {
-        SessionStart: [
-          { type: 'command', command: 'echo hello', matcher: 'startup' },
-        ],
+        SessionStart: [{ type: 'command', command: 'echo hello', matcher: 'startup' }],
       },
     });
     const result = JSON.parse(mergeHookIntoSettings(existing, 'ctxify context-hook'));
@@ -51,9 +49,7 @@ describe('mergeHookIntoSettings', () => {
         ],
       },
     });
-    const result = JSON.parse(
-      mergeHookIntoSettings(existing, 'npx ctxify context-hook'),
-    );
+    const result = JSON.parse(mergeHookIntoSettings(existing, 'npx ctxify context-hook'));
     expect(result.hooks.SessionStart).toHaveLength(2);
     expect(result.hooks.SessionStart[0].command).toBe('echo hello');
     expect(result.hooks.SessionStart[1].command).toBe('npx ctxify context-hook');
@@ -88,17 +84,13 @@ describe('removeHookFromSettings', () => {
       },
     });
     const result = JSON.parse(removeHookFromSettings(existing)!);
-    expect(result.hooks.SessionStart).toEqual([
-      { type: 'command', command: 'echo hello' },
-    ]);
+    expect(result.hooks.SessionStart).toEqual([{ type: 'command', command: 'echo hello' }]);
   });
 
   it('cleans up empty SessionStart array', () => {
     const existing = JSON.stringify({
       hooks: {
-        SessionStart: [
-          { type: 'command', command: 'ctxify context-hook' },
-        ],
+        SessionStart: [{ type: 'command', command: 'ctxify context-hook' }],
       },
     });
     const result = JSON.parse(removeHookFromSettings(existing)!);
@@ -108,9 +100,7 @@ describe('removeHookFromSettings', () => {
   it('preserves other hook types when SessionStart becomes empty', () => {
     const existing = JSON.stringify({
       hooks: {
-        SessionStart: [
-          { type: 'command', command: 'ctxify context-hook' },
-        ],
+        SessionStart: [{ type: 'command', command: 'ctxify context-hook' }],
         PreToolUse: [{ type: 'command', command: 'lint' }],
       },
     });
@@ -122,16 +112,12 @@ describe('removeHookFromSettings', () => {
   it('returns existing JSON unchanged when no ctxify hook exists', () => {
     const existing = JSON.stringify({
       hooks: {
-        SessionStart: [
-          { type: 'command', command: 'echo hello' },
-        ],
+        SessionStart: [{ type: 'command', command: 'echo hello' }],
       },
     });
     const result = removeHookFromSettings(existing);
     const parsed = JSON.parse(result!);
-    expect(parsed.hooks.SessionStart).toEqual([
-      { type: 'command', command: 'echo hello' },
-    ]);
+    expect(parsed.hooks.SessionStart).toEqual([{ type: 'command', command: 'echo hello' }]);
   });
 
   it('returns null for malformed JSON', () => {
@@ -214,9 +200,7 @@ describe('installClaudeHook', () => {
     installClaudeHook(tmpDir, 'global');
     installClaudeHook(tmpDir, 'local'); // should replace, not add
 
-    const settings = JSON.parse(
-      readFileSync(join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
-    );
+    const settings = JSON.parse(readFileSync(join(tmpDir, '.claude', 'settings.json'), 'utf-8'));
     expect(settings.hooks.SessionStart).toHaveLength(1);
     expect(settings.hooks.SessionStart[0].command).toBe('npx ctxify context-hook');
   });
@@ -240,9 +224,7 @@ describe('removeClaudeHook', () => {
     // Remove
     removeClaudeHook(tmpDir);
 
-    const settings = JSON.parse(
-      readFileSync(join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
-    );
+    const settings = JSON.parse(readFileSync(join(tmpDir, '.claude', 'settings.json'), 'utf-8'));
     expect(settings.hooks).toBeUndefined();
   });
 
@@ -264,12 +246,8 @@ describe('removeClaudeHook', () => {
 
     removeClaudeHook(tmpDir);
 
-    const settings = JSON.parse(
-      readFileSync(join(settingsDir, 'settings.json'), 'utf-8'),
-    );
-    expect(settings.hooks.SessionStart).toEqual([
-      { type: 'command', command: 'echo hello' },
-    ]);
+    const settings = JSON.parse(readFileSync(join(settingsDir, 'settings.json'), 'utf-8'));
+    expect(settings.hooks.SessionStart).toEqual([{ type: 'command', command: 'echo hello' }]);
   });
 
   it('no-op when no settings.json exists', () => {
