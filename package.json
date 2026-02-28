@@ -1,7 +1,7 @@
 {
   "name": "@benjollymore/ctxify",
-  "version": "0.4.3",
-  "description": "Turbocharged workspace context for AI coding agents",
+  "version": "0.4.4",
+  "description": "Persistent workspace knowledge for AI coding agents.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
