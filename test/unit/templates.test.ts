@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { parseFrontmatter } from '../../src/utils/frontmatter.js';
 import { generateIndexTemplate, type RepoTemplateData } from '../../src/templates/index-md.js';
 import { generateRepoTemplate } from '../../src/templates/repo.js';
-import { filterEssentialScripts } from '../../src/templates/repo.js';
 
 // ── Test fixtures ────────────────────────────────────────────────────────
 
@@ -123,24 +122,31 @@ describe('repo template', () => {
   const repo = makeRepo();
   const output = generateRepoTemplate(repo);
 
-  it('has YAML frontmatter with repo metadata', () => {
+  it('has YAML frontmatter with repo metadata but NOT mechanical fields', () => {
     const fm = parseFrontmatter(output);
     expect(fm).not.toBeNull();
     expect(fm!.repo).toBe('api-server');
     expect(fm!.type).toBe('overview');
     expect(fm!.language).toBe('typescript');
     expect(fm!.framework).toBe('hono');
-    expect(fm!.entry_points).toEqual(['src/index.ts', 'bin/cli.ts']);
-    expect(fm!.file_count).toBe(42);
+    // Mechanical fields removed
+    expect(fm!.entry_points).toBeUndefined();
+    expect(fm!.file_count).toBeUndefined();
   });
 
   it('has name heading', () => {
     expect(output).toMatch(/^# api-server/m);
   });
 
-  it('has entry points', () => {
-    expect(output).toContain('src/index.ts');
-    expect(output).toContain('bin/cli.ts');
+  it('does NOT contain entry points line', () => {
+    expect(output).not.toContain('Entry points:');
+  });
+
+  it('does NOT contain pre-filled scripts', () => {
+    expect(output).not.toContain('**dev**:');
+    expect(output).not.toContain('**build**:');
+    expect(output).not.toContain('**test**:');
+    expect(output).not.toContain('## Commands');
   });
 
   it('filters key dirs to ≤2 segments and excludes noise', () => {
@@ -156,17 +162,6 @@ describe('repo template', () => {
     expect(output).not.toContain('tests/unit');
   });
 
-  it('shows only essential scripts', () => {
-    expect(output).toContain('dev');
-    expect(output).toContain('build');
-    expect(output).toContain('test');
-    expect(output).toContain('lint');
-    // Excluded: pre-commit, docker:up, migrate:run
-    expect(output).not.toContain('pre-commit');
-    expect(output).not.toContain('docker:up');
-    expect(output).not.toContain('migrate:run');
-  });
-
   it('does NOT list dependencies', () => {
     expect(output).not.toContain('hono 4.0.0');
     expect(output).not.toContain('zod 3.22.0');
@@ -174,15 +169,23 @@ describe('repo template', () => {
     expect(output).not.toContain('## Dev Dependencies');
   });
 
-  it('has Architecture, Commands, and Context sections', () => {
+  it('has Architecture and Context sections', () => {
     expect(output).toContain('## Architecture');
-    expect(output).toContain('## Commands');
     expect(output).toContain('## Context');
   });
 
   it('does NOT have inline Patterns or Domains sections', () => {
     expect(output).not.toContain('## Patterns');
     expect(output).not.toContain('## Domains');
+  });
+
+  it('Architecture TODO asks for operational context', () => {
+    expect(output).toContain('why it');
+    expect(output).toContain('What would surprise someone');
+  });
+
+  it('key dirs TODO asks for operational context', () => {
+    expect(output).toContain('why it');
   });
 
   it('Context section references patterns.md', () => {
@@ -201,40 +204,5 @@ describe('repo template', () => {
 
   it('has TODO markers', () => {
     expect(output).toContain('<!-- TODO:');
-  });
-});
-
-// ── filterEssentialScripts ───────────────────────────────────────────────
-
-describe('filterEssentialScripts', () => {
-  it('keeps test, build, start, dev, lint, typecheck', () => {
-    const scripts = {
-      test: 'vitest',
-      build: 'tsc',
-      start: 'node dist/index.js',
-      dev: 'tsx watch',
-      lint: 'eslint .',
-      typecheck: 'tsc --noEmit',
-    };
-    const result = filterEssentialScripts(scripts);
-    expect(Object.keys(result)).toEqual(['test', 'build', 'start', 'dev', 'lint', 'typecheck']);
-  });
-
-  it('keeps test:* variants', () => {
-    const scripts = { 'test:unit': 'vitest run unit', 'test:e2e': 'playwright test' };
-    const result = filterEssentialScripts(scripts);
-    expect(Object.keys(result)).toEqual(['test:unit', 'test:e2e']);
-  });
-
-  it('filters out CI, docker, migration, precommit scripts', () => {
-    const scripts = {
-      'pre-commit': 'lint-staged',
-      'docker:up': 'docker compose up',
-      'migrate:run': 'prisma migrate deploy',
-      'ci:test': 'vitest --coverage',
-      postinstall: 'patch-package',
-    };
-    const result = filterEssentialScripts(scripts);
-    expect(Object.keys(result)).toEqual([]);
   });
 });
