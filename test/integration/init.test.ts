@@ -157,19 +157,18 @@ describe('integration: ctxify init', () => {
     expect(output.status).toBe('initialized');
   });
 
-  it('ensures .ctxify/ is in .gitignore', () => {
+  it('does not add .ctxify/ to .gitignore', () => {
     const dir = makeTmpDir();
     createPackageJson(dir, 'gitignore-app');
 
     runCli(['init'], dir);
 
     const gitignorePath = join(dir, '.gitignore');
-    expect(existsSync(gitignorePath)).toBe(true);
-    const content = readFileSync(gitignorePath, 'utf-8');
-    expect(content).toContain('.ctxify/');
+    // .gitignore should not be created just for .ctxify/
+    expect(existsSync(gitignorePath)).toBe(false);
   });
 
-  it('preserves existing .gitignore entries', () => {
+  it('does not modify existing .gitignore', () => {
     const dir = makeTmpDir();
     createPackageJson(dir, 'preserve-app');
     writeFileSync(join(dir, '.gitignore'), 'node_modules/\ndist/\n', 'utf-8');
@@ -179,6 +178,6 @@ describe('integration: ctxify init', () => {
     const content = readFileSync(join(dir, '.gitignore'), 'utf-8');
     expect(content).toContain('node_modules/');
     expect(content).toContain('dist/');
-    expect(content).toContain('.ctxify/');
+    expect(content).not.toContain('.ctxify/');
   });
 });

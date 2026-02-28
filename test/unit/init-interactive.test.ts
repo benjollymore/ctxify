@@ -114,4 +114,28 @@ describe('resolveInteractiveOptions', () => {
 
     expect(result.agentScopes).toBeUndefined();
   });
+
+  it('passes through hook: true', () => {
+    const result = resolveInteractiveOptions({
+      workspaceRoot: '/tmp/test',
+      agents: ['claude'],
+      confirmedMode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      hook: true,
+    });
+
+    expect(result.hook).toBe(true);
+  });
+
+  it('passes through hook: false', () => {
+    const result = resolveInteractiveOptions({
+      workspaceRoot: '/tmp/test',
+      agents: ['claude'],
+      confirmedMode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      hook: false,
+    });
+
+    expect(result.hook).toBe(false);
+  });
 });

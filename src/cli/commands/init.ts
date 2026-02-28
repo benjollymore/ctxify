@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
-import { existsSync, writeFileSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
+import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
 import type {
   RepoEntry,
@@ -18,6 +18,7 @@ import type { RepoTemplateData } from '../../templates/index-md.js';
 import { generateIndexTemplate } from '../../templates/index-md.js';
 import { generateRepoTemplate } from '../../templates/repo.js';
 import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
+import { installClaudeHook } from '../install-hooks.js';
 import { runInteractiveFlow } from './init-interactive.js';
 
 export type AgentType = 'claude' | 'copilot' | 'cursor' | 'codex';
@@ -32,6 +33,8 @@ export interface ScaffoldOptions {
   install_method?: 'global' | 'local' | 'npx';
   agentScopes?: Record<string, SkillScope>;
   homeDir?: string;
+  /** Install Claude Code SessionStart hook. Defaults to true when claude agent is selected. */
+  hook?: boolean;
 }
 
 export function detectInstallMethod(argv1 = process.argv[1]): 'global' | 'local' | 'npx' {
@@ -47,6 +50,7 @@ export interface ScaffoldResult {
   repos: string[];
   shards_written: boolean;
   skills_installed?: string[];
+  hooks_installed?: string[];
 }
 
 export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<ScaffoldResult> {
@@ -63,6 +67,20 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
       skills_installed.push(dest);
       skillsMap[agent] = { path: dest, scope };
     }
+  }
+
+  // Install Claude Code SessionStart hook (opt-out with hook: false)
+  const hooks_installed: string[] = [];
+  if (options.hook !== false && options.agents?.includes('claude')) {
+    const scope = options.agentScopes?.['claude'] ?? 'workspace';
+    const install_method_for_hook = options.install_method ?? detectInstallMethod();
+    const hookCmd = installClaudeHook(
+      workspaceRoot,
+      install_method_for_hook,
+      scope,
+      options.homeDir,
+    );
+    hooks_installed.push(hookCmd);
   }
 
   // Detect install method (use provided override or auto-detect)
@@ -110,9 +128,6 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     writeFileSync(join(repoDir, 'overview.md'), generateRepoTemplate(repo), 'utf-8');
   }
 
-  // Ensure .ctxify/ is in .gitignore
-  ensureGitignore(workspaceRoot, outputDir);
-
   return {
     status: 'initialized',
     mode,
@@ -120,6 +135,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     repos: repos.map((r) => r.name),
     shards_written: true,
     ...(skills_installed.length > 0 ? { skills_installed } : {}),
+    ...(hooks_installed.length > 0 ? { hooks_installed } : {}),
   };
 }
 
@@ -134,10 +150,21 @@ export function registerInitCommand(program: Command): void {
       'Install playbook for specified agents (claude, copilot, cursor, codex)',
     )
     .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
+    .option(
+      '--hook',
+      'Install Claude Code SessionStart hook to auto-load context (default: true with --agent claude)',
+    )
+    .option('--no-hook', 'Skip installing the Claude Code SessionStart hook')
     .action(
       async (
         dir?: string,
-        options?: { repos?: string[]; mono?: boolean; agent?: string[]; force?: boolean },
+        options?: {
+          repos?: string[];
+          mono?: boolean;
+          agent?: string[];
+          force?: boolean;
+          hook?: boolean;
+        },
       ) => {
         const workspaceRoot = resolve(dir || '.');
         const configPath = join(workspaceRoot, 'ctx.yaml');
@@ -233,6 +260,7 @@ export function registerInitCommand(program: Command): void {
             monoRepoOptions,
             force: options?.force,
             agents,
+            hook: options?.hook,
           };
         }
 
@@ -266,22 +294,6 @@ export function registerInitCommand(program: Command): void {
         }
       },
     );
-}
-
-function ensureGitignore(workspaceRoot: string, outputDir: string): void {
-  const gitignorePath = join(workspaceRoot, '.gitignore');
-  const entry = outputDir.endsWith('/') ? outputDir : outputDir + '/';
-
-  if (existsSync(gitignorePath)) {
-    const content = readFileSync(gitignorePath, 'utf-8');
-    // Check if outputDir is already covered (with or without trailing slash)
-    const lines = content.split('\n').map((l) => l.trim());
-    if (lines.includes(entry) || lines.includes(outputDir)) return;
-    const suffix = content.endsWith('\n') ? '' : '\n';
-    appendFileSync(gitignorePath, `${suffix}${entry}\n`, 'utf-8');
-  } else {
-    writeFileSync(gitignorePath, `${entry}\n`, 'utf-8');
-  }
 }
 
 export function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {

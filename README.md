@@ -79,7 +79,7 @@ ctxify init --repos ./api ./web
 
 | Command | Purpose |
 |---------|---------|
-| `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force` |
+| `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force`, `--hook`/`--no-hook` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
 | `ctxify patterns <repo>` | Scaffold `patterns.md` with TODO placeholders for an agent to fill. Flags: `--force` |
@@ -110,6 +110,17 @@ Multiple agents: `ctxify init --agent claude copilot cursor`
 
 The 6 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
 
+### Claude Code session hook
+
+When you select Claude Code as an agent, `ctxify init` installs a [SessionStart hook](https://docs.anthropic.com/en/docs/claude-code/hooks) in `.claude/settings.json` that runs `ctxify context-hook` every time a Claude Code session starts, resumes, or compacts. The hook:
+
+1. Outputs any `corrections.md` content from `.ctxify/repos/*/` — so past corrections are always in context
+2. Nudges the agent to invoke `/ctxify-reading-context` for full patterns and domain context
+
+This means corrections are automatically loaded without the agent needing to remember to check. Use `--no-hook` to skip hook installation if you prefer to manage context loading manually.
+
+The hook is reinstalled on `ctxify upgrade` and removed on `ctxify clean`.
+
 ## Agent integration
 
 When you run `ctxify init`, the installed skills teach your agent how to:
@@ -133,6 +144,8 @@ ctxify upgrade --dry-run   # show what would happen without executing
 ```
 
 The install method and installed agents are persisted in `ctx.yaml` automatically on `ctxify init`, so `upgrade` requires no flags.
+
+To suppress the update warning in CI or scripts, set `CI=true` (standard in GitHub Actions, CircleCI, etc.) or `CTXIFY_NO_UPDATE_CHECK=1`.
 
 ## Supported manifests and modes
 

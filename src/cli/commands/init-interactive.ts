@@ -14,6 +14,7 @@ export interface InteractiveAnswers {
   confirmedMode: OperatingMode;
   repos: RepoEntry[];
   monoRepoOptions?: MonoRepoOptions;
+  hook?: boolean;
 }
 
 /**
@@ -28,6 +29,7 @@ export function resolveInteractiveOptions(answers: InteractiveAnswers): Scaffold
     monoRepoOptions: answers.monoRepoOptions,
     agents: answers.agents,
     agentScopes: answers.agentScopes,
+    hook: answers.hook,
   };
 }
 
@@ -75,6 +77,16 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
       }
     }
     agentScopes = scopeMap;
+  }
+
+  // Step 1.75: Claude Code SessionStart hook opt-in
+  let hook: boolean | undefined;
+  if (agents?.includes('claude')) {
+    hook = await confirm({
+      message:
+        'Install a Claude Code session hook? (auto-loads corrections and context on session start)',
+      default: true,
+    });
   }
 
   // Step 2: Auto-detect and confirm mode
@@ -152,5 +164,6 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     confirmedMode: mode,
     repos,
     monoRepoOptions,
+    hook,
   });
 }
