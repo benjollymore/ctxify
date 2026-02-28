@@ -37,9 +37,10 @@ Do NOT create domain files for small, self-contained modules — a `file:line` r
 ## What to Fill
 
 After scaffolding, read entry points + 2-3 key files and fill the TODOs:
-- **Overview**: What this domain covers, key concepts, workflow/status flows (2-3 sentences)
-- **Key Files**: 5-10 most important files with 1-line descriptions and `file:line` references
-- **Patterns**: Domain-specific patterns with brief examples
+- **Overview**: What this domain covers, key concepts, 2-3 sentences
+- **Concepts**: Key domain concepts, business rules, status/state flows. What does someone need to know to work here?
+- **Decisions**: Why is it built this way? What constraints or trade-offs shaped the design?
+- **Patterns**: Domain-specific patterns with brief code examples
 - **Cross-repo**: How this domain spans repos (backend model + frontend form, etc.)
 
 Target: 50-150 lines total.
