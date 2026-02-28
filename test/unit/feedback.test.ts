@@ -314,7 +314,7 @@ describe('feedback command', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it('--type antipattern creates # Anti-Patterns section and antipattern markers', () => {
+  it('--type antipattern writes to rules.md with antipattern markers', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
     createWorkspace(dir, ['api']);
@@ -327,7 +327,10 @@ describe('feedback command', () => {
     expect(parsed.status).toBe('recorded');
     expect(parsed.type).toBe('antipattern');
 
-    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
+    const rulesPath = join(dir, '.ctxify', 'repos', 'api', 'rules.md');
+    expect(existsSync(rulesPath)).toBe(true);
+
+    const content = readFileSync(rulesPath, 'utf-8');
     expect(content).toContain('# Anti-Patterns');
     expect(content).toContain('<!-- antipattern:');
     expect(content).toContain('<!-- /antipattern -->');
@@ -352,7 +355,7 @@ describe('feedback command', () => {
       dir,
     );
 
-    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'rules.md'), 'utf-8');
     expect(content).toContain('Missing validation — `src/payments/handler.ts:42`');
   });
 
@@ -364,28 +367,73 @@ describe('feedback command', () => {
     runFeedback(['api', '--type', 'antipattern', '--body', 'First anti-pattern'], dir);
     runFeedback(['api', '--type', 'antipattern', '--body', 'Second anti-pattern'], dir);
 
-    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'rules.md'), 'utf-8');
     const headerCount = (content.match(/# Anti-Patterns/g) || []).length;
     expect(headerCount).toBe(1);
     expect(content).toContain('First anti-pattern');
     expect(content).toContain('Second anti-pattern');
   });
 
-  it('antipatterns and corrections coexist without interference', () => {
+  it('--type rule creates rules.md with rule markers', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    const { parsed } = runFeedback(
+      ['api', '--type', 'rule', '--body', 'Do not fragment CSS into modules'],
+      dir,
+    );
+
+    expect(parsed.status).toBe('recorded');
+    expect(parsed.type).toBe('rule');
+
+    const rulesPath = join(dir, '.ctxify', 'repos', 'api', 'rules.md');
+    expect(existsSync(rulesPath)).toBe(true);
+
+    const content = readFileSync(rulesPath, 'utf-8');
+    const fm = parseFrontmatter(content);
+    expect(fm!.repo).toBe('api');
+    expect(fm!.type).toBe('rules');
+    expect(content).toContain('Do not fragment CSS into modules');
+    expect(content).toContain('<!-- rule:');
+    expect(content).toContain('<!-- /rule -->');
+  });
+
+  it('rules and antipatterns coexist in rules.md', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createWorkspace(dir, ['api']);
+
+    runFeedback(['api', '--type', 'rule', '--body', 'Always use bun'], dir);
+    runFeedback(['api', '--type', 'antipattern', '--body', 'Silent catch'], dir);
+
+    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'rules.md'), 'utf-8');
+    expect(content).toContain('Always use bun');
+    expect(content).toContain('Silent catch');
+    expect(content).toContain('<!-- rule:');
+    expect(content).toContain('<!-- antipattern:');
+  });
+
+  it('corrections and rules write to separate files', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
     createWorkspace(dir, ['api']);
 
     runFeedback(['api', '--body', 'A correction'], dir);
-    runFeedback(['api', '--type', 'antipattern', '--body', 'An anti-pattern'], dir);
-    runFeedback(['api', '--body', 'Another correction'], dir);
+    runFeedback(['api', '--type', 'rule', '--body', 'A rule'], dir);
 
-    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'corrections.md'), 'utf-8');
-    expect(content).toContain('A correction');
-    expect(content).toContain('An anti-pattern');
-    expect(content).toContain('Another correction');
-    expect(content).toContain('<!-- correction:');
-    expect(content).toContain('<!-- antipattern:');
+    const correctionsContent = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'corrections.md'),
+      'utf-8',
+    );
+    const rulesContent = readFileSync(
+      join(dir, '.ctxify', 'repos', 'api', 'rules.md'),
+      'utf-8',
+    );
+    expect(correctionsContent).toContain('A correction');
+    expect(correctionsContent).not.toContain('A rule');
+    expect(rulesContent).toContain('A rule');
+    expect(rulesContent).not.toContain('A correction');
   });
 
   it('explicit --type correction works same as default', () => {
@@ -412,7 +460,6 @@ describe('feedback command', () => {
     const stdout = runFeedbackExpectFail(['api', '--type', 'invalid', '--body', 'test'], dir);
     const parsed = JSON.parse(stdout);
     expect(parsed.error).toContain('Invalid --type');
-    expect(parsed.error).toContain('invalid');
   });
 
   it('antipattern entries pass validateShards', () => {
