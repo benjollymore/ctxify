@@ -313,9 +313,9 @@ describe('listSkillSourceFiles', () => {
     expect(files[0].filename).toBe('SKILL.md');
   });
 
-  it('returns 6 skill files', () => {
+  it('returns 7 skill files', () => {
     const files = listSkillSourceFiles();
-    expect(files).toHaveLength(6);
+    expect(files).toHaveLength(7);
   });
 
   it('remaining files are alphabetically sorted after SKILL.md', () => {

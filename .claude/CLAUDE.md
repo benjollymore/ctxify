@@ -12,7 +12,7 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 266 tests, 22 files
+npm test             # vitest run — 279 tests, 22 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
