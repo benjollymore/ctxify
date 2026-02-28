@@ -68,8 +68,9 @@ ctxify init --repos ./api ./web
 ├── index.md                    # Workspace hub: overview, repo table, relationships, workflows
 └── repos/
     └── {name}/
-        ├── overview.md         # Repo hub (~30-40 lines): architecture, commands, context file index
-        ├── corrections.md      # Agent-logged corrections (created by ctxify feedback, always loaded)
+        ├── overview.md         # Repo hub (~30-40 lines): architecture, context file index
+        ├── corrections.md      # Agent-logged factual corrections (always loaded)
+        ├── rules.md            # Behavioral instructions and anti-patterns (always loaded)
         └── (agent creates after reading source:)
             ├── patterns.md     # How to build features — the primary deliverable
             └── {domain}.md     # Domain deep dives (one per complex area)
@@ -87,7 +88,7 @@ ctxify init --repos ./api ./web
 | `ctxify patterns <repo>` | Scaffold `patterns.md` with TODO placeholders for an agent to fill. Flags: `--force` |
 | `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
 | `ctxify domain list` | List registered domain files. Flags: `--repo` |
-| `ctxify feedback <repo>` | Log a correction or anti-pattern to `corrections.md`. Flags: `--body` (required), `--type correction\|antipattern`, `--source file:line` |
+| `ctxify feedback <repo>` | Log feedback. Corrections go to `corrections.md`, rules and anti-patterns go to `rules.md`. Flags: `--body` (required), `--type correction\|rule\|antipattern`, `--source file:line` |
 | `ctxify upgrade` | Upgrade ctxify and reinstall all tracked agent skills |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
 | `ctxify branch <name>` | Create a branch across all repos (multi-repo only) |
@@ -97,26 +98,26 @@ All commands output JSON to stdout.
 
 ## Supported agents
 
-`ctxify init` installs 6 focused skills that teach your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
+`ctxify init` installs 7 focused skills that teach your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
 
 | Agent | Flag | Primary skill | Files installed |
 |-------|------|---------------|-----------------|
-| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` | 6 separate skill files |
+| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` | 7 separate skill files |
 | GitHub Copilot | `--agent copilot` | `.github/instructions/ctxify.instructions.md` | 1 combined file |
-| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` | 6 separate rule files |
+| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` | 7 separate rule files |
 | OpenAI Codex | `--agent codex` | `AGENTS.md` | 1 combined file |
 
 **Skill scope:** During `ctxify init`, you'll be prompted to choose where to install skills for each agent that supports global installation (Claude Code and Codex). Choose **workspace** (default) to install skills local to the current project, or **global** to install to your home directory (e.g., `~/.claude/skills/`) so skills are available in every project.
 
 Multiple agents: `ctxify init --agent claude copilot cursor`
 
-The 6 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
+The 7 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:rules`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
 
 ### Claude Code session hook
 
 When you select Claude Code as an agent, `ctxify init` installs a [SessionStart hook](https://docs.anthropic.com/en/docs/claude-code/hooks) in `.claude/settings.json` that runs `ctxify context-hook` every time a Claude Code session starts, resumes, or compacts. The hook:
 
-1. Outputs any `corrections.md` content from `.ctxify/repos/*/` — so past corrections are always in context
+1. Outputs any `corrections.md` and `rules.md` content from `.ctxify/repos/*/` — so past corrections and behavioral instructions are always in context
 2. Nudges the agent to invoke `/ctxify-reading-context` for full patterns and domain context
 
 This means corrections are automatically loaded without the agent needing to remember to check. Use `--no-hook` to skip hook installation if you prefer to manage context loading manually.
@@ -131,7 +132,8 @@ When you run `ctxify init`, the installed skills teach your agent how to:
 2. Run `ctxify patterns <repo>` to scaffold `patterns.md`, then fill the TODOs — the most important deliverable
 3. Run `ctxify domain add <repo> <domain>` to scaffold domain files for complex areas
 4. Fill cross-repo workflows in index.md
-5. Log corrections with `ctxify feedback <repo>` when context guidance was wrong
+5. Log corrections with `ctxify feedback <repo> --type correction` when context guidance was wrong
+6. Log behavioral rules with `ctxify feedback <repo> --type rule` when you correct the agent's approach
 
 ## Keeping ctxify and skills up to date
 

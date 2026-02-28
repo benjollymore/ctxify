@@ -8,16 +8,20 @@ import {
   formatAntiPatternEntry,
   ANTI_PATTERNS_SECTION_HEADER,
 } from '../../templates/corrections.js';
+import { generateRulesTemplate, formatRuleEntry } from '../../templates/rules.js';
 
 // ── Command ─────────────────────────────────────────────────────────────
+
+const VALID_TYPES = ['correction', 'antipattern', 'rule'] as const;
+type EntryType = (typeof VALID_TYPES)[number];
 
 export function registerFeedbackCommand(program: Command): void {
   program
     .command('feedback <repo>')
-    .description('Log a correction or anti-pattern')
+    .description('Log a correction, rule, or anti-pattern')
     .requiredOption('--body <text>', 'Entry body')
-    .option('--type <type>', 'Entry type: correction or antipattern', 'correction')
-    .option('--source <source>', 'Source file:line reference (for antipatterns)')
+    .option('--type <type>', 'Entry type: correction, rule, or antipattern', 'correction')
+    .option('--source <source>', 'Source file:line reference (for rules/antipatterns)')
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .action(
       async (
@@ -32,11 +36,11 @@ export function registerFeedbackCommand(program: Command): void {
           process.exit(1);
         }
 
-        const entryType = options.type;
-        if (entryType !== 'correction' && entryType !== 'antipattern') {
+        const entryType = options.type as EntryType;
+        if (!VALID_TYPES.includes(entryType)) {
           console.log(
             JSON.stringify({
-              error: `Invalid --type "${entryType}". Must be "correction" or "antipattern".`,
+              error: `Invalid --type "${options.type}". Must be "correction", "rule", or "antipattern".`,
             }),
           );
           process.exit(1);
@@ -57,32 +61,53 @@ export function registerFeedbackCommand(program: Command): void {
         }
 
         const repoDir = join(workspaceRoot, outputDir, 'repos', repo);
-        const correctionsPath = join(repoDir, 'corrections.md');
         const timestamp = new Date().toISOString();
-
         let createdFile = false;
+        let targetPath: string;
 
-        if (!existsSync(correctionsPath)) {
-          mkdirSync(repoDir, { recursive: true });
-          writeFileSync(correctionsPath, generateCorrectionsTemplate({ repo }), 'utf-8');
-          createdFile = true;
-        }
+        if (entryType === 'correction') {
+          // Corrections go to corrections.md
+          targetPath = join(repoDir, 'corrections.md');
 
-        let current = readFileSync(correctionsPath, 'utf-8');
-
-        if (entryType === 'antipattern') {
-          if (!current.includes('# Anti-Patterns')) {
-            current = current + ANTI_PATTERNS_SECTION_HEADER;
+          if (!existsSync(targetPath)) {
+            mkdirSync(repoDir, { recursive: true });
+            writeFileSync(targetPath, generateCorrectionsTemplate({ repo }), 'utf-8');
+            createdFile = true;
           }
-          const entry = formatAntiPatternEntry({
-            body: options.body,
-            source: options.source,
-            timestamp,
-          });
-          writeFileSync(correctionsPath, current + entry, 'utf-8');
-        } else {
+
+          const current = readFileSync(targetPath, 'utf-8');
           const entry = formatCorrectionEntry({ body: options.body, timestamp });
-          writeFileSync(correctionsPath, current + entry, 'utf-8');
+          writeFileSync(targetPath, current + entry, 'utf-8');
+        } else {
+          // Rules and antipatterns go to rules.md
+          targetPath = join(repoDir, 'rules.md');
+
+          if (!existsSync(targetPath)) {
+            mkdirSync(repoDir, { recursive: true });
+            writeFileSync(targetPath, generateRulesTemplate({ repo }), 'utf-8');
+            createdFile = true;
+          }
+
+          let current = readFileSync(targetPath, 'utf-8');
+
+          if (entryType === 'antipattern') {
+            if (!current.includes('# Anti-Patterns')) {
+              current = current + ANTI_PATTERNS_SECTION_HEADER;
+            }
+            const entry = formatAntiPatternEntry({
+              body: options.body,
+              source: options.source,
+              timestamp,
+            });
+            writeFileSync(targetPath, current + entry, 'utf-8');
+          } else {
+            const entry = formatRuleEntry({
+              body: options.body,
+              source: options.source,
+              timestamp,
+            });
+            writeFileSync(targetPath, current + entry, 'utf-8');
+          }
         }
 
         console.log(
@@ -91,7 +116,7 @@ export function registerFeedbackCommand(program: Command): void {
               status: 'recorded',
               type: entryType,
               repo,
-              path: correctionsPath,
+              path: targetPath,
               timestamp,
               created_file: createdFile,
             },

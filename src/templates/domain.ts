@@ -27,9 +27,13 @@ ${fm.trimEnd()}
 
 <!-- TODO: Agent — what this domain covers, key concepts, 2-3 sentences -->
 
-## Key Files
+## Concepts
 
-<!-- TODO: Agent — 5-10 most important files with descriptions and file:line references -->
+<!-- TODO: Agent — key domain concepts, business rules, status/state flows. What does someone need to know to work here? -->
+
+## Decisions
+
+<!-- TODO: Agent — why is it built this way? What constraints or trade-offs shaped the design? -->
 
 ## Patterns
 

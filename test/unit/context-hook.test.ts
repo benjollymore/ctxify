@@ -101,6 +101,41 @@ describe('getContextHookOutput', () => {
     expect(output).toContain('/ctxify-reading-context');
   });
 
+  it('outputs rules content when rules.md exists', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      join(repoDir, 'rules.md'),
+      '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\nDo not fragment CSS.',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('Do not fragment CSS.');
+    expect(output).toContain('/ctxify-reading-context');
+  });
+
+  it('outputs both corrections and rules when both exist', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      join(repoDir, 'corrections.md'),
+      '---\nrepo: my-app\ntype: corrections\n---\n\n# Corrections\n\nAPI is at /v2.',
+      'utf-8',
+    );
+    writeFileSync(
+      join(repoDir, 'rules.md'),
+      '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\nAlways use bun.',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('API is at /v2.');
+    expect(output).toContain('Always use bun.');
+  });
+
   it('skips repos without corrections.md', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');

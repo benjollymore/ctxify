@@ -3,123 +3,116 @@ import { extractSegments } from '../../src/utils/segments.js';
 import { parseFrontmatter } from '../../src/utils/frontmatter.js';
 
 // Test shard files are now markdown with segment markers.
+// Examples use the active v2 tags: correction, rule, domain-index.
 
-describe('segment extraction: endpoints', () => {
-  const content = `# api — Endpoints
+describe('segment extraction: corrections', () => {
+  const content = `# api — Corrections
 
-<!-- endpoint:GET:/users -->
-**GET /users** — \`src/routes/users.ts:5\` (getUsers)
-<!-- /endpoint -->
+<!-- correction:2025-06-15T10:30:00.000Z -->
+Auth middleware is not global — it's applied per-route.
+<!-- /correction -->
 
-<!-- endpoint:POST:/users -->
-**POST /users** — \`src/routes/users.ts:20\` (createUser)
-<!-- /endpoint -->
+<!-- correction:2025-06-15T11:00:00.000Z -->
+Database uses UUID, not integer IDs.
+<!-- /correction -->
 
-<!-- endpoint:GET:/health -->
-**GET /health** — \`src/index.ts:10\`
-<!-- /endpoint -->
+<!-- correction:2025-06-16T09:00:00.000Z -->
+API is at /v2, not /v1.
+<!-- /correction -->
 
-<!-- endpoint:DELETE:/users/:id -->
-**DELETE /users/:id** — \`src/routes/users.ts:30\`
-<!-- /endpoint -->
+<!-- correction:2025-06-17T14:00:00.000Z -->
+Rate limiting is per-user, not per-IP.
+<!-- /correction -->
 `;
 
   it('extracts all segments when no filter', () => {
-    const segments = extractSegments(content, 'endpoint');
+    const segments = extractSegments(content, 'correction');
     expect(segments).toHaveLength(4);
   });
 
-  it('filters by method (attr index 0, exact)', () => {
-    const segments = extractSegments(content, 'endpoint', { index: 0, value: 'GET', exact: true });
+  it('filters by timestamp substring (attr index 0)', () => {
+    const segments = extractSegments(content, 'correction', { index: 0, value: '2025-06-15' });
     expect(segments).toHaveLength(2);
-    expect(segments[0]).toContain('GET /users');
-    expect(segments[1]).toContain('GET /health');
+    expect(segments[0]).toContain('Auth middleware');
+    expect(segments[1]).toContain('UUID');
   });
 
-  it('filters by path substring (attr index 1)', () => {
-    const segments = extractSegments(content, 'endpoint', { index: 1, value: 'users' });
-    expect(segments).toHaveLength(3);
+  it('filters by date prefix substring (attr index 0)', () => {
+    const segments = extractSegments(content, 'correction', {
+      index: 0,
+      value: '2025-06-16',
+    });
+    expect(segments).toHaveLength(1);
+    expect(segments[0]).toContain('/v2');
   });
 
   it('returns empty when no match', () => {
-    const segments = extractSegments(content, 'endpoint', {
+    const segments = extractSegments(content, 'correction', {
       index: 0,
-      value: 'PATCH',
+      value: '2024-01-01',
       exact: true,
     });
     expect(segments).toHaveLength(0);
   });
 });
 
-describe('segment extraction: types', () => {
-  const content = `# Shared Types
+describe('segment extraction: rules', () => {
+  const content = `# Rules
 
-<!-- type:UserProfile:interface -->
-### UserProfile
-Defined in **api**, used by **web**.
-<!-- /type -->
+<!-- rule:2025-06-15T10:30:00.000Z -->
+Do not fragment CSS into modules.
+<!-- /rule -->
 
-<!-- type:ApiResponse:type -->
-### ApiResponse
-Defined in **api**, used by **web**.
-<!-- /type -->
+<!-- rule:2025-06-16T09:00:00.000Z -->
+Always use bun, not npm.
+<!-- /rule -->
 
-<!-- type:Config:interface -->
-### Config
-Internal config type.
-<!-- /type -->
+<!-- rule:2025-06-17T14:00:00.000Z -->
+Never auto-run the linter — CI handles that.
+<!-- /rule -->
 `;
 
-  it('filters by exact name (attr index 0)', () => {
-    const segments = extractSegments(content, 'type', {
+  it('filters by date prefix substring (attr index 0)', () => {
+    const segments = extractSegments(content, 'rule', {
       index: 0,
-      value: 'UserProfile',
-      exact: true,
+      value: '2025-06-15',
     });
     expect(segments).toHaveLength(1);
-    expect(segments[0]).toContain('UserProfile');
+    expect(segments[0]).toContain('CSS');
   });
 
   it('returns all when no filter', () => {
-    const segments = extractSegments(content, 'type');
+    const segments = extractSegments(content, 'rule');
     expect(segments).toHaveLength(3);
   });
 
-  it('returns empty when name not found', () => {
-    const segments = extractSegments(content, 'type', {
+  it('returns empty when timestamp not found', () => {
+    const segments = extractSegments(content, 'rule', {
       index: 0,
-      value: 'NonExistent',
+      value: '2024-01-01T00:00:00.000Z',
       exact: true,
     });
     expect(segments).toHaveLength(0);
   });
 });
 
-describe('segment extraction: env', () => {
-  const content = `# Environment Variables
+describe('segment extraction: domain-index', () => {
+  const content = `# api overview
 
-<!-- env:DATABASE_URL -->
-**DATABASE_URL** — shared
-<!-- /env -->
+## Context
 
-<!-- env:PORT -->
-**PORT** — api only
-<!-- /env -->
-
-<!-- env:API_URL -->
-**API_URL** — web only
-<!-- /env -->
+<!-- domain-index -->
+- \`payments.md\` — Payment processing
+- \`auth.md\` — Authentication and authorization
+- \`notifications.md\` — Email and push notifications
+<!-- /domain-index -->
 `;
 
-  it('extracts by exact name', () => {
-    const segments = extractSegments(content, 'env', { index: 0, value: 'PORT', exact: true });
+  it('extracts domain-index content', () => {
+    const segments = extractSegments(content, 'domain-index');
     expect(segments).toHaveLength(1);
-    expect(segments[0]).toContain('PORT');
-  });
-
-  it('extracts all env segments', () => {
-    const segments = extractSegments(content, 'env');
-    expect(segments).toHaveLength(3);
+    expect(segments[0]).toContain('payments.md');
+    expect(segments[0]).toContain('auth.md');
   });
 });
 

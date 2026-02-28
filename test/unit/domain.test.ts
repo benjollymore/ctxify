@@ -70,7 +70,9 @@ describe('generateDomainTemplate', () => {
     const output = generateDomainTemplate({ repo: 'api', domain: 'payments' });
 
     expect(output).toContain('# payments');
-    expect(output).toContain('## Key Files');
+    expect(output).not.toContain('## Key Files');
+    expect(output).toContain('## Concepts');
+    expect(output).toContain('## Decisions');
     expect(output).toContain('## Patterns');
     expect(output).toContain('## Cross-repo');
     expect(output).toContain('<!-- TODO:');
