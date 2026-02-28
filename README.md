@@ -5,7 +5,7 @@
 [![Node >=18](https://img.shields.io/node/v/@benjollymore/ctxify)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Context layer for AI coding agents — a turbocharged `CLAUDE.md` for multi-repo workspaces.
+Context layer for AI coding agents — a turbocharged context framework for single, mono, and multi-repo workspaces.
 
 AI agents struggle with multi-repo projects. They can see one repo at a time but miss the bigger picture: which services call which, what types are shared, how patterns differ across repos. ctxify scaffolds a structured context layer (`.ctxify/`) that your agent fills with semantic analysis from reading source code. The result is a persistent workspace context framework that any agent session can read to understand the big workspace and evolves with time. 
 
