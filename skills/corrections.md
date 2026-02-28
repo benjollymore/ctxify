@@ -1,6 +1,6 @@
 ---
 name: ctxify:corrections
-description: Use when context guidance led you astray, or you discover a pattern that contradicts documented behavior in a ctxify workspace.
+description: Use when the user corrects your behaviour or tells you not to do something, context guidance led you astray, or you discover a pattern that contradicts documented behavior in a ctxify workspace.
 ---
 
 # ctxify:corrections — Logging Corrections and Anti-Patterns
