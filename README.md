@@ -1,7 +1,7 @@
 # ctxify
 
 [![npm version](https://img.shields.io/npm/v/@benjollymore/ctxify)](https://www.npmjs.com/package/@benjollymore/ctxify)
-[![CI](https://github.com/benjollymore/ctxify/actions/workflows/ci.yml/badge.svg)](https://github.com/benjollymore/ctxify/actions/workflows/ci.yml)
+[![Tests](https://github.com/benjollymore/ctxify/actions/workflows/ci.yml/badge.svg)](https://github.com/benjollymore/ctxify/actions/workflows/ci.yml)
 [![Node >=18](https://img.shields.io/node/v/@benjollymore/ctxify)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
