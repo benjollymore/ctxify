@@ -5,19 +5,21 @@
 [![Node >=18](https://img.shields.io/node/v/@benjollymore/ctxify)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Context layer for AI coding agents — a turbocharged context framework for single, mono, and multi-repo workspaces.
+Persistent workspace knowledge for AI coding agents.
 
-AI agents struggle with multi-repo projects. They can see one repo at a time but miss the bigger picture: which services call which, what types are shared, how patterns differ across repos. ctxify scaffolds a structured context layer (`.ctxify/`) that your agent fills with semantic analysis from reading source code. The result is a persistent workspace context framework that any agent session can read to understand the big workspace and evolves with time. 
+Every new agent session starts from scratch. The agent rediscovers your architecture, re-learns your patterns, and re-reads your conventions — every single time. You can write this down in CLAUDE.md or AGENTS.md, but a single flat file either stays too shallow to be useful or grows large enough to bloat every context window. ctxify fixes both problems: it scaffolds a structured knowledge layer (`.ctxify/`) that your agent fills with what it learns from reading your code, then uses progressive disclosure to load only what's relevant to the current task. The result is persistent context without the context window cost.
+
+Works with single repos, monorepos, and multi-repo workspaces. Supports Claude Code, GitHub Copilot, Cursor, and OpenAI Codex.
 
 ## How it works
 
-Two roles: **ctxify scaffolds**, **your agent fills**.
+**ctxify scaffolds, your agent fills.** Mechanical extraction (parsing package.json, detecting frameworks) is deterministic and cheap — ctxify handles that. Semantic analysis (understanding architecture, patterns, conventions) requires reading code — your agent handles that.
 
-1. **`ctxify init`** detects your repos, parses their manifests (package.json, go.mod, pyproject.toml, requirements.txt), and scaffolds `.ctxify/` with lightweight markdown hubs pre-filled with mechanical data and TODO placeholders.
+1. **`ctxify init`** detects your repos, parses their manifests (package.json, go.mod, pyproject.toml, requirements.txt), and scaffolds `.ctxify/` with lightweight markdown templates pre-filled with mechanical data and TODO placeholders. It also installs agent skills that guide the filling process.
 
-2. **Your agent** reads the hubs, explores source code, and creates detail files — `patterns.md` (how to build features) and domain files (deep dives into complex areas).
+2. **Your agent** reads the scaffolded templates, explores your source code, and fills in the semantic content: architecture descriptions, coding patterns, domain knowledge, and (for multi-repo workspaces) cross-repo relationships. As the agent works, it continues to learn — adding domain files for complex areas it discovers and logging corrections when you tell it something was wrong or it discovers a mistake on its own.
 
-3. **`ctxify validate`** checks structural integrity: valid frontmatter, balanced segment markers, TODO detection.
+3. **On every future session**, the agent loads the filled context and starts with a senior engineer's understanding of the codebase — not a blank slate. The installed skills use progressive disclosure to keep context window bloat in check: a lightweight overview is always loaded, but patterns and domain deep-dives are only pulled in when the agent is actually working in that area.
 
 ### Quick start
 
