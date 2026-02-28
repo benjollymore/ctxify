@@ -32,11 +32,10 @@ Follow **ctxify:reading-context**: load `corrections.md`, `rules.md`, and `overv
 
 ## If context is unfilled
 
-Tell the user:
+Check the user's intent from the conversation:
 
-> "The ctxify context files for this workspace have unfilled templates — architecture, patterns, and conventions haven't been documented yet. Would you like me to fill them now? I'll read the codebase and document what I find using **/ctxify-filling-context**."
-
-Wait for the user to respond before doing anything else.
-
-- **If yes** → invoke **ctxify:filling-context** to read the codebase and fill in the templates.
-- **If no** → proceed as if context is filled: load the existing files and note that TODO markers indicate sections that are still unfilled.
+- **User explicitly requested context setup** (e.g., "set up context", "fill context", "/ctxify", "initialize context") → Proceed directly: invoke **ctxify:filling-context**. No need to ask.
+- **Startup was triggered automatically** (e.g., session start hook, or you invoked startup as a prerequisite before a different task) → Ask briefly:
+  > "Context files are unfilled. Fill them now, or skip and start on your task?"
+  - **If yes** → invoke **ctxify:filling-context** to read the codebase and fill in the templates.
+  - **If no** → proceed as if context is filled: load the existing files and note that TODO markers indicate sections that are still unfilled.
