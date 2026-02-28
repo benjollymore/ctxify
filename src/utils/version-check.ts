@@ -56,6 +56,19 @@ function isCacheFresh(cache: VersionCache, ttlMs: number): boolean {
   return Date.now() - checkedAt < ttlMs;
 }
 
+function parseSemver(v: string): [number, number, number] {
+  const parts = v.replace(/^v/, '').split('.').map(Number);
+  return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
+}
+
+function isNewerVersion(candidate: string, current: string): boolean {
+  const [cMaj, cMin, cPat] = parseSemver(candidate);
+  const [rMaj, rMin, rPat] = parseSemver(current);
+  if (cMaj !== rMaj) return cMaj > rMaj;
+  if (cMin !== rMin) return cMin > rMin;
+  return cPat > rPat;
+}
+
 /**
  * Check if a newer version is available. Returns the latest version string if
  * the current version is outdated, or undefined if up-to-date or the check fails.
@@ -88,8 +101,8 @@ export async function checkForUpdate(
       writeCache(cacheFile, latest);
     }
 
-    // Compare: return latest only if it's actually newer
-    return latest !== currentVersion ? latest : undefined;
+    // Compare: return latest only if it's strictly newer (semver gt)
+    return isNewerVersion(latest, currentVersion) ? latest : undefined;
   } catch {
     return undefined;
   }
