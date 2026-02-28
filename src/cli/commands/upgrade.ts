@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { loadConfig } from '../../core/config.js';
 import type { SkillEntry } from '../../core/config.js';
 import { installSkill } from '../install-skill.js';
+import { installClaudeHook } from '../install-hooks.js';
 import { invalidateVersionCache } from '../../utils/version-check.js';
 
 const PACKAGE_NAME = '@benjollymore/ctxify@latest';
@@ -15,6 +16,7 @@ export interface UpgradeResult {
   npm_command: string[] | null;
   npx_note?: string;
   skills_reinstalled: string[];
+  hooks_reinstalled?: string[];
 }
 
 export interface UpgradeOptions {
@@ -96,6 +98,22 @@ export async function runUpgrade(
     }
   }
 
+  // Reinstall Claude Code hook if claude is in the skills map
+  const hooks_reinstalled: string[] = [];
+  if ('claude' in skillsMap) {
+    try {
+      const hookCmd = installClaudeHook(
+        workspaceRoot,
+        install_method,
+        skillsMap['claude'].scope,
+        homeDir,
+      );
+      hooks_reinstalled.push(hookCmd);
+    } catch {
+      // Non-fatal
+    }
+  }
+
   // Invalidate version check cache so next command checks immediately
   invalidateVersionCache();
 
@@ -105,6 +123,7 @@ export async function runUpgrade(
     npm_command: npmArgs,
     ...(npx_note ? { npx_note } : {}),
     skills_reinstalled,
+    ...(hooks_reinstalled.length > 0 ? { hooks_reinstalled } : {}),
   };
 }
 

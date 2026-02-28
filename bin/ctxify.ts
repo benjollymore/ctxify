@@ -27,6 +27,7 @@ import { registerDomainCommand } from '../src/cli/commands/domain.js';
 import { registerFeedbackCommand } from '../src/cli/commands/feedback.js';
 import { registerUpgradeCommand } from '../src/cli/commands/upgrade.js';
 import { registerPatternsCommand } from '../src/cli/commands/patterns.js';
+import { registerContextHookCommand } from '../src/cli/commands/context-hook.js';
 import { checkForUpdate } from '../src/utils/version-check.js';
 
 function findPackageJson(): { version: string } {
@@ -53,8 +54,9 @@ program
   .description('Turbocharged workspace context for AI coding agents')
   .version(pkg.version);
 
-// Non-blocking version check warning before each command
-program.hook('preAction', async () => {
+// Non-blocking version check warning before each command (skip for context-hook to avoid latency)
+program.hook('preAction', async (thisCommand) => {
+  if (thisCommand.name() === 'context-hook') return;
   if (process.env.CI || process.env.CTXIFY_NO_UPDATE_CHECK) return;
   const latest = await checkForUpdate(pkg.version);
   if (latest) {
@@ -75,6 +77,7 @@ registerDomainCommand(program);
 registerPatternsCommand(program);
 registerFeedbackCommand(program);
 registerUpgradeCommand(program);
+registerContextHookCommand(program);
 
 program.parseAsync().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);

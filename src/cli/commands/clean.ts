@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { parseYaml } from '../../utils/yaml.js';
+import { removeClaudeHook } from '../install-hooks.js';
 
 export function registerCleanCommand(program: Command): void {
   program
@@ -37,6 +38,9 @@ export function registerCleanCommand(program: Command): void {
         rmSync(configPath);
         removed.push('ctx.yaml');
       }
+
+      // Remove Claude Code SessionStart hook
+      removeClaudeHook(workspaceRoot);
 
       console.log(JSON.stringify({ removed, workspace: workspaceRoot }));
     });

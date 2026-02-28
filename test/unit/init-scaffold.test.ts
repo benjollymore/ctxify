@@ -1,5 +1,12 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  rmSync,
+  readFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffoldWorkspace, detectInstallMethod } from '../../src/cli/commands/init.js';
@@ -284,6 +291,85 @@ describe('scaffoldWorkspace', () => {
 
     const config = loadConfig(join(dir, 'ctx.yaml'));
     expect(config.skills!['claude'].scope).toBe('workspace');
+  });
+
+  it('installs Claude Code SessionStart hook when agent is claude', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    const result = await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude'],
+      install_method: 'global',
+    });
+
+    expect(result.hooks_installed).toEqual(['ctxify context-hook']);
+    const settingsPath = join(dir, '.claude', 'settings.json');
+    expect(existsSync(settingsPath)).toBe(true);
+    const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+    expect(settings.hooks.SessionStart).toHaveLength(1);
+    expect(settings.hooks.SessionStart[0].command).toBe('ctxify context-hook');
+  });
+
+  it('does not install hooks for non-claude agents', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    const result = await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['cursor', 'codex'],
+    });
+
+    expect(result.hooks_installed).toBeUndefined();
+  });
+
+  it('hook command matches install method', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    const result = await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude'],
+      install_method: 'local',
+    });
+
+    expect(result.hooks_installed).toEqual(['npx ctxify context-hook']);
+  });
+
+  it('preserves existing settings.json content when installing hook', async () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+    createPackageJson(dir, 'my-app');
+
+    // Pre-create settings.json with existing content
+    const settingsDir = join(dir, '.claude');
+    mkdirSync(settingsDir, { recursive: true });
+    writeFileSync(
+      join(settingsDir, 'settings.json'),
+      JSON.stringify({ permissions: { allow: ['Read'] } }),
+      'utf-8',
+    );
+
+    await scaffoldWorkspace({
+      workspaceRoot: dir,
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'my-app' }],
+      agents: ['claude'],
+      install_method: 'global',
+    });
+
+    const settings = JSON.parse(readFileSync(join(settingsDir, 'settings.json'), 'utf-8'));
+    expect(settings.permissions).toEqual({ allow: ['Read'] });
+    expect(settings.hooks.SessionStart).toHaveLength(1);
   });
 });
 

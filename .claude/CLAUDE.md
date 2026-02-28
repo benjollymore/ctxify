@@ -12,7 +12,7 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 233 tests, 20 files
+npm test             # vitest run — 266 tests, 22 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -29,7 +29,7 @@ npx vitest run test/unit/validate.test.ts
 ```
 bin/ctxify.ts                    CLI entry (Commander.js, registers commands)
     ↓
-src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain, patterns, feedback)
+src/cli/commands/*.ts            Command handlers (init, status, validate, branch, commit, domain, patterns, feedback, context-hook)
     ↓
 src/core/*.ts                    Business logic (config, manifest, validate, detect)
 src/templates/*.ts               Markdown template generators
@@ -65,7 +65,8 @@ The library is also exported from `src/index.ts` for programmatic use (config, m
 | `domain.ts` | `domain add <repo> <domain>` scaffolds domain file + updates overview.md index. `domain list` scans for domain files. Flags: `--tags`, `--description`, `--repo` |
 | `patterns.ts` | `patterns <repo>` scaffolds `repos/{name}/patterns.md` with TODO placeholders. Flags: `--force`, `-d`. JSON output with `status`, `repo`, `path`, `file_existed` |
 | `feedback.ts` | `feedback <repo> --body "..."` appends a correction entry to `repos/{name}/corrections.md`, creating the file if needed. JSON output with `status`, `created_file`, `timestamp` |
-| `upgrade.ts` | `upgrade` upgrades ctxify using the `install_method` from ctx.yaml (global/local/npx) and reinstalls all tracked skills. Exports `runUpgrade(workspaceRoot, opts?)` with injectable `execFn` for testability. `--dry-run` flag shows what would happen. |
+| `upgrade.ts` | `upgrade` upgrades ctxify using the `install_method` from ctx.yaml (global/local/npx) and reinstalls all tracked skills and Claude Code hooks. Exports `runUpgrade(workspaceRoot, opts?)` with injectable `execFn` for testability. `--dry-run` flag shows what would happen. |
+| `context-hook.ts` | `context-hook` outputs corrections and context nudge for Claude Code SessionStart hook. Pure output, no side effects. Exports `getContextHookOutput(workspaceRoot)`, `registerContextHookCommand(program)` |
 
 ### `src/templates/` — markdown generators
 
@@ -97,6 +98,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | File | Purpose |
 |------|---------|
 | `install-skill.ts` | `AgentConfig` interface (`destDir`, `globalDestDir?: string`, `primaryFilename`, `skillFrontmatter`, `singleFile`, `combinedFrontmatter`), `AGENT_CONFIGS` registry (claude, copilot, cursor, codex). Multi-file agents (claude, cursor) install each skill as a separate file; single-file agents (copilot, codex) concatenate all skills. `installSkill()` accepts `scope` ('workspace' \| 'global') and `homeDir` parameters, returns primary file path. `getSkillSourceDir()` finds skills/ package root. `listSkillSourceFiles()` returns `[{filename, sourcePath}]` ordered SKILL.md-first then alphabetical. `getPrimarySkillSourcePath()` / `getPlaybookSourcePath()` (compat alias) |
+| `install-hooks.ts` | Manage Claude Code SessionStart hooks in `.claude/settings.json`. Pure merge helper `mergeHookIntoSettings()` / `removeHookFromSettings()` for testability. `installClaudeHook(workspaceRoot, installMethod, scope, homeDir?)` installs hook entry. `removeClaudeHook(workspaceRoot)` removes it. Idempotent — replaces existing ctxify hook entry. |
 
 ### `test/`
 
@@ -109,7 +111,7 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/query.test.ts` | Segment extraction and frontmatter parsing utilities |
 | `unit/monorepo-detection.test.ts` | Workspace detection across package managers |
 | `unit/git-mutate.test.ts` | Branch creation, change detection, commit |
-| `unit/init-scaffold.test.ts` | scaffoldWorkspace function: single/multi-repo, skill install, gitignore |
+| `unit/init-scaffold.test.ts` | scaffoldWorkspace function: single/multi-repo, skill install, hook install, gitignore |
 | `unit/install-skill.test.ts` | Skill installer: multi-file (claude, cursor), single-file (copilot, codex), frontmatter per agent, alwaysApply cursor logic, version header, directory creation, overwrite. `getSkillSourceDir()`, `listSkillSourceFiles()` |
 | `unit/patterns.test.ts` | `generatePatternsTemplate`: frontmatter, TODO sections, line limit. CLI `ctxify patterns <repo>`: creates file, correct JSON, error if exists (no --force), --force overwrites, unknown repo error, no ctx.yaml error |
 | `unit/init-interactive.test.ts` | resolveInteractiveOptions: mode mapping, agent pass-through |
@@ -118,6 +120,8 @@ Each file exports a pure function that takes mechanical data and returns a markd
 | `unit/detect.test.ts` | Auto-detect mode: single-repo, multi-repo, mono-repo |
 | `unit/version-check.test.ts` | checkForUpdate: cache hit, cache miss, TTL expiry, timeout, error handling; invalidateVersionCache |
 | `unit/upgrade.test.ts` | runUpgrade: dry-run, per-method npm args, skills reinstall, no ctx.yaml fallback |
+| `unit/context-hook.test.ts` | getContextHookOutput: corrections output, nudge message, no .ctxify/, custom outputDir, multiple repos |
+| `unit/install-hooks.test.ts` | mergeHookIntoSettings, removeHookFromSettings, installClaudeHook, removeClaudeHook: create/preserve/replace/remove hook entries |
 | `integration/init.test.ts` | Full init flow: single/multi/mono-repo scaffolding |
 | `integration/git-commands.test.ts` | Multi-repo branch and commit coordination |
 | `integration/status.test.ts` | Status without config, status after init |

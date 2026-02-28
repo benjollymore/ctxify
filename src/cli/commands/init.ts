@@ -18,6 +18,7 @@ import type { RepoTemplateData } from '../../templates/index-md.js';
 import { generateIndexTemplate } from '../../templates/index-md.js';
 import { generateRepoTemplate } from '../../templates/repo.js';
 import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
+import { installClaudeHook } from '../install-hooks.js';
 import { runInteractiveFlow } from './init-interactive.js';
 
 export type AgentType = 'claude' | 'copilot' | 'cursor' | 'codex';
@@ -47,6 +48,7 @@ export interface ScaffoldResult {
   repos: string[];
   shards_written: boolean;
   skills_installed?: string[];
+  hooks_installed?: string[];
 }
 
 export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<ScaffoldResult> {
@@ -63,6 +65,15 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
       skills_installed.push(dest);
       skillsMap[agent] = { path: dest, scope };
     }
+  }
+
+  // Install Claude Code SessionStart hook
+  const hooks_installed: string[] = [];
+  if (options.agents?.includes('claude')) {
+    const scope = options.agentScopes?.['claude'] ?? 'workspace';
+    const install_method_for_hook = options.install_method ?? detectInstallMethod();
+    const hookCmd = installClaudeHook(workspaceRoot, install_method_for_hook, scope, options.homeDir);
+    hooks_installed.push(hookCmd);
   }
 
   // Detect install method (use provided override or auto-detect)
@@ -120,6 +131,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     repos: repos.map((r) => r.name),
     shards_written: true,
     ...(skills_installed.length > 0 ? { skills_installed } : {}),
+    ...(hooks_installed.length > 0 ? { hooks_installed } : {}),
   };
 }
 
