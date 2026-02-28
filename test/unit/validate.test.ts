@@ -271,6 +271,88 @@ Auth middleware is not global.
     expect(result.errors.some((e) => e.includes('correction'))).toBe(true);
   });
 
+  it('passes for balanced rule markers', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'rules.md'),
+      `---
+repo: api
+type: rules
+---
+
+# Rules
+
+<!-- rule:2025-06-15T10:30:00.000Z -->
+Do not fragment CSS.
+<!-- /rule -->
+
+<!-- antipattern:2025-06-15T11:00:00.000Z -->
+Silent catch swallows errors.
+<!-- /antipattern -->
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('fails for unbalanced rule markers', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'rules.md'),
+      `---
+repo: api
+type: rules
+---
+
+# Rules
+
+<!-- rule:2025-06-15T10:30:00.000Z -->
+Unclosed rule marker.
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes('rule'))).toBe(true);
+  });
+
   it('handles domain-index markers without colon (no false positive)', () => {
     const ctxDir = join(tmpDir, '.ctxify');
     mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });

@@ -41,15 +41,17 @@ export function getContextHookOutput(workspaceRoot: string): string {
   }
 
   for (const repo of repoDirs) {
-    const correctionsPath = join(reposDir, repo, 'corrections.md');
-    if (existsSync(correctionsPath)) {
-      try {
-        const content = readFileSync(correctionsPath, 'utf-8').trim();
-        if (content) {
-          parts.push(content);
+    for (const filename of ['corrections.md', 'rules.md']) {
+      const filePath = join(reposDir, repo, filename);
+      if (existsSync(filePath)) {
+        try {
+          const content = readFileSync(filePath, 'utf-8').trim();
+          if (content) {
+            parts.push(content);
+          }
+        } catch {
+          // Skip unreadable files
         }
-      } catch {
-        // Skip unreadable files
       }
     }
   }
