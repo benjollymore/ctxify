@@ -88,6 +88,28 @@ describe('checkForUpdate', () => {
     expect(result).toBe('3.0.0');
   });
 
+  it('returns undefined when cached latest is older than current (user upgraded ahead of cache)', async () => {
+    const cacheFile = join(tmpDir, 'version-check.json');
+
+    // Cache has 0.4.0 but user just installed 0.4.1
+    const cache = {
+      checked_at: new Date(Date.now() + 1_000_000).toISOString(), // still fresh
+      latest: '0.4.0',
+    };
+    writeFileSync(cacheFile, JSON.stringify(cache), 'utf-8');
+
+    let fetchCalled = false;
+    const fetchFn = async () => {
+      fetchCalled = true;
+      return '0.4.0';
+    };
+
+    const result = await checkForUpdate('0.4.1', { cacheFile, ttlMs: 3_600_000, fetchFn });
+
+    expect(fetchCalled).toBe(false); // cache was fresh, no fetch
+    expect(result).toBeUndefined(); // should NOT warn — current is already newer
+  });
+
   it('returns undefined when fetchFn throws (fail silently)', async () => {
     const cacheFile = join(tmpDir, 'version-check.json');
     const fetchFn = async (): Promise<string> => {
