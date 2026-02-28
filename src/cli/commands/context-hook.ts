@@ -58,7 +58,7 @@ export function getContextHookOutput(workspaceRoot: string): string {
 
   // Add nudge message
   parts.push(
-    'ctxify workspace detected. Invoke /ctxify-startup to initialize context for this session.',
+    'ctxify workspace detected. Invoke /ctxify to initialize context for this session.',
   );
 
   return parts.join('\n\n');

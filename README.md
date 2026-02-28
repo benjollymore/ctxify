@@ -120,7 +120,7 @@ The 7 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:fill
 When you select Claude Code as an agent, `ctxify init` installs a [SessionStart hook](https://docs.anthropic.com/en/docs/claude-code/hooks) in `.claude/settings.json` that runs `ctxify context-hook` every time a Claude Code session starts, resumes, or compacts. The hook:
 
 1. Outputs any `corrections.md` and `rules.md` content from `.ctxify/repos/*/` — so past corrections and behavioral instructions are always in context
-2. Nudges the agent to invoke `/ctxify-reading-context` for full patterns and domain context
+2. Nudges the agent to invoke `/ctxify` to detect context state and load appropriately
 
 This means corrections are automatically loaded without the agent needing to remember to check. Use `--no-hook` to skip hook installation if you prefer to manage context loading manually.
 

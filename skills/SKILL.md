@@ -12,7 +12,7 @@ ALWAYS check for `.ctxify/` before writing code in any workspace. If absent, sto
 ## Detection
 
 Check for `.ctxify/index.md` at workspace root.
-- **Found** → Read it. Invoke **ctxify:reading-context** to load context.
+- **Found** → Invoke **ctxify:startup** to detect context state and load appropriately.
 - **Not found** → Check for `ctx.yaml`. If exists, run `ctxify init`. If neither, go to First-time Setup below.
 
 Do not look for context files inside individual repos unless referenced from `.ctxify/`.
