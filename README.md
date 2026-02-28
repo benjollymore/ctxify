@@ -7,7 +7,7 @@
 
 Persistent workspace knowledge for AI coding agents.
 
-Every new agent session starts from scratch. The agent rediscovers your architecture, re-learns your patterns, and re-reads your conventions — every single time. ctxify fixes this by scaffolding a structured knowledge layer (`.ctxify/`) that your agent fills with what it learns from reading your code. The result is persistent context that any future session can load instantly, so no knowledge is lost between conversations.
+Every new agent session starts from scratch. The agent rediscovers your architecture, re-learns your patterns, and re-reads your conventions — every single time. You can write this down in CLAUDE.md or AGENTS.md, but a single flat file either stays too shallow to be useful or grows large enough to bloat every context window. ctxify fixes both problems: it scaffolds a structured knowledge layer (`.ctxify/`) that your agent fills with what it learns from reading your code, then uses progressive disclosure to load only what's relevant to the current task. The result is persistent context without the context window cost.
 
 Works with single repos, monorepos, and multi-repo workspaces. Supports Claude Code, GitHub Copilot, Cursor, and OpenAI Codex.
 
