@@ -60,10 +60,17 @@ describe('generatePatternsTemplate', () => {
   it('contains all 5 TODO sections', () => {
     const output = generatePatternsTemplate({ repo: 'api' });
     expect(output).toContain('# How to Build Features');
+    expect(output).toContain('How we build features here');
     expect(output).toContain('## Validation');
     expect(output).toContain('## Testing');
     expect(output).toContain('## Naming Conventions');
     expect(output).toContain('## Gotchas');
+  });
+
+  it('first TODO asks for end-to-end patterns, not route/controller catalogs', () => {
+    const output = generatePatternsTemplate({ repo: 'api' });
+    expect(output).toContain('end-to-end');
+    expect(output).not.toContain('route/controller structure');
   });
 
   it('has TODO placeholders for agent to fill', () => {
