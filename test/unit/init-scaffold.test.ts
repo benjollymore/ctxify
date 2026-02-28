@@ -139,7 +139,7 @@ describe('scaffoldWorkspace', () => {
     expect(existsSync(join(dir, '.ctxify', '_analysis.md'))).toBe(false);
   });
 
-  it('ensures .ctxify/ is in .gitignore', async () => {
+  it('does not add .ctxify/ to .gitignore', async () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
     createPackageJson(dir, 'my-app');
@@ -151,9 +151,8 @@ describe('scaffoldWorkspace', () => {
     });
 
     const gitignorePath = join(dir, '.gitignore');
-    expect(existsSync(gitignorePath)).toBe(true);
-    const content = readFileSync(gitignorePath, 'utf-8');
-    expect(content).toContain('.ctxify/');
+    // .gitignore should not be created just for .ctxify/
+    expect(existsSync(gitignorePath)).toBe(false);
   });
 
   it('returns config path as absolute path', async () => {

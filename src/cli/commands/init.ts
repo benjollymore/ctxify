@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
-import { existsSync, writeFileSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
+import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
 import type {
   RepoEntry,
@@ -125,9 +125,6 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     mkdirSync(repoDir, { recursive: true });
     writeFileSync(join(repoDir, 'overview.md'), generateRepoTemplate(repo), 'utf-8');
   }
-
-  // Ensure .ctxify/ is in .gitignore
-  ensureGitignore(workspaceRoot, outputDir);
 
   return {
     status: 'initialized',
@@ -283,22 +280,6 @@ export function registerInitCommand(program: Command): void {
         }
       },
     );
-}
-
-function ensureGitignore(workspaceRoot: string, outputDir: string): void {
-  const gitignorePath = join(workspaceRoot, '.gitignore');
-  const entry = outputDir.endsWith('/') ? outputDir : outputDir + '/';
-
-  if (existsSync(gitignorePath)) {
-    const content = readFileSync(gitignorePath, 'utf-8');
-    // Check if outputDir is already covered (with or without trailing slash)
-    const lines = content.split('\n').map((l) => l.trim());
-    if (lines.includes(entry) || lines.includes(outputDir)) return;
-    const suffix = content.endsWith('\n') ? '' : '\n';
-    appendFileSync(gitignorePath, `${suffix}${entry}\n`, 'utf-8');
-  } else {
-    writeFileSync(gitignorePath, `${entry}\n`, 'utf-8');
-  }
 }
 
 export function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
