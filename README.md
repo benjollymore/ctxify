@@ -113,6 +113,8 @@ Multiple agents: `ctxify init --agent claude copilot cursor`
 
 The 7 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:rules`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
 
+**Sub-agent delegation (Claude Code):** The `ctxify:filling-context` skill delegates per-repo context filling (passes 1-3) to Haiku sub-agents — cheaper, faster, and parallel. Pass 4 (cross-repo index.md) stays with the orchestrator. Other agents fall back to sequential execution automatically.
+
 ### Claude Code session hook
 
 When you select Claude Code as an agent, `ctxify init` installs a [SessionStart hook](https://docs.anthropic.com/en/docs/claude-code/hooks) in `.claude/settings.json` that runs `ctxify context-hook` every time a Claude Code session starts, resumes, or compacts. The hook:
