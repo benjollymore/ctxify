@@ -1,6 +1,6 @@
 {
   "name": "@benjollymore/ctxify",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Turbocharged workspace context for AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
