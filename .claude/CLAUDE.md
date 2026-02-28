@@ -160,12 +160,12 @@ export function generateRepoTemplate(repo: RepoTemplateData): string {
 HTML comments invisible to markdown renderers, parseable by `extractSegments()`:
 
 ```markdown
-<!-- endpoint:GET:/users -->
-**GET /users** — `src/routes/users.ts:5` (getUsers)
-<!-- /endpoint -->
+<!-- correction:2025-06-15T10:30:00.000Z -->
+Auth middleware is not global — it's applied per-route.
+<!-- /correction -->
 ```
 
-Tags: `endpoint`, `type`, `env`, `model`, `question`, `domain-index`, `correction`. Attributes are colon-separated after the tag name.
+Active tags: `domain-index`, `correction`, `antipattern`, `rule`, `question`. Attributes are colon-separated after the tag name.
 
 ### YAML frontmatter for structured metadata
 
