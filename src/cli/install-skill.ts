@@ -33,7 +33,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     satelliteFilename: 'SKILL.md',
     skillFrontmatter: ({ name, description }) =>
       `---\nname: ${name}\ndescription: ${description}\n---`,
-    nextStepHint: 'open Claude Code — context loads automatically on session start',
+    nextStepHint: 'open Claude Code and run /ctxify or ask Claude to set up workspace context',
     globalDestDir: '.claude/skills/ctxify',
   },
   copilot: {
@@ -42,7 +42,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     primaryFilename: 'ctxify.instructions.md',
     singleFile: true,
     combinedFrontmatter: () => '---\napplyTo: "**"\n---',
-    nextStepHint: 'open VS Code with Copilot — instructions load automatically',
+    nextStepHint: 'open VS Code with Copilot and ask it to set up workspace context',
   },
   cursor: {
     displayName: 'Cursor',
@@ -50,7 +50,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     primaryFilename: 'ctxify.md',
     skillFrontmatter: ({ description, isPrimary }) =>
       `---\ndescription: ${description}\nalwaysApply: ${isPrimary}\n---`,
-    nextStepHint: 'open Cursor — rules load automatically',
+    nextStepHint: 'open Cursor and ask it to set up workspace context',
   },
   codex: {
     displayName: 'OpenAI Codex',
@@ -58,7 +58,7 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     primaryFilename: 'AGENTS.md',
     singleFile: true,
     combinedFrontmatter: () => '',
-    nextStepHint: 'run Codex CLI — AGENTS.md loads automatically',
+    nextStepHint: 'run Codex CLI and ask it to set up workspace context',
     globalDestDir: '.codex',
   },
 };
