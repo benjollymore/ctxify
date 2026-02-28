@@ -303,7 +303,9 @@ describe('scaffoldWorkspace', () => {
     expect(existsSync(settingsPath)).toBe(true);
     const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
     expect(settings.hooks.SessionStart).toHaveLength(1);
-    expect(settings.hooks.SessionStart[0].command).toBe('ctxify context-hook');
+    expect(settings.hooks.SessionStart[0]).toEqual({
+      hooks: [{ type: 'command', command: 'ctxify context-hook' }],
+    });
   });
 
   it('does not install hooks for non-claude agents', async () => {
