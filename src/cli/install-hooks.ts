@@ -5,15 +5,19 @@ import type { SkillScope } from '../core/config.js';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-interface HookEntry {
+interface HookCommand {
   type: string;
   command: string;
-  matcher?: string;
+}
+
+interface MatcherEntry {
+  matcher?: Record<string, unknown>;
+  hooks: HookCommand[];
 }
 
 interface HooksConfig {
   hooks?: {
-    SessionStart?: HookEntry[];
+    SessionStart?: MatcherEntry[];
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -24,6 +28,10 @@ interface HooksConfig {
 const HOOK_MARKER = 'ctxify context-hook';
 
 // ── Pure merge helper (testable) ─────────────────────────────────────────
+
+function isCtxifyEntry(entry: MatcherEntry): boolean {
+  return (entry.hooks ?? []).some((h) => h.command?.includes(HOOK_MARKER));
+}
 
 /**
  * Merges a ctxify SessionStart hook entry into existing settings JSON.
@@ -45,18 +53,15 @@ export function mergeHookIntoSettings(existingJson: string | null, command: stri
     settings.hooks = {};
   }
 
-  const newEntry: HookEntry = {
-    type: 'command',
-    command,
-    matcher: 'startup|resume|compact',
+  const newEntry: MatcherEntry = {
+    hooks: [{ type: 'command', command }],
   };
 
   if (!settings.hooks.SessionStart) {
     settings.hooks.SessionStart = [newEntry];
   } else {
-    // Remove any existing ctxify entry
     settings.hooks.SessionStart = settings.hooks.SessionStart.filter(
-      (entry) => !entry.command?.includes(HOOK_MARKER),
+      (entry) => !isCtxifyEntry(entry),
     );
     settings.hooks.SessionStart.push(newEntry);
   }
@@ -82,7 +87,7 @@ export function removeHookFromSettings(existingJson: string): string | null {
   }
 
   settings.hooks.SessionStart = settings.hooks.SessionStart.filter(
-    (entry) => !entry.command?.includes(HOOK_MARKER),
+    (entry) => !isCtxifyEntry(entry),
   );
 
   // Clean up empty structures

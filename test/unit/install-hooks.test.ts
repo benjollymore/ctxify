@@ -17,7 +17,7 @@ describe('mergeHookIntoSettings', () => {
   it('creates settings from scratch when null', () => {
     const result = JSON.parse(mergeHookIntoSettings(null, 'ctxify context-hook'));
     expect(result.hooks.SessionStart).toEqual([
-      { type: 'command', command: 'ctxify context-hook', matcher: 'startup|resume|compact' },
+      { hooks: [{ type: 'command', command: 'ctxify context-hook' }] },
     ]);
   });
 
@@ -37,7 +37,9 @@ describe('mergeHookIntoSettings', () => {
     const result = JSON.parse(mergeHookIntoSettings(existing, 'ctxify context-hook'));
     expect(result.hooks.SessionStart).toHaveLength(2);
     expect(result.hooks.SessionStart[0].command).toBe('echo hello');
-    expect(result.hooks.SessionStart[1].command).toBe('ctxify context-hook');
+    expect(result.hooks.SessionStart[1]).toEqual({
+      hooks: [{ type: 'command', command: 'ctxify context-hook' }],
+    });
   });
 
   it('replaces existing ctxify hook (idempotent)', () => {
@@ -45,15 +47,16 @@ describe('mergeHookIntoSettings', () => {
       hooks: {
         SessionStart: [
           { type: 'command', command: 'echo hello' },
-          { type: 'command', command: 'ctxify context-hook', matcher: 'startup' },
+          { hooks: [{ type: 'command', command: 'ctxify context-hook' }] },
         ],
       },
     });
     const result = JSON.parse(mergeHookIntoSettings(existing, 'npx ctxify context-hook'));
     expect(result.hooks.SessionStart).toHaveLength(2);
     expect(result.hooks.SessionStart[0].command).toBe('echo hello');
-    expect(result.hooks.SessionStart[1].command).toBe('npx ctxify context-hook');
-    expect(result.hooks.SessionStart[1].matcher).toBe('startup|resume|compact');
+    expect(result.hooks.SessionStart[1]).toEqual({
+      hooks: [{ type: 'command', command: 'npx ctxify context-hook' }],
+    });
   });
 
   it('handles malformed JSON gracefully', () => {
@@ -79,7 +82,7 @@ describe('removeHookFromSettings', () => {
       hooks: {
         SessionStart: [
           { type: 'command', command: 'echo hello' },
-          { type: 'command', command: 'ctxify context-hook' },
+          { hooks: [{ type: 'command', command: 'ctxify context-hook' }] },
         ],
       },
     });
@@ -90,7 +93,7 @@ describe('removeHookFromSettings', () => {
   it('cleans up empty SessionStart array', () => {
     const existing = JSON.stringify({
       hooks: {
-        SessionStart: [{ type: 'command', command: 'ctxify context-hook' }],
+        SessionStart: [{ hooks: [{ type: 'command', command: 'ctxify context-hook' }] }],
       },
     });
     const result = JSON.parse(removeHookFromSettings(existing)!);
@@ -100,7 +103,7 @@ describe('removeHookFromSettings', () => {
   it('preserves other hook types when SessionStart becomes empty', () => {
     const existing = JSON.stringify({
       hooks: {
-        SessionStart: [{ type: 'command', command: 'ctxify context-hook' }],
+        SessionStart: [{ hooks: [{ type: 'command', command: 'ctxify context-hook' }] }],
         PreToolUse: [{ type: 'command', command: 'lint' }],
       },
     });
@@ -151,7 +154,7 @@ describe('installClaudeHook', () => {
 
     const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
     expect(settings.hooks.SessionStart).toEqual([
-      { type: 'command', command: 'ctxify context-hook', matcher: 'startup|resume|compact' },
+      { hooks: [{ type: 'command', command: 'ctxify context-hook' }] },
     ]);
   });
 
@@ -202,7 +205,9 @@ describe('installClaudeHook', () => {
 
     const settings = JSON.parse(readFileSync(join(tmpDir, '.claude', 'settings.json'), 'utf-8'));
     expect(settings.hooks.SessionStart).toHaveLength(1);
-    expect(settings.hooks.SessionStart[0].command).toBe('npx ctxify context-hook');
+    expect(settings.hooks.SessionStart[0]).toEqual({
+      hooks: [{ type: 'command', command: 'npx ctxify context-hook' }],
+    });
   });
 });
 
@@ -237,7 +242,7 @@ describe('removeClaudeHook', () => {
         hooks: {
           SessionStart: [
             { type: 'command', command: 'echo hello' },
-            { type: 'command', command: 'ctxify context-hook' },
+            { hooks: [{ type: 'command', command: 'ctxify context-hook' }] },
           ],
         },
       }),
