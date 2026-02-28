@@ -134,6 +134,8 @@ ctxify upgrade --dry-run   # show what would happen without executing
 
 The install method and installed agents are persisted in `ctx.yaml` automatically on `ctxify init`, so `upgrade` requires no flags.
 
+To suppress the update warning in CI or scripts, set `CI=true` (standard in GitHub Actions, CircleCI, etc.) or `CTXIFY_NO_UPDATE_CHECK=1`.
+
 ## Supported manifests and modes
 
 **Manifests** (parsed in order, first found wins): package.json, go.mod, pyproject.toml, requirements.txt

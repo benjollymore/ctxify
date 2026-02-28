@@ -12,10 +12,12 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 232 tests, 20 files
+npm test             # vitest run — 233 tests, 20 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
+
+**When using ctxify as a tool on this repo** (e.g. `ctxify patterns ctxify`), use the globally installed `ctxify` command — not `node dist/bin/ctxify.js`. The `dist/bin/ctxify.js` path is for integration tests and local development of ctxify itself.
 
 Run a specific test file:
 ```

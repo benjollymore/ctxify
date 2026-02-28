@@ -55,6 +55,7 @@ program
 
 // Non-blocking version check warning before each command
 program.hook('preAction', async () => {
+  if (process.env.CI || process.env.CTXIFY_NO_UPDATE_CHECK) return;
   const latest = await checkForUpdate(pkg.version);
   if (latest) {
     const hint = process.argv[1]?.includes('_npx')
