@@ -7,40 +7,25 @@ framework: commander
 
 # ctxify
 
-ctxify is a scaffolder + validator that generates persistent workspace context for AI coding agents. It detects repos, parses manifests (language, framework, dependencies, entry points), and scaffolds `.ctxify/` with markdown templates that agents read and fill with semantic content (architecture, patterns, decisions, domain knowledge). ctxify handles the deterministic mechanical part (parsing package.json, discovering frameworks, counting files). Agents do what they do best: read source code and document *why* things are built the way they are. The output is consumed by any AI coding agent (Claude Code, Copilot, Cursor, Codex) as workspace context files that ship with the repo.
+ctxify is an npm library and CLI tool that scaffolds and validates persistent context for AI coding agents. It detects Git repos, parses language manifests (package.json, go.mod, pyproject.toml), infers architecture, and generates markdown templates in `.ctxify/` that agents fill with semantic content (patterns, architecture, domains). The library also exports configuration, validation, and frontmatter utilities for programmatic use. ctxify is a scaffolder and validator, not an analyzer—it automates mechanical extraction (framework detection, entry point discovery, manifest parsing) and leaves semantic analysis to agents reading source code directly.
 
 ## Architecture
 
-- `bin/ctxify.ts` — CLI entry point (Commander.js program setup, command registration, version check, error handling)
-- `src/cli/commands/` — Command handlers (init, status, validate, patterns, domain, feedback, etc.) — one file per command
-- `src/core/` — Business logic (config loading, manifest parsing, mode detection, validation rules)
-- `src/templates/` — Template generators (pure functions that return markdown strings for scaffolding)
-- `src/utils/` — Shared utilities (fs, git, yaml parsing, frontmatter extraction, segment markers)
-- `src/index.ts` — Library exports for programmatic use (config, manifest, validate, detect, frontmatter, segments)
+- `bin/ctxify.ts` — CLI entry point. Uses Commander.js to register all commands (init, patterns, validate, etc.) and coordinate command dispatch. Handles version discovery and update checks.
+- `src/core/` — Business logic layer: config loading/serialization, manifest parsing (package.json → framework detection), workspace detection, validation (segment markers, TODOs, frontmatter), and error handling.
+- `src/templates/` — Pure markdown generators: each template function takes typed data and returns a string. No I/O—the init command handles file writing. One generator per shard type (overview.md, patterns.md, domain.md, etc.).
+- `src/cli/commands/` — Command handlers. Each registers with Commander, parses arguments, calls business logic, and outputs JSON (success or error). Interactive prompts (init) live in init-interactive.ts.
+- `src/utils/` — Shared utilities: YAML/frontmatter parsing, git operations, filesystem ops, segment extraction, monorepo detection, version checking.
+- `src/index.ts` — Library exports: config, manifest, validate, detect, frontmatter, segments. Agents and tools can import programmatically.
 
-Request flow: `ctxify init` → CLI registers command handler → `scaffoldWorkspace()` detects repos + mode → `parseRepoManifest()` reads manifests (package.json, go.mod, etc.) → templates generate markdown → write shards to `.ctxify/`. The key insight is the split of labor: manifest parsing is deterministic (happens in `src/core/manifest.ts`), template generation is pure (returns strings, no side effects), and file I/O is centralized (only in CLI commands or `scaffoldWorkspace`). This layering keeps business logic testable without mocking the filesystem. Commands output JSON for agent consumption. Validation (`validateShards`) checks structural integrity (frontmatter, segment markers, missing domain files). Agents invoke `ctxify domain add` and `ctxify patterns` to scaffold content, then fill semantic details. The skill installer (`install-skill.ts`) handles agent-specific file placement (`.claude/skills/ctxify`, `.github/instructions`, etc.) with multi-file or single-file output depending on agent capabilities.
+**Data flow:** CLI → command handler → business logic → templates (generate strings) → file write. Commands always output JSON for agent parsability. Templates are decoupled from I/O so they can be tested independently. Validation (validateShards) runs post-scaffolding to ensure structural integrity: frontmatter syntax, segment marker matching, TODO markers, domain file references.
 
-## Context
+**Key architectural insight:** Manifests and structure are detected mechanically; semantic content (patterns, architecture, domains) is supplied by agents reading source directly. This division lets agents focus on high-value semantic analysis while ctxify automates routine scaffolding and structural checks. Read patterns.md for how to add new commands and tests; see manifest-detection.md and skill-installation.md for domain deep-dives.
 
-After reading the codebase, create these sibling files in this directory:
-
-**`patterns.md`** — How to build features in this repo. The most important file.
-Include: end-to-end feature patterns, validation approach, testing patterns, naming
-conventions, gotchas and tips. 20-50 lines with brief code examples.
-
-**`corrections.md`** — Agent-logged factual corrections (created by `ctxify feedback`).
-Always loaded — prevents repeating past mistakes.
-
-**`rules.md`** — Behavioral instructions and anti-patterns (created by `ctxify feedback --type rule`).
-Always loaded — the highest-signal context.
-
-**Domain files** — One `{domain}.md` per complex domain area (3-5 domains).
-Each covers: key concepts, business rules, decisions, domain-specific patterns,
-cross-repo interactions. 50-150 lines each.
+## Domains
 
 <!-- domain-index -->
-- `manifest-detection.md` — Parsing manifests and detecting frameworks, languages, and entry points
-- `workspace-scaffolding.md` — Detecting workspace topology, generating configs, coordinating file I/O
-- `agent-skills.md` — Multi-agent skill installation with agent-specific file placement
-- `validation.md` — Structural integrity checking of shards and context
+- `manifest-detection.md` — Language and framework detection via manifest parsing with fallback chains
+- `skill-installation.md` — Multi-agent skill distribution with agent-specific file structures and installation scopes
+- `corrections.md` — Feedback loop: corrections, rules, and anti-patterns logged by agents during sessions
 <!-- /domain-index -->
