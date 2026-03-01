@@ -449,6 +449,59 @@ This also has content.
     });
   });
 
+  // ── Type inference ──────────────────────────────────────────────
+
+  describe('type inference', () => {
+    it('infers index type from filename when frontmatter has no type', () => {
+      // writeIndex helper does not include a type field
+      writeIndex(ctxDir);
+
+      const result = auditShards(tmpDir);
+      const index = result.files.find((f) => f.path === 'index.md');
+
+      expect(index!.type).toBe('index');
+    });
+
+    it('frontmatter type takes precedence over inference', () => {
+      writeIndex(ctxDir);
+      writeRepoFile(ctxDir, 'myapp', 'overview.md', 'custom-type', 'Content.\n'.repeat(20));
+
+      const result = auditShards(tmpDir);
+      const overview = result.files.find((f) => f.path.includes('overview'));
+
+      expect(overview!.type).toBe('custom-type');
+    });
+
+    it('infers domain type for non-standard filenames under repos/', () => {
+      writeIndex(ctxDir);
+      writeRepoFile(ctxDir, 'myapp', 'auth.md', '', 'Domain content.\n'.repeat(40), {
+        domain: 'auth',
+      });
+
+      const result = auditShards(tmpDir);
+      const auth = result.files.find((f) => f.path.includes('auth'));
+
+      // Frontmatter type is empty string, so inferType kicks in
+      expect(auth!.type).toBe('domain');
+    });
+  });
+
+  // ── Workspace path ─────────────────────────────────────────────
+
+  describe('workspace_path', () => {
+    it('includes .ctxify/ prefix', () => {
+      writeIndex(ctxDir);
+      writeRepoFile(ctxDir, 'myapp', 'overview.md', 'overview', 'Content.\n'.repeat(20));
+
+      const result = auditShards(tmpDir);
+      const index = result.files.find((f) => f.path === 'index.md');
+      const overview = result.files.find((f) => f.path.includes('overview'));
+
+      expect(index!.workspace_path).toBe('.ctxify/index.md');
+      expect(overview!.workspace_path).toBe('.ctxify/repos/myapp/overview.md');
+    });
+  });
+
   // ── Repo filter ───────────────────────────────────────────────────
 
   describe('repo filter', () => {

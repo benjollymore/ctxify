@@ -143,6 +143,8 @@ Check `summary.total_tokens` for budget awareness. Check `summary.external_conte
 
 Re-run `ctxify audit` after fixes to confirm `total_issues` reaches 0 (or only `info`-level issues remain).
 
+If context needs refreshing later, do NOT re-run `ctxify init`. Edit files directly or use `ctxify audit` to identify what needs updating.
+
 ## WRITE Rules
 
 These describe what high-signal context looks like:

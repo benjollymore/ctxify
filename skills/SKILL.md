@@ -57,6 +57,16 @@ Add `--agent claude` (or copilot/cursor/codex) to install agent playbooks alongs
 
 After init — invoke **ctxify:filling-context** to document what you learn about the codebase.
 
+## Refreshing Context
+
+**NEVER run `ctxify init` to refresh existing context.** Init scaffolds empty templates — running it again overwrites agent-filled content with blank TODOs.
+
+To refresh context:
+- **Check quality:** Run `ctxify audit` to find unfilled TODOs, stale sections, or size issues.
+- **Update specific files:** Edit `.ctxify/` files directly.
+- **Add new domains:** Invoke **ctxify:domain** to scaffold new domain files without touching existing ones.
+- **Log corrections:** Invoke **ctxify:corrections** when you discover wrong context.
+
 ## Handoffs
 
 - **Filling/writing context files** → invoke `ctxify:filling-context`

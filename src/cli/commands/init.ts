@@ -49,6 +49,7 @@ export interface ScaffoldResult {
   config: string;
   repos: string[];
   shards_written: boolean;
+  shards_skipped?: string[];
   skills_installed?: string[];
   hooks_installed?: string[];
 }
@@ -113,19 +114,30 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   // Generate all templates and write to .ctxify/
   const outputRoot = join(workspaceRoot, outputDir);
   mkdirSync(outputRoot, { recursive: true });
+  const skipped: string[] = [];
 
-  // index.md
-  writeFileSync(
-    join(outputRoot, 'index.md'),
-    generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode),
-    'utf-8',
-  );
+  // index.md — skip if already exists (unless force)
+  const indexPath = join(outputRoot, 'index.md');
+  if (!existsSync(indexPath) || options.force) {
+    writeFileSync(
+      indexPath,
+      generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode),
+      'utf-8',
+    );
+  } else {
+    skipped.push('index.md');
+  }
 
   // Per-repo overview files: repos/{name}/overview.md
   for (const repo of repoTemplateDataList) {
     const repoDir = join(outputRoot, 'repos', repo.name);
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(join(repoDir, 'overview.md'), generateRepoTemplate(repo), 'utf-8');
+    const overviewPath = join(repoDir, 'overview.md');
+    if (!existsSync(overviewPath) || options.force) {
+      writeFileSync(overviewPath, generateRepoTemplate(repo), 'utf-8');
+    } else {
+      skipped.push(`repos/${repo.name}/overview.md`);
+    }
   }
 
   return {
@@ -134,6 +146,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     config: configPath,
     repos: repos.map((r) => r.name),
     shards_written: true,
+    ...(skipped.length > 0 ? { shards_skipped: skipped } : {}),
     ...(skills_installed.length > 0 ? { skills_installed } : {}),
     ...(hooks_installed.length > 0 ? { hooks_installed } : {}),
   };
