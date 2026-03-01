@@ -361,8 +361,8 @@ This also has content.
 
     it('downgrades near-miss file_too_short to info severity', () => {
       writeIndex(ctxDir);
-      // Domain min is 30. 27 lines = ceil(30*0.9) = 27, so this is a near-miss → info
-      const lines = Array.from({ length: 27 }, (_, i) => `Content line ${i + 1}.`).join('\n');
+      // Domain min is 15. 14 lines = ceil(15*0.9) = 14, so this is a near-miss → info
+      const lines = Array.from({ length: 14 }, (_, i) => `Content line ${i + 1}.`).join('\n');
       writeRepoFile(ctxDir, 'myapp', 'auth.md', 'domain', lines, { domain: 'auth' });
 
       const result = auditShards(tmpDir);
@@ -375,8 +375,8 @@ This also has content.
 
     it('keeps file_too_short as warning when well below minimum', () => {
       writeIndex(ctxDir);
-      // Domain min is 30. 10 lines is well below ceil(30*0.9)=27 → warning
-      const lines = Array.from({ length: 10 }, (_, i) => `Content line ${i + 1}.`).join('\n');
+      // Domain min is 15. 5 lines is well below ceil(15*0.9)=14 → warning
+      const lines = Array.from({ length: 5 }, (_, i) => `Content line ${i + 1}.`).join('\n');
       writeRepoFile(ctxDir, 'myapp', 'auth.md', 'domain', lines, { domain: 'auth' });
 
       const result = auditShards(tmpDir);

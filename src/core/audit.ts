@@ -63,7 +63,7 @@ export interface AuditResult {
 const SIZE_LIMITS: Record<string, { min: number; max: number } | null> = {
   overview: { min: 15, max: 60 },
   patterns: { min: 15, max: 60 },
-  domain: { min: 30, max: 180 },
+  domain: { min: 15, max: 180 },
 };
 
 // ── Public API ─────────────────────────────────────────────────────────

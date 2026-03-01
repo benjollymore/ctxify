@@ -14,7 +14,7 @@ export function registerBranchCommand(program: Command): void {
       const configPath = join(workspaceRoot, 'ctx.yaml');
 
       if (!existsSync(configPath)) {
-        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run ctxify init first.' }));
+        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.' }));
         process.exit(1);
       }
 
