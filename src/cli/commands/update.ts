@@ -141,7 +141,7 @@ export async function runUpdate(
     if (!existsSync(overviewPath)) continue;
 
     const manifest = freshManifests.get(name)!;
-    let content = readFileSync(overviewPath, 'utf-8');
+    const content = readFileSync(overviewPath, 'utf-8');
     const existing = parseFrontmatter(content);
 
     if (existing) {
@@ -240,7 +240,9 @@ export function updateRepoTable(
   addedRepos: string[],
 ): string {
   const lines = content.split('\n');
-  const headerIdx = lines.findIndex((l) => /^\|\s*Repo\s*\|\s*Language\s*\|\s*Framework\s*\|\s*Role\s*\|/i.test(l));
+  const headerIdx = lines.findIndex((l) =>
+    /^\|\s*Repo\s*\|\s*Language\s*\|\s*Framework\s*\|\s*Role\s*\|/i.test(l),
+  );
   if (headerIdx === -1) return content;
 
   // Header line + separator line
@@ -292,15 +294,13 @@ export function updateRepoTable(
 
     const lang = manifest.language || '--';
     const fw = manifest.framework || '--';
-    updatedRows.push(`| [${name}](repos/${name}/overview.md) | ${lang} | ${fw} | <!-- TODO: role --> |`);
+    updatedRows.push(
+      `| [${name}](repos/${name}/overview.md) | ${lang} | ${fw} | <!-- TODO: role --> |`,
+    );
   }
 
   // Splice updated rows back
-  const result = [
-    ...lines.slice(0, sepIdx + 1),
-    ...updatedRows,
-    ...lines.slice(endIdx),
-  ];
+  const result = [...lines.slice(0, sepIdx + 1), ...updatedRows, ...lines.slice(endIdx)];
 
   return result.join('\n');
 }

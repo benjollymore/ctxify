@@ -1,12 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-  readFileSync,
-  mkdirSync,
-  existsSync,
-} from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runUpdate, updateRepoTable } from '../../src/cli/commands/update.js';
@@ -24,11 +17,7 @@ function writeCtxYaml(dir: string, overrides: Partial<CtxConfig> = {}): void {
   writeFileSync(join(dir, 'ctx.yaml'), serializeConfig(raw as CtxConfig), 'utf-8');
 }
 
-function createPackageJson(
-  dir: string,
-  name: string,
-  extras: Record<string, unknown> = {},
-): void {
+function createPackageJson(dir: string, name: string, extras: Record<string, unknown> = {}): void {
   writeFileSync(
     join(dir, 'package.json'),
     JSON.stringify({ name, version: '1.0.0', ...extras }, null, 2),
@@ -36,7 +25,12 @@ function createPackageJson(
   );
 }
 
-function writeOverviewMd(dir: string, repoName: string, body: string, fm: Record<string, unknown> = {}): void {
+function writeOverviewMd(
+  dir: string,
+  repoName: string,
+  body: string,
+  fm: Record<string, unknown> = {},
+): void {
   const repoDir = join(dir, '.ctxify', 'repos', repoName);
   mkdirSync(repoDir, { recursive: true });
   const frontmatter = dumpYaml({
@@ -44,11 +38,7 @@ function writeOverviewMd(dir: string, repoName: string, body: string, fm: Record
     type: 'overview',
     ...fm,
   }).trimEnd();
-  writeFileSync(
-    join(repoDir, 'overview.md'),
-    `---\n${frontmatter}\n---\n\n${body}`,
-    'utf-8',
-  );
+  writeFileSync(join(repoDir, 'overview.md'), `---\n${frontmatter}\n---\n\n${body}`, 'utf-8');
 }
 
 function writeIndexMd(dir: string, content: string): void {
@@ -79,9 +69,16 @@ describe('runUpdate', () => {
       repos: [{ path: '.', name: 'my-app', language: 'javascript', framework: 'express' }],
     });
 
-    const fmData = { repo: 'my-app', type: 'overview', language: 'javascript', framework: 'express' };
+    const fmData = {
+      repo: 'my-app',
+      type: 'overview',
+      language: 'javascript',
+      framework: 'express',
+    };
     writeOverviewMd(tmpDir, 'my-app', '# my-app\n\nAgent content.', fmData);
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -97,7 +94,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 | Repo | Language | Framework | Role |
 |------|----------|-----------|------|
 | [my-app](repos/my-app/overview.md) | javascript | express | CLI tool |
-`);
+`,
+    );
 
     const result = await runUpdate(tmpDir);
 
@@ -124,7 +122,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
       framework: 'express',
     });
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -134,7 +134,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     const result = await runUpdate(tmpDir);
 
@@ -159,10 +160,13 @@ scanned_at: '2025-01-01T00:00:00.000Z'
       repos: [{ path: '.', name: 'my-app', language: 'javascript' }],
     });
 
-    const agentContent = '# my-app\n\nThis is detailed architecture written by an agent.\n\n## Domains\n\nSome domain info.';
+    const agentContent =
+      '# my-app\n\nThis is detailed architecture written by an agent.\n\n## Domains\n\nSome domain info.';
     writeOverviewMd(tmpDir, 'my-app', agentContent, { language: 'javascript' });
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -172,7 +176,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     await runUpdate(tmpDir);
 
@@ -198,7 +203,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 
     writeOverviewMd(tmpDir, 'my-app', '# my-app', { language: 'javascript', framework: 'express' });
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -214,7 +221,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 | Repo | Language | Framework | Role |
 |------|----------|-----------|------|
 | [my-app](repos/my-app/overview.md) | javascript | express | API server |
-`);
+`,
+    );
 
     const result = await runUpdate(tmpDir);
     expect(result.table_updated).toBe(true);
@@ -255,7 +263,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 
     writeOverviewMd(tmpDir, 'pkg-a', '# pkg-a\n\nExisting content.', { language: 'javascript' });
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: mono-repo
@@ -271,7 +281,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 | Repo | Language | Framework | Role |
 |------|----------|-----------|------|
 | [pkg-a](repos/pkg-a/overview.md) | javascript | -- | Core lib |
-`);
+`,
+    );
 
     const result = await runUpdate(tmpDir);
 
@@ -299,7 +310,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeOverviewMd(tmpDir, 'my-app', '# my-app', {});
     writeOverviewMd(tmpDir, 'old-service', '# old-service\n\nValuable domain knowledge.', {});
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -310,7 +323,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     const result = await runUpdate(tmpDir);
 
@@ -319,17 +333,13 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     expect(result.warnings![0]).toContain('old-service');
 
     // Context files should still exist
-    expect(
-      existsSync(join(tmpDir, '.ctxify', 'repos', 'old-service', 'overview.md')),
-    ).toBe(true);
+    expect(existsSync(join(tmpDir, '.ctxify', 'repos', 'old-service', 'overview.md'))).toBe(true);
   });
 
   it('preserves ctx.yaml relationships/skills/options', async () => {
     createPackageJson(tmpDir, 'my-app');
 
-    const relationships = [
-      { from: 'api', to: 'web', type: 'dependency' as const },
-    ];
+    const relationships = [{ from: 'api', to: 'web', type: 'dependency' as const }];
     const skills = {
       claude: { path: '.claude/skills/ctxify.md', scope: 'workspace' as const },
     };
@@ -343,7 +353,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     });
 
     writeOverviewMd(tmpDir, 'my-app', '# my-app', {});
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -353,7 +365,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     await runUpdate(tmpDir);
 
@@ -378,7 +391,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 
     writeOverviewMd(tmpDir, 'my-app', '# my-app', { language: 'javascript' });
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -388,7 +403,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     // Save original content
     const originalOverview = readFileSync(
@@ -441,7 +457,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     mkdirSync(repoDir, { recursive: true });
     writeFileSync(join(repoDir, 'overview.md'), '# my-app\n\nNo frontmatter here.', 'utf-8');
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -451,7 +469,8 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     const result = await runUpdate(tmpDir);
 
@@ -471,7 +490,9 @@ scanned_at: '2025-01-01T00:00:00.000Z'
 
     writeOverviewMd(tmpDir, 'my-app', '# my-app', {});
 
-    writeIndexMd(tmpDir, `---
+    writeIndexMd(
+      tmpDir,
+      `---
 ctxify: '2.0'
 type: index
 mode: single-repo
@@ -481,7 +502,8 @@ scanned_at: '2020-01-01T00:00:00.000Z'
 ---
 
 # workspace
-`);
+`,
+    );
 
     await runUpdate(tmpDir);
 
@@ -527,7 +549,12 @@ describe('updateRepoTable', () => {
 `;
 
     const manifests = new Map();
-    manifests.set('api', { name: 'api', path: 'api', language: 'typescript', framework: 'express' });
+    manifests.set('api', {
+      name: 'api',
+      path: 'api',
+      language: 'typescript',
+      framework: 'express',
+    });
     manifests.set('web', { name: 'web', path: 'web', language: 'typescript', framework: 'react' });
 
     const result = updateRepoTable(content, manifests, ['web']);
