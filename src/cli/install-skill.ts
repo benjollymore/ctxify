@@ -171,6 +171,9 @@ export function installSkill(
       : `${versionComment}\n${bodies.join('\n\n---\n\n')}`;
     writeFileSync(join(baseDir, config.primaryFilename), content, 'utf-8');
   } else {
+    // Track files written to baseDir so we can clean up stale ones
+    const writtenToBaseDir = new Set<string>();
+
     // Install each skill as a separate file
     for (const { filename, sourcePath } of skillFiles) {
       const raw = readFileSync(sourcePath, 'utf-8');
@@ -194,6 +197,7 @@ export function installSkill(
       } else {
         const destFilename = isPrimary ? config.primaryFilename : filename;
         writeFileSync(join(baseDir, destFilename), installedContent, 'utf-8');
+        writtenToBaseDir.add(destFilename);
       }
     }
 
@@ -220,6 +224,27 @@ export function installSkill(
           // Best-effort cleanup — ignore errors
         }
       }
+    }
+
+    // Clean up stale ctxify-managed files in the primary directory.
+    // Detects stale files by the version comment header (<!-- ctxify v) so we
+    // only remove files ctxify previously wrote, not user-created files.
+    try {
+      const filesInBaseDir = readdirSync(baseDir).filter((f) => f.endsWith('.md'));
+      for (const file of filesInBaseDir) {
+        if (writtenToBaseDir.has(file)) continue;
+        const filePath = join(baseDir, file);
+        try {
+          const content = readFileSync(filePath, 'utf-8');
+          if (content.includes('<!-- ctxify v')) {
+            rmSync(filePath, { force: true });
+          }
+        } catch {
+          // Best-effort — skip files we can't read
+        }
+      }
+    } catch {
+      // Best-effort cleanup — ignore errors
     }
   }
 

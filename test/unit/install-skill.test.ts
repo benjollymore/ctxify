@@ -315,6 +315,68 @@ describe('installSkill', () => {
     expect(existsSync(join(skillsDir, 'ctxify-corrections', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-domain', 'SKILL.md'))).toBe(true);
   });
+
+  it('claude reinstall removes stale .md files from primary directory', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const primaryDir = join(dir, '.claude', 'skills', 'ctxify');
+    mkdirSync(primaryDir, { recursive: true });
+    // Simulate a stale skill file from an older ctxify version (e.g. v0.4.0)
+    writeFileSync(
+      join(primaryDir, 'reading-context.md'),
+      '---\nname: ctxify:reading-context\n---\n<!-- ctxify v0.4.0 — do not edit manually, managed by ctxify init -->\n\n# stale skill',
+      'utf-8',
+    );
+
+    installSkill(dir, 'claude');
+
+    // Stale file should be removed
+    expect(existsSync(join(primaryDir, 'reading-context.md'))).toBe(false);
+    // Primary SKILL.md should still exist
+    expect(existsSync(join(primaryDir, 'SKILL.md'))).toBe(true);
+  });
+
+  it('does not remove non-ctxify .md files from primary directory', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const primaryDir = join(dir, '.claude', 'skills', 'ctxify');
+    mkdirSync(primaryDir, { recursive: true });
+    // A user-created file without ctxify version comment
+    writeFileSync(join(primaryDir, 'my-notes.md'), '# My custom notes\n', 'utf-8');
+
+    installSkill(dir, 'claude');
+
+    // User file should be preserved
+    expect(existsSync(join(primaryDir, 'my-notes.md'))).toBe(true);
+  });
+
+  it('cursor reinstall removes stale ctxify-managed files from shared directory', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const rulesDir = join(dir, '.cursor', 'rules');
+    mkdirSync(rulesDir, { recursive: true });
+    // Simulate a stale ctxify skill from older version
+    writeFileSync(
+      join(rulesDir, 'reading-context.md'),
+      '---\ndescription: stale\n---\n<!-- ctxify v0.4.0 — do not edit manually, managed by ctxify init -->\n\n# stale',
+      'utf-8',
+    );
+    // Non-ctxify file in the same shared directory
+    writeFileSync(join(rulesDir, 'my-custom-rule.md'), '# Custom cursor rule\n', 'utf-8');
+
+    installSkill(dir, 'cursor');
+
+    // Stale ctxify file should be removed
+    expect(existsSync(join(rulesDir, 'reading-context.md'))).toBe(false);
+    // Non-ctxify file should be preserved
+    expect(existsSync(join(rulesDir, 'my-custom-rule.md'))).toBe(true);
+    // Current skill files should exist
+    expect(existsSync(join(rulesDir, 'ctxify.md'))).toBe(true);
+    expect(existsSync(join(rulesDir, 'corrections.md'))).toBe(true);
+  });
 });
 
 describe('getSkillSourceDir', () => {
