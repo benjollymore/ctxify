@@ -40,19 +40,60 @@ describe('getContextHookOutput', () => {
     expect(output).toBe('');
   });
 
-  it('outputs nudge message when repos dir exists but no corrections', () => {
-    writeCtxYaml(tmpDir);
-    mkdirSync(join(tmpDir, '.ctxify', 'repos', 'my-app'), { recursive: true });
-
-    const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('Invoke /ctxify to');
-    expect(output).toContain('ctxify workspace detected');
-  });
-
-  it('outputs summary when corrections.md has entries', () => {
+  it('returns unfilled nudge when overview.md has TODO markers', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      join(repoDir, 'overview.md'),
+      '---\ntype: overview\n---\n\n# My App\n\n<!-- TODO: Describe the architecture -->',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toBe(
+      'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.',
+    );
+  });
+
+  it('includes index.md content without frontmatter', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      join(tmpDir, '.ctxify', 'index.md'),
+      '---\nmode: single-repo\n---\n\n# Workspace Overview\n\nThis is the workspace.',
+      'utf-8',
+    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('# Workspace Overview');
+    expect(output).toContain('This is the workspace.');
+    expect(output).not.toContain('mode: single-repo');
+  });
+
+  it('includes overview.md content when context is filled', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      join(repoDir, 'overview.md'),
+      '---\ntype: overview\n---\n\n# My App\n\nA well-documented app.',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('# My App');
+    expect(output).toContain('A well-documented app.');
+    expect(output).not.toContain('type: overview');
+  });
+
+  it('includes corrections content when corrections.md exists', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
     writeFileSync(
       join(repoDir, 'corrections.md'),
       '---\nrepo: my-app\ntype: corrections\n---\n\n# Corrections\n\n<!-- correction:2025-06-15 -->\nDo not use var.\n<!-- /correction -->',
@@ -60,12 +101,50 @@ describe('getContextHookOutput', () => {
     );
 
     const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('my-app (1 correction)');
-    expect(output).not.toContain('Do not use var.');
-    expect(output).toContain('Invoke /ctxify to');
+    expect(output).toContain('Do not use var.');
+    expect(output).toContain('# Corrections');
   });
 
-  it('handles multiple repos with corrections', () => {
+  it('includes rules content when rules.md exists', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
+    writeFileSync(
+      join(repoDir, 'rules.md'),
+      '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\n<!-- rule:2025-06-15 -->\nDo not fragment CSS.\n<!-- /rule -->',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('Do not fragment CSS.');
+    expect(output).toContain('# Rules');
+  });
+
+  it('includes footer line about patterns.md', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain(
+      'Load patterns.md before writing code. Load domain files when entering specific areas.',
+    );
+  });
+
+  it('omits corrections section when corrections.md does not exist', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).not.toContain('Corrections');
+    expect(output).toContain('# My App');
+  });
+
+  it('handles multiple repos', () => {
     writeCtxYaml(tmpDir, {
       repos: [
         { path: 'api', name: 'api' },
@@ -78,28 +157,25 @@ describe('getContextHookOutput', () => {
     mkdirSync(apiDir, { recursive: true });
     mkdirSync(webDir, { recursive: true });
 
+    writeFileSync(join(apiDir, 'overview.md'), '# API\n\nThe API service.', 'utf-8');
+    writeFileSync(join(webDir, 'overview.md'), '# Web\n\nThe web frontend.', 'utf-8');
     writeFileSync(
       join(apiDir, 'corrections.md'),
-      '<!-- correction:2025-06-15 -->\nuse POST not PUT.\n<!-- /correction -->\n<!-- correction:2025-06-16 -->\nuse v2 API.\n<!-- /correction -->',
-      'utf-8',
-    );
-    writeFileSync(
-      join(webDir, 'corrections.md'),
-      '<!-- correction:2025-06-15 -->\nprefer flex over grid.\n<!-- /correction -->',
+      '<!-- correction:2025-06-15 -->\nuse POST not PUT.\n<!-- /correction -->',
       'utf-8',
     );
 
     const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('api (2 corrections)');
-    expect(output).toContain('web (1 correction)');
-    expect(output).not.toContain('use POST not PUT');
-    expect(output).toContain('Invoke /ctxify to');
+    expect(output).toContain('# API');
+    expect(output).toContain('# Web');
+    expect(output).toContain('use POST not PUT.');
   });
 
   it('handles custom outputDir from ctx.yaml', () => {
     writeCtxYaml(tmpDir, { options: { outputDir: 'custom-ctx' } });
     const repoDir = join(tmpDir, 'custom-ctx', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nCustom dir app.', 'utf-8');
     writeFileSync(
       join(repoDir, 'corrections.md'),
       '<!-- correction:2025-06-15 -->\nCustom dir correction.\n<!-- /correction -->',
@@ -107,72 +183,29 @@ describe('getContextHookOutput', () => {
     );
 
     const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('my-app (1 correction)');
-    expect(output).not.toContain('Custom dir correction.');
-    expect(output).toContain('Invoke /ctxify to');
-  });
-
-  it('outputs summary when rules.md has entries', () => {
-    writeCtxYaml(tmpDir);
-    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
-    mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'rules.md'),
-      '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\n<!-- rule:2025-06-15 -->\nDo not fragment CSS.\n<!-- /rule -->',
-      'utf-8',
-    );
-
-    const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('my-app (1 rule)');
-    expect(output).not.toContain('Do not fragment CSS.');
-    expect(output).toContain('Invoke /ctxify to');
-  });
-
-  it('outputs summary with both corrections and rules when both exist', () => {
-    writeCtxYaml(tmpDir);
-    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
-    mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'corrections.md'),
-      '---\nrepo: my-app\ntype: corrections\n---\n\n# Corrections\n\n<!-- correction:2025-06-15 -->\nAPI is at /v2.\n<!-- /correction -->',
-      'utf-8',
-    );
-    writeFileSync(
-      join(repoDir, 'rules.md'),
-      '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\n<!-- rule:2025-06-15 -->\nAlways use bun.\n<!-- /rule -->\n<!-- antipattern:2025-06-16 -->\nDo not use var.\n<!-- /antipattern -->',
-      'utf-8',
-    );
-
-    const output = getContextHookOutput(tmpDir);
-    expect(output).toContain('my-app (1 correction, 2 rules)');
-    expect(output).not.toContain('API is at /v2.');
-    expect(output).not.toContain('Always use bun.');
-  });
-
-  it('skips repos without corrections.md', () => {
-    writeCtxYaml(tmpDir);
-    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
-    mkdirSync(repoDir, { recursive: true });
-    // Only overview.md, no corrections.md
-    writeFileSync(join(repoDir, 'overview.md'), '# My App', 'utf-8');
-
-    const output = getContextHookOutput(tmpDir);
-    // Should only have the nudge, no corrections content
-    expect(output).toBe(
-      'ctxify workspace detected. Invoke /ctxify to load codebase context before coding.',
-    );
+    expect(output).toContain('Custom dir correction.');
+    expect(output).toContain('# My App');
   });
 
   it('skips empty corrections.md files', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test app.', 'utf-8');
     writeFileSync(join(repoDir, 'corrections.md'), '', 'utf-8');
 
     const output = getContextHookOutput(tmpDir);
-    // Should only have the nudge, no empty corrections
-    expect(output).toBe(
-      'ctxify workspace detected. Invoke /ctxify to load codebase context before coding.',
-    );
+    expect(output).toContain('# My App');
+    expect(output).not.toContain('Corrections');
+  });
+
+  it('returns empty string when repos dir has no overview files and no content', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    // No files at all in the repo dir
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toBe('');
   });
 });

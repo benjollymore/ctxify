@@ -4,10 +4,19 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
 
 /**
- * Outputs a compact summary of available corrections/rules for Claude Code SessionStart hook.
- * Counts segment markers instead of injecting full file content — agents invoke /ctxify to load details.
+ * Outputs the content of always-load context files for Claude Code SessionStart hook.
+ * When context is filled, concatenates index.md + overview.md + corrections.md + rules.md
+ * (frontmatter stripped) so agents start with full context loaded.
+ * When context is unfilled (TODO markers in overview.md), outputs a nudge to fill context.
  * Designed to be fast and silent — exits 0 with no output if nothing is found.
  */
+
+function stripFrontmatter(content: string): string {
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  if (!match) return content;
+  return content.slice(match[0].length);
+}
+
 export function getContextHookOutput(workspaceRoot: string): string {
   const configPath = join(workspaceRoot, 'ctx.yaml');
 
@@ -38,18 +47,53 @@ export function getContextHookOutput(workspaceRoot: string): string {
     return '';
   }
 
-  // Count entries per repo
-  const repoSummaries: string[] = [];
-
+  // Check if any overview.md has TODO markers → unfilled
   for (const repo of repoDirs) {
-    let corrections = 0;
-    let rules = 0;
+    const overviewPath = join(reposDir, repo, 'overview.md');
+    if (existsSync(overviewPath)) {
+      try {
+        const content = readFileSync(overviewPath, 'utf-8');
+        if (content.includes('<!-- TODO:')) {
+          return 'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.';
+        }
+      } catch {
+        // Skip unreadable files
+      }
+    }
+  }
+
+  // Context is filled — concatenate always-load files
+  const sections: string[] = [];
+
+  // index.md
+  const indexPath = join(outputRoot, 'index.md');
+  if (existsSync(indexPath)) {
+    try {
+      const content = readFileSync(indexPath, 'utf-8');
+      sections.push(stripFrontmatter(content).trim());
+    } catch {
+      // Skip unreadable files
+    }
+  }
+
+  // Per-repo: overview.md, corrections.md, rules.md
+  for (const repo of repoDirs) {
+    const overviewPath = join(reposDir, repo, 'overview.md');
+    if (existsSync(overviewPath)) {
+      try {
+        const content = readFileSync(overviewPath, 'utf-8');
+        sections.push(stripFrontmatter(content).trim());
+      } catch {
+        // Skip unreadable files
+      }
+    }
 
     const correctionsPath = join(reposDir, repo, 'corrections.md');
     if (existsSync(correctionsPath)) {
       try {
         const content = readFileSync(correctionsPath, 'utf-8');
-        corrections = (content.match(/<!-- correction:/g) || []).length;
+        const body = stripFrontmatter(content).trim();
+        if (body) sections.push(body);
       } catch {
         // Skip unreadable files
       }
@@ -59,28 +103,19 @@ export function getContextHookOutput(workspaceRoot: string): string {
     if (existsSync(rulesPath)) {
       try {
         const content = readFileSync(rulesPath, 'utf-8');
-        rules = (content.match(/<!-- (?:rule|antipattern):/g) || []).length;
+        const body = stripFrontmatter(content).trim();
+        if (body) sections.push(body);
       } catch {
         // Skip unreadable files
       }
     }
-
-    if (corrections === 0 && rules === 0) continue;
-
-    const counts: string[] = [];
-    if (corrections > 0) counts.push(`${corrections} correction${corrections === 1 ? '' : 's'}`);
-    if (rules > 0) counts.push(`${rules} rule${rules === 1 ? '' : 's'}`);
-    repoSummaries.push(`${repo} (${counts.join(', ')})`);
   }
 
-  const nudge = 'ctxify workspace detected.';
-  const cta = 'Invoke /ctxify to load codebase context before coding.';
+  if (sections.length === 0) return '';
 
-  if (repoSummaries.length > 0) {
-    return `${nudge} Context: ${repoSummaries.join(', ')}. ${cta}`;
-  }
-
-  return `${nudge} ${cta}`;
+  const footer =
+    'Load patterns.md before writing code. Load domain files when entering specific areas.';
+  return sections.join('\n\n') + '\n\n' + footer;
 }
 
 export function registerContextHookCommand(program: Command): void {
