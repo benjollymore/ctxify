@@ -113,7 +113,8 @@ export function getContextHookOutput(workspaceRoot: string): string {
 
   if (sections.length === 0) return '';
 
-  const footer = 'Load patterns.md before writing code. Load domain files when entering specific areas.';
+  const footer =
+    'Load patterns.md before writing code. Load domain files when entering specific areas.';
   return sections.join('\n\n') + '\n\n' + footer;
 }
 

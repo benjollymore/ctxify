@@ -65,11 +65,7 @@ describe('getContextHookOutput', () => {
       '---\nmode: single-repo\n---\n\n# Workspace Overview\n\nThis is the workspace.',
       'utf-8',
     );
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      '# My App\n\nA test application.',
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain('# Workspace Overview');
@@ -97,11 +93,7 @@ describe('getContextHookOutput', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      '# My App\n\nA test application.',
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
     writeFileSync(
       join(repoDir, 'corrections.md'),
       '---\nrepo: my-app\ntype: corrections\n---\n\n# Corrections\n\n<!-- correction:2025-06-15 -->\nDo not use var.\n<!-- /correction -->',
@@ -117,11 +109,7 @@ describe('getContextHookOutput', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      '# My App\n\nA test application.',
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
     writeFileSync(
       join(repoDir, 'rules.md'),
       '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\n<!-- rule:2025-06-15 -->\nDo not fragment CSS.\n<!-- /rule -->',
@@ -137,11 +125,7 @@ describe('getContextHookOutput', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      '# My App\n\nA test application.',
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toContain(
@@ -153,11 +137,7 @@ describe('getContextHookOutput', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      '# My App\n\nA test application.',
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
 
     const output = getContextHookOutput(tmpDir);
     expect(output).not.toContain('Corrections');
@@ -195,11 +175,7 @@ describe('getContextHookOutput', () => {
     writeCtxYaml(tmpDir, { options: { outputDir: 'custom-ctx' } });
     const repoDir = join(tmpDir, 'custom-ctx', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
-    writeFileSync(
-      join(repoDir, 'overview.md'),
-      '# My App\n\nCustom dir app.',
-      'utf-8',
-    );
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nCustom dir app.', 'utf-8');
     writeFileSync(
       join(repoDir, 'corrections.md'),
       '<!-- correction:2025-06-15 -->\nCustom dir correction.\n<!-- /correction -->',
