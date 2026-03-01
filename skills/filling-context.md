@@ -126,6 +126,23 @@ Keep each domain file 50-150 lines total.
 - **Commands**: Essential commands per repo. 1-2 lines each.
 - **Workflows**: 2-5 common cross-repo tasks as step-by-step guides. These are the highest-value context — tasks that trip up someone new.
 
+### Pass 5: Verify quality (orchestrator only)
+
+After all passes complete, run `ctxify audit` and review the JSON output. Fix any issues before considering context complete.
+
+| Issue | Action |
+|-------|--------|
+| `todo_remaining` | Go fill the TODO markers — the template wasn't completed |
+| `scaffold_only` | File was never filled — read source and write content |
+| `prose_wall` | Break into bullets or shorter paragraphs (2-3 sentences max) |
+| `empty_section` | Fill the section or remove the heading |
+| `file_too_short` | Read more source, add depth — the file isn't earning its token cost |
+| `file_too_long` | Split into sub-domains or trim to high-signal content only |
+
+Check `summary.total_tokens` for budget awareness. Check `summary.external_context_files` to see what other context files exist — ensure your content complements rather than duplicates them.
+
+Re-run `ctxify audit` after fixes to confirm `total_issues` reaches 0 (or only `info`-level issues remain).
+
 ## WRITE Rules
 
 These describe what high-signal context looks like:

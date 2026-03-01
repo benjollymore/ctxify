@@ -85,6 +85,7 @@ ctxify init --repos ./api ./web
 | `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force`, `--hook`/`--no-hook` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
+| `ctxify audit` | Quality analysis of context shards: token budget, unfilled TODOs, prose walls, size issues. Flags: `--repo <name>` |
 | `ctxify patterns <repo>` | Scaffold `patterns.md` with TODO placeholders for an agent to fill. Flags: `--force` |
 | `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
 | `ctxify domain list` | List registered domain files. Flags: `--repo` |
