@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runUpgrade } from '../../src/cli/commands/upgrade.js';
@@ -119,7 +119,7 @@ describe('runUpgrade', () => {
     expect(existsSync(join(tmpDir, '.claude', 'skills', 'ctxify', 'SKILL.md'))).toBe(true);
   });
 
-  it('proceeds without skills reinstall when no skills in ctx.yaml', async () => {
+  it('proceeds without skills reinstall when no skills in ctx.yaml and none on disk', async () => {
     writeCtxYaml(tmpDir, { install_method: 'global' });
     const calls: string[][] = [];
     const result = await runUpgrade(tmpDir, {
@@ -130,7 +130,7 @@ describe('runUpgrade', () => {
     expect(result.skills_reinstalled).toEqual([]);
   });
 
-  it('proceeds without ctx.yaml (uses default global install, no skills)', async () => {
+  it('proceeds without ctx.yaml (uses default global install, no skills on disk)', async () => {
     const calls: string[][] = [];
     const result = await runUpgrade(tmpDir, {
       execFn: (args) => calls.push(args),
@@ -139,6 +139,29 @@ describe('runUpgrade', () => {
     expect(result.status).toBe('upgraded');
     expect(calls[0]).toEqual(['install', '-g', '@benjollymore/ctxify@latest']);
     expect(result.skills_reinstalled).toEqual([]);
+  });
+
+  it('auto-detects installed skills when ctx.yaml has no skills key', async () => {
+    // ctx.yaml with no skills field (old config)
+    writeCtxYaml(tmpDir, { install_method: 'global' });
+    // But skills exist on disk from a previous init
+    mkdirSync(join(tmpDir, '.claude', 'skills', 'ctxify'), { recursive: true });
+    writeFileSync(
+      join(tmpDir, '.claude', 'skills', 'ctxify', 'SKILL.md'),
+      '<!-- ctxify v0.5.2 -->\n# old skill',
+      'utf-8',
+    );
+
+    const calls: string[][] = [];
+    const result = await runUpgrade(tmpDir, {
+      execFn: (args) => calls.push(args),
+    });
+
+    expect(result.status).toBe('upgraded');
+    expect(result.skills_reinstalled).toContain('.claude/skills/ctxify/SKILL.md');
+    // Verify the file was actually overwritten with fresh content
+    const content = readFileSync(join(tmpDir, '.claude', 'skills', 'ctxify', 'SKILL.md'), 'utf-8');
+    expect(content).not.toContain('v0.5.2');
   });
 
   it('reinstalls skills with correct scope from new SkillEntry format — global scope goes to homeDir', async () => {

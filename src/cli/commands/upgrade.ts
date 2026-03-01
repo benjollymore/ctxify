@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { loadConfig } from '../../core/config.js';
 import type { SkillEntry } from '../../core/config.js';
-import { installSkill } from '../install-skill.js';
+import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
 import { installClaudeHook } from '../install-hooks.js';
 import { invalidateVersionCache } from '../../utils/version-check.js';
 
@@ -47,6 +47,29 @@ export async function runUpgrade(
       }
     } catch {
       // If config is malformed, proceed with defaults
+    }
+  }
+
+  // Auto-detect installed skills when ctx.yaml doesn't track them
+  if (Object.keys(skillsMap).length === 0) {
+    for (const [agent, config] of Object.entries(AGENT_CONFIGS)) {
+      const skillPath = join(workspaceRoot, config.destDir, config.primaryFilename);
+      if (existsSync(skillPath)) {
+        skillsMap[agent] = {
+          path: join(config.destDir, config.primaryFilename),
+          scope: 'workspace',
+        };
+      }
+      if (config.globalDestDir) {
+        const resolvedHome = homeDir ?? (await import('node:os')).homedir();
+        const globalPath = join(resolvedHome, config.globalDestDir, config.primaryFilename);
+        if (existsSync(globalPath) && !(agent in skillsMap)) {
+          skillsMap[agent] = {
+            path: join('~', config.globalDestDir, config.primaryFilename),
+            scope: 'global',
+          };
+        }
+      }
     }
   }
 
