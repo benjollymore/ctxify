@@ -14,6 +14,10 @@ Check for `.ctxify/index.md` at workspace root.
 
 Do not look for context files inside individual repos unless referenced from `.ctxify/`.
 
+## Version Check
+
+If this skill has a `version` field in its frontmatter, compare it against the output of `ctxify --version`. If they differ, tell the user: "ctxify skills are from v{X} but v{Y} is installed. Run `ctxify upgrade` to update." Continue regardless — don't block on this.
+
 ## Check Context State
 
 Read `.ctxify/index.md` and each `repos/{name}/overview.md`.

@@ -106,6 +106,7 @@ describe('installSkill', () => {
     expect(content.startsWith('---')).toBe(true);
     expect(content).toContain('name: ctxify');
     expect(content).toContain('description:');
+    expect(content).toContain('version:');
     expect(content).toContain('<!-- ctxify v');
   });
 
@@ -128,6 +129,7 @@ describe('installSkill', () => {
       expect(content.startsWith('---'), `${dirName}/SKILL.md should start with ---`).toBe(true);
       expect(content, `${dirName}/SKILL.md should have name:`).toContain('name: ctxify:');
       expect(content, `${dirName}/SKILL.md should have description:`).toContain('description:');
+      expect(content, `${dirName}/SKILL.md should have version:`).toContain('version:');
     }
   });
 
@@ -139,6 +141,7 @@ describe('installSkill', () => {
 
     const content = readFileSync(join(dir, '.cursor', 'rules', 'ctxify.md'), 'utf-8');
     expect(content).toContain('alwaysApply: true');
+    expect(content).toContain('version:');
   });
 
   it('cursor satellite skills have alwaysApply: false', () => {
@@ -158,6 +161,7 @@ describe('installSkill', () => {
     for (const filename of satellites) {
       const content = readFileSync(join(rulesDir, filename), 'utf-8');
       expect(content, `${filename} should have alwaysApply: false`).toContain('alwaysApply: false');
+      expect(content, `${filename} should have version:`).toContain('version:');
     }
   });
 
