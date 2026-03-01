@@ -63,26 +63,10 @@ ${dirLines}
 
 <!-- TODO: Agent — describe how a request flows through this system and why it's layered this way. What would surprise someone coming from a different codebase? 10-20 lines. -->
 
-## Context
-
-After reading the codebase, create these sibling files in this directory:
-
-**\`patterns.md\`** — How to build features in this repo. The most important file.
-Include: end-to-end feature patterns, validation approach, testing patterns, naming
-conventions, gotchas and tips. 20-50 lines with brief code examples.
-
-**\`corrections.md\`** — Agent-logged factual corrections (created by \`ctxify feedback\`).
-Always loaded — prevents repeating past mistakes.
-
-**\`rules.md\`** — Behavioral instructions and anti-patterns (created by \`ctxify feedback --type rule\`).
-Always loaded — the highest-signal context.
-
-**Domain files** — One \`{domain}.md\` per complex domain area (3-5 domains).
-Each covers: key concepts, business rules, decisions, domain-specific patterns,
-cross-repo interactions. 50-150 lines each.
+## Domains
 
 <!-- domain-index -->
-<!-- TODO: Agent — List the domains you'll document after exploring the codebase:
+<!-- TODO: Agent — list domain files here if warranted (only for areas that take 30+ min to re-understand from scratch).
 - \`{domain}.md\` — {what it covers}
 -->
 <!-- /domain-index -->

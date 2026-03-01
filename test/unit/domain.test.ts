@@ -66,16 +66,16 @@ describe('generateDomainTemplate', () => {
     expect(fm!.tags).toEqual(['billing', 'stripe']);
   });
 
-  it('generates domain file with TODO sections', () => {
+  it('generates domain file with consolidated TODO', () => {
     const output = generateDomainTemplate({ repo: 'api', domain: 'payments' });
 
     expect(output).toContain('# payments');
     expect(output).not.toContain('## Key Files');
-    expect(output).toContain('## Concepts');
-    expect(output).toContain('## Decisions');
-    expect(output).toContain('## Patterns');
-    expect(output).toContain('## Cross-repo');
+    expect(output).not.toContain('## Concepts');
+    expect(output).not.toContain('## Decisions');
     expect(output).toContain('<!-- TODO:');
+    expect(output).toContain('Decisions');
+    expect(output).toContain('Patterns');
   });
 
   it('omits tags from frontmatter when not provided', () => {
