@@ -60,6 +60,7 @@ After init — invoke **ctxify:filling-context** to document what you learn abou
 ## Handoffs
 
 - **Filling/writing context files** → invoke `ctxify:filling-context`
+- **Checking context quality** → run `ctxify audit` (token budget, unfilled TODOs, prose walls, size issues)
 - **Creating a new domain file** → invoke `ctxify:domain`
 - **Logging a correction** → invoke `ctxify:corrections`
 - **Logging a behavioral rule** → invoke `ctxify:rules`
