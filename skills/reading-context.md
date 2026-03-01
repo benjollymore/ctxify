@@ -1,13 +1,11 @@
 ---
 name: ctxify:reading-context
-description: Use when loading context files from a ctxify workspace before starting a task.
+description: Detailed reference for progressive context loading in a ctxify workspace — file roles, loading order, and staleness detection.
 ---
 
 # ctxify:reading-context — Loading Context
 
-## Hard Gate
-
-ALWAYS load `corrections.md` and `rules.md` before starting any task (if they exist). They contain documented mistakes and behavioral instructions that will save you time.
+The main loading instructions are in the **ctxify** skill. This file provides additional detail on file roles, loading order, and staleness detection.
 
 ## Progressive Disclosure
 

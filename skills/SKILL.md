@@ -1,21 +1,45 @@
 ---
 name: ctxify
-description: Use when starting work in any ctxify-managed workspace. Detects context scaffolding, runs init if needed, and hands off to focused skills.
+description: Use before writing, modifying, or debugging code in a ctxify workspace — loads architecture, patterns, and coding conventions so you build correctly.
 ---
 
-# ctxify — Orientation
+# ctxify — Load Context Before Coding
 
-## Hard Gate
-
-ALWAYS check for `.ctxify/` before writing code in any workspace. If absent, stop and initialize.
-
-## Detection
+## Before Starting Any Task
 
 Check for `.ctxify/index.md` at workspace root.
-- **Found** → Invoke **ctxify:startup** to detect context state and load appropriately.
+
 - **Not found** → Check for `ctx.yaml`. If exists, run `ctxify init`. If neither, go to First-time Setup below.
+- **Found** → Continue to "Check Context State".
 
 Do not look for context files inside individual repos unless referenced from `.ctxify/`.
+
+## Check Context State
+
+Read `.ctxify/index.md` and each `repos/{name}/overview.md`.
+
+If any overview.md contains `<!-- TODO:` markers, context is **unfilled**:
+- User explicitly requested context setup → invoke **ctxify:filling-context**.
+- Otherwise → ask: "Context files are unfilled. Fill them now, or skip and start on your task?"
+
+If no TODO markers → context is filled. Continue to "Load Context Files".
+
+## Load Context Files
+
+| File | Load when |
+|------|-----------|
+| `.ctxify/index.md` | Every session |
+| `repos/{name}/overview.md` | Every session |
+| `repos/{name}/corrections.md` | Every session — past mistakes to avoid |
+| `repos/{name}/rules.md` | Every session — behavioral instructions |
+| `repos/{name}/patterns.md` | Before writing or modifying code |
+| `repos/{name}/{domain}.md` | When working in that specific domain |
+
+Read the "Every session" files now. Load patterns.md and domain files when you reach a coding task that needs them.
+
+If context looks stale or a `corrections.md` contradicts an overview, note it.
+When you discover wrong context during a task — invoke **ctxify:corrections**.
+When the user corrects your behavior — invoke **ctxify:rules**.
 
 ## First-time Setup
 
@@ -33,8 +57,9 @@ After init — invoke **ctxify:filling-context** to document what you learn abou
 
 ## Handoffs
 
-- **Reading context** → invoke `ctxify:reading-context`
 - **Filling/writing context files** → invoke `ctxify:filling-context`
 - **Creating a new domain file** → invoke `ctxify:domain`
 - **Logging a correction** → invoke `ctxify:corrections`
 - **Cross-repo branch/commit coordination** → invoke `ctxify:multi-repo`
+- **Context troubleshooting** → invoke `ctxify:startup`
+- **Detailed loading reference** → invoke `ctxify:reading-context`

@@ -111,7 +111,7 @@ All commands output JSON to stdout.
 
 Multiple agents: `ctxify init --agent claude copilot cursor`
 
-The 7 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:rules`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
+The 7 skills are: `ctxify` (loads context before coding — the main entry point), `ctxify:startup` (troubleshooting), `ctxify:reading-context` (detailed loading reference), `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:rules`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
 
 **Sub-agent delegation (Claude Code):** The `ctxify:filling-context` skill delegates per-repo context filling (passes 1-3) to Haiku sub-agents — cheaper, faster, and parallel. Pass 4 (cross-repo index.md) stays with the orchestrator. Other agents fall back to sequential execution automatically.
 
@@ -119,10 +119,10 @@ The 7 skills are: `ctxify` (orientation), `ctxify:reading-context`, `ctxify:fill
 
 When you select Claude Code as an agent, `ctxify init` installs a [SessionStart hook](https://docs.anthropic.com/en/docs/claude-code/hooks) in `.claude/settings.json` that runs `ctxify context-hook` every time a Claude Code session starts, resumes, or compacts. The hook:
 
-1. Outputs any `corrections.md` and `rules.md` content from `.ctxify/repos/*/` — so past corrections and behavioral instructions are always in context
+1. Outputs a compact summary of available context (which repos have corrections/rules and how many) — without injecting full file content into the context window
 2. Nudges the agent to invoke `/ctxify` to detect context state and load appropriately
 
-This means corrections are automatically loaded without the agent needing to remember to check. Use `--no-hook` to skip hook installation if you prefer to manage context loading manually.
+This gives agents awareness that corrections and rules exist — and a nudge to load them via `/ctxify` — without polluting the context window with full content. Use `--no-hook` to skip hook installation if you prefer to manage context loading manually.
 
 The hook is reinstalled on `ctxify upgrade` and removed on `ctxify clean`.
 

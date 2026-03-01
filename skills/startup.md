@@ -1,13 +1,9 @@
 ---
 name: ctxify:startup
-description: Use at session start in a ctxify workspace to detect whether context files are filled or need to be written, then hand off to the appropriate skill.
+description: Use when context files need to be checked for completeness, re-initialized, or troubleshot in a ctxify workspace.
 ---
 
 # ctxify:startup — Session Start
-
-## Hard Gate
-
-ALWAYS run this check before starting any task in a ctxify workspace. Do not skip to reading-context directly — this skill ensures context is in a usable state first.
 
 ## Step 0: Check for workspace initialisation
 
