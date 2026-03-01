@@ -75,6 +75,21 @@ Keep each domain file 50-150 lines total.
 6. Do NOT list a domain in overview.md without creating it via `ctxify domain add`
 7. Do NOT log anti-patterns liberally — max 2 per repo, use ctxify:rules
 8. Use bullet points, short paragraphs (2-3 sentences), and code blocks. No dense prose walls.
+
+## After completing all passes
+
+Run `ctxify audit` and fix any issues for this repo's files. Iterate until warnings are resolved.
+
+| Issue | Action |
+|-------|--------|
+| `todo_remaining` | Fill the TODO markers |
+| `scaffold_only` | Read source and write content |
+| `prose_wall` | Break into bullets or shorter paragraphs |
+| `empty_section` | Fill the section or remove the heading |
+| `file_too_short` | Add genuinely useful content — don't pad with filler |
+| `file_too_long` | Split into sub-domains or trim |
+
+Do NOT return until `total_issues` for your repo's files reaches 0 (or only `info`-level remain).
 ```
 
 ### Other platforms

@@ -340,9 +340,10 @@ function checkSizeHeuristics(type: string, contentLines: number): AuditIssue[] {
   const issues: AuditIssue[] = [];
 
   if (contentLines < limits.min) {
+    const nearMiss = contentLines >= Math.ceil(limits.min * 0.9);
     issues.push({
       kind: 'file_too_short',
-      severity: 'warning',
+      severity: nearMiss ? 'info' : 'warning',
       message: `${type} has ${contentLines} content lines (minimum ${limits.min})`,
     });
   }
