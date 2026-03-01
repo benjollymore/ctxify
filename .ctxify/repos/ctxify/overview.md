@@ -7,7 +7,7 @@ framework: commander
 
 # ctxify
 
-ctxify is a scaffolder + validator that generates turbocharged workspace context for AI coding agents. It detects repos, parses manifests (language, framework, dependencies, entry points), and scaffolds `.ctxify/` with markdown templates that agents read and fill with semantic content (architecture, patterns, decisions, domain knowledge). ctxify handles the deterministic mechanical part (parsing package.json, discovering frameworks, counting files). Agents do what they do best: read source code and document *why* things are built the way they are. The output is consumed by any AI coding agent (Claude Code, Copilot, Cursor, Codex) as workspace context files that ship with the repo.
+ctxify is a scaffolder + validator that generates persistent workspace context for AI coding agents. It detects repos, parses manifests (language, framework, dependencies, entry points), and scaffolds `.ctxify/` with markdown templates that agents read and fill with semantic content (architecture, patterns, decisions, domain knowledge). ctxify handles the deterministic mechanical part (parsing package.json, discovering frameworks, counting files). Agents do what they do best: read source code and document *why* things are built the way they are. The output is consumed by any AI coding agent (Claude Code, Copilot, Cursor, Codex) as workspace context files that ship with the repo.
 
 ## Architecture
 
