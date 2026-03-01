@@ -12,7 +12,12 @@ interface AgentConfig {
   destDir: string;
   primaryFilename: string;
   // For agents that install each skill as a separate file (claude, cursor):
-  skillFrontmatter?: (opts: { name: string; description: string; isPrimary: boolean; version: string }) => string;
+  skillFrontmatter?: (opts: {
+    name: string;
+    description: string;
+    isPrimary: boolean;
+    version: string;
+  }) => string;
   // When set, each satellite skill gets its own sibling directory containing this filename.
   // Used by Claude Code, which requires one directory per skill with SKILL.md inside.
   satelliteFilename?: string;
