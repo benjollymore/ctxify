@@ -57,15 +57,15 @@
     "url": "https://github.com/benjollymore/ctxify/issues"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.10.1",
-    "commander": "^12.1.0",
-    "glob": "^11.0.0",
+    "@inquirer/prompts": "^8.3.0",
+    "commander": "^14.0.3",
+    "glob": "^13.0.6",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.3.3",
     "eslint": "^10.0.2",
     "prettier": "^3.8.1",
     "tsup": "^8.3.0",
