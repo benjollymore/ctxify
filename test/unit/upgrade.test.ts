@@ -160,10 +160,7 @@ describe('runUpgrade', () => {
     expect(result.status).toBe('upgraded');
     expect(result.skills_reinstalled).toContain('.claude/skills/ctxify/SKILL.md');
     // Verify the file was actually overwritten with fresh content
-    const content = readFileSync(
-      join(tmpDir, '.claude', 'skills', 'ctxify', 'SKILL.md'),
-      'utf-8',
-    );
+    const content = readFileSync(join(tmpDir, '.claude', 'skills', 'ctxify', 'SKILL.md'), 'utf-8');
     expect(content).not.toContain('v0.5.2');
   });
 

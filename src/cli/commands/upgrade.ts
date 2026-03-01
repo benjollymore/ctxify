@@ -55,7 +55,10 @@ export async function runUpgrade(
     for (const [agent, config] of Object.entries(AGENT_CONFIGS)) {
       const skillPath = join(workspaceRoot, config.destDir, config.primaryFilename);
       if (existsSync(skillPath)) {
-        skillsMap[agent] = { path: join(config.destDir, config.primaryFilename), scope: 'workspace' };
+        skillsMap[agent] = {
+          path: join(config.destDir, config.primaryFilename),
+          scope: 'workspace',
+        };
       }
       if (config.globalDestDir) {
         const resolvedHome = homeDir ?? (await import('node:os')).homedir();
