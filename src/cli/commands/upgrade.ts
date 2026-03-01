@@ -96,7 +96,9 @@ export async function runUpgrade(
       const dest = installSkill(workspaceRoot, agent, entry.scope, homeDir);
       skills_reinstalled.push(dest);
     } catch (err) {
-      warnings.push(`Failed to reinstall ${agent} skill: ${err instanceof Error ? err.message : String(err)}`);
+      warnings.push(
+        `Failed to reinstall ${agent} skill: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -112,7 +114,9 @@ export async function runUpgrade(
       );
       hooks_reinstalled.push(hookCmd);
     } catch (err) {
-      warnings.push(`Failed to reinstall Claude Code hook: ${err instanceof Error ? err.message : String(err)}`);
+      warnings.push(
+        `Failed to reinstall Claude Code hook: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
