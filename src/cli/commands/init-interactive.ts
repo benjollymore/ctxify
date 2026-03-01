@@ -133,7 +133,7 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     const discovered = buildMultiRepoEntries(workspaceRoot);
 
     if (discovered.length === 0) {
-      console.log('No repositories found in subdirectories.');
+      console.error('No repositories found in subdirectories.');
       repos = [];
     } else {
       const includeAll = await confirm({

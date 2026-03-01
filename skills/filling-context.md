@@ -81,7 +81,7 @@ Keep each domain file 50-150 lines total.
 
 If your platform does not support sub-agent delegation or model selection, execute passes 1-3 sequentially as written below.
 
-## 4-Pass Workflow
+## 5-Pass Workflow
 
 ### Passes 1-3: Per-repo (delegatable)
 

@@ -17,6 +17,7 @@ export interface UpgradeResult {
   npx_note?: string;
   skills_reinstalled: string[];
   hooks_reinstalled?: string[];
+  warnings?: string[];
 }
 
 export interface UpgradeOptions {
@@ -89,12 +90,13 @@ export async function runUpgrade(
 
   // Reinstall skills
   const skills_reinstalled: string[] = [];
+  const warnings: string[] = [];
   for (const [agent, entry] of Object.entries(skillsMap)) {
     try {
       const dest = installSkill(workspaceRoot, agent, entry.scope, homeDir);
       skills_reinstalled.push(dest);
-    } catch {
-      // Non-fatal — if agent is unknown or skill install fails, continue
+    } catch (err) {
+      warnings.push(`Failed to reinstall ${agent} skill: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -109,8 +111,8 @@ export async function runUpgrade(
         homeDir,
       );
       hooks_reinstalled.push(hookCmd);
-    } catch {
-      // Non-fatal
+    } catch (err) {
+      warnings.push(`Failed to reinstall Claude Code hook: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -124,6 +126,7 @@ export async function runUpgrade(
     ...(npx_note ? { npx_note } : {}),
     skills_reinstalled,
     ...(hooks_reinstalled.length > 0 ? { hooks_reinstalled } : {}),
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
 
@@ -156,6 +159,9 @@ export function registerUpgradeCommand(program: Command): void {
         if (result.npx_note) lines.push(result.npx_note);
         if (result.skills_reinstalled.length > 0) {
           lines.push(`Skills reinstalled: ${result.skills_reinstalled.join(', ')}`);
+        }
+        if (result.warnings && result.warnings.length > 0) {
+          lines.push(`Warnings:\n${result.warnings.map((w) => `  - ${w}`).join('\n')}`);
         }
         console.error(lines.join('\n'));
       }

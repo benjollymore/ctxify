@@ -1,6 +1,6 @@
 ---
 name: ctxify:rules
-description: Use when the user corrects your behaviour, tells you not to do something, or you discover a systemic anti-pattern in a ctxify workspace.
+description: Use when the user corrects your behavior, tells you not to do something, or you discover a systemic anti-pattern in a ctxify workspace.
 ---
 
 # ctxify:rules — Behavioral Rules and Anti-Patterns
