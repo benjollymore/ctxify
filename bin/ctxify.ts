@@ -52,7 +52,7 @@ const program = new Command();
 
 program
   .name('ctxify')
-  .description('Turbocharged workspace context for AI coding agents')
+  .description('Persistent workspace context for AI coding agents')
   .version(pkg.version);
 
 // Non-blocking version check warning before each command (skip for context-hook to avoid latency)

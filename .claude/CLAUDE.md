@@ -1,6 +1,6 @@
 # ctxify
 
-Turbocharged workspace context for AI coding agents.
+Persistent workspace context for AI coding agents.
 
 ctxify is a **scaffolder + validator**, not an analyzer. `ctxify init` detects repos, parses manifests (language, framework, deps, entry points), and scaffolds `.ctxify/` with CLAUDE.md-style markdown templates. The calling agent reads source code and fills in semantic content: architecture descriptions, coding patterns, domain knowledge, cross-repo relationships. `ctxify validate` checks structural integrity of the filled shards.
 
