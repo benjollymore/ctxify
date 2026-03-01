@@ -359,6 +359,34 @@ This also has content.
       expect(file!.issues.some((i) => i.kind === 'file_too_short')).toBe(true);
     });
 
+    it('downgrades near-miss file_too_short to info severity', () => {
+      writeIndex(ctxDir);
+      // Domain min is 30. 27 lines = ceil(30*0.9) = 27, so this is a near-miss → info
+      const lines = Array.from({ length: 27 }, (_, i) => `Content line ${i + 1}.`).join('\n');
+      writeRepoFile(ctxDir, 'myapp', 'auth.md', 'domain', lines, { domain: 'auth' });
+
+      const result = auditShards(tmpDir);
+      const file = result.files.find((f) => f.path.includes('auth'));
+      const issue = file!.issues.find((i) => i.kind === 'file_too_short');
+
+      expect(issue).toBeDefined();
+      expect(issue!.severity).toBe('info');
+    });
+
+    it('keeps file_too_short as warning when well below minimum', () => {
+      writeIndex(ctxDir);
+      // Domain min is 30. 10 lines is well below ceil(30*0.9)=27 → warning
+      const lines = Array.from({ length: 10 }, (_, i) => `Content line ${i + 1}.`).join('\n');
+      writeRepoFile(ctxDir, 'myapp', 'auth.md', 'domain', lines, { domain: 'auth' });
+
+      const result = auditShards(tmpDir);
+      const file = result.files.find((f) => f.path.includes('auth'));
+      const issue = file!.issues.find((i) => i.kind === 'file_too_short');
+
+      expect(issue).toBeDefined();
+      expect(issue!.severity).toBe('warning');
+    });
+
     it('does not check size for corrections type', () => {
       writeIndex(ctxDir);
       writeRepoFile(ctxDir, 'myapp', 'corrections.md', 'corrections', 'One correction.');

@@ -121,15 +121,20 @@ export function collectMdFiles(dir: string): string[] {
   return files.sort();
 }
 
+function stripFencedCodeBlocks(content: string): string {
+  return content.replace(/^```[^\n]*\n[\s\S]*?^```/gm, '');
+}
+
 function checkSegmentMarkers(content: string, relativePath: string, errors: string[]): void {
+  const stripped = stripFencedCodeBlocks(content);
   for (const tag of SEGMENT_TAGS) {
     // Match opening markers: <!-- tag:... -->
     const openPattern = new RegExp(`<!--\\s*${tag}[:\\s]`, 'g');
     // Match closing markers: <!-- /tag -->
     const closePattern = new RegExp(`<!--\\s*/${tag}\\s*-->`, 'g');
 
-    const openCount = (content.match(openPattern) || []).length;
-    const closeCount = (content.match(closePattern) || []).length;
+    const openCount = (stripped.match(openPattern) || []).length;
+    const closeCount = (stripped.match(closePattern) || []).length;
 
     if (openCount !== closeCount) {
       errors.push(

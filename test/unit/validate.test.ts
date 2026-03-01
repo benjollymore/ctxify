@@ -182,6 +182,59 @@ type: overview
     expect(result.errors).toHaveLength(0);
   });
 
+  it('ignores segment markers inside fenced code blocks', () => {
+    const ctxDir = join(tmpDir, '.ctxify');
+    mkdirSync(join(ctxDir, 'repos', 'api'), { recursive: true });
+
+    writeFileSync(
+      join(ctxDir, 'index.md'),
+      `---
+ctxify: "2.0"
+mode: single-repo
+repos:
+  - api
+scanned_at: "2025-01-15T10:00:00.000Z"
+---
+
+# Workspace
+`,
+      'utf-8',
+    );
+
+    // File documents how segment markers work — markers appear only inside code blocks
+    writeFileSync(
+      join(ctxDir, 'repos', 'api', 'validation.md'),
+      `---
+repo: api
+type: domain
+domain: validation
+---
+
+# Validation
+
+Segment markers use HTML comments for queryable content:
+
+\`\`\`markdown
+<!-- domain-index -->
+- \`payments.md\` — Payment processing
+<!-- /domain-index -->
+
+<!-- correction:2025-06-15T10:30:00.000Z -->
+Auth middleware is not global.
+<!-- /correction -->
+\`\`\`
+
+The validator checks that opening and closing markers are balanced.
+`,
+      'utf-8',
+    );
+
+    const result = validateShards(tmpDir);
+
+    // Should not flag unmatched markers — they're inside code blocks
+    expect(result.errors).toHaveLength(0);
+  });
+
   it('fails when index.md is missing', () => {
     const result = validateShards(tmpDir);
 
