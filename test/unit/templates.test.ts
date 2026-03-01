@@ -169,14 +169,13 @@ describe('repo template', () => {
     expect(output).not.toContain('## Dev Dependencies');
   });
 
-  it('has Architecture and Context sections', () => {
+  it('has Architecture and Domains sections', () => {
     expect(output).toContain('## Architecture');
-    expect(output).toContain('## Context');
+    expect(output).toContain('## Domains');
   });
 
-  it('does NOT have inline Patterns or Domains sections', () => {
+  it('does NOT have inline Patterns section', () => {
     expect(output).not.toContain('## Patterns');
-    expect(output).not.toContain('## Domains');
   });
 
   it('Architecture TODO asks for operational context', () => {
@@ -188,13 +187,10 @@ describe('repo template', () => {
     expect(output).toContain('why it');
   });
 
-  it('Context section references patterns.md', () => {
-    expect(output).toContain('`patterns.md`');
-  });
-
-  it('Context section includes domain file guidance', () => {
+  it('Domains section includes domain-index markers and placeholder', () => {
+    expect(output).toContain('<!-- domain-index -->');
+    expect(output).toContain('<!-- /domain-index -->');
     expect(output).toContain('`{domain}.md`');
-    expect(output).toContain('Domain files');
   });
 
   it('has domain-index segment markers', () => {

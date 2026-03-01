@@ -33,7 +33,7 @@ function updateOverviewDomainIndex(
 
   if (startIdx === -1 || endIdx === -1) {
     // Fallback: append to end of Context section
-    const contextIdx = content.indexOf('## Context');
+    const contextIdx = content.indexOf('## Domains');
     if (contextIdx === -1) {
       // No Context section — append to end of file
       content = content.trimEnd() + '\n\n' + entry + '\n';

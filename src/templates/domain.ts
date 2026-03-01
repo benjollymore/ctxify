@@ -25,22 +25,10 @@ ${fm.trimEnd()}
 
 # ${data.domain}
 
-<!-- TODO: Agent — what this domain covers, key concepts, 2-3 sentences -->
-
-## Concepts
-
-<!-- TODO: Agent — key domain concepts, business rules, status/state flows. What does someone need to know to work here? -->
-
-## Decisions
-
-<!-- TODO: Agent — why is it built this way? What constraints or trade-offs shaped the design? -->
-
-## Patterns
-
-<!-- TODO: Agent — domain-specific patterns with brief code examples -->
-
-## Cross-repo
-
-<!-- TODO: Agent — how this domain spans repos (if applicable) -->
+<!-- TODO: Agent — document this domain with sections that fit the content.
+Suggested sections: Concepts (business rules, state flows), Decisions (why it's built this way, what broke before), Patterns (domain-specific examples).
+Add a Cross-repo section only if this domain spans multiple repos.
+Focus on: why decisions were made, what traps exist, what constraints shaped the design.
+Use bullet points and short paragraphs. 50-150 lines total. -->
 `;
 }

@@ -34,8 +34,8 @@ Execute passes 1-3 below. Do NOT touch index.md — the orchestrator handles tha
 
 Open `{WORKSPACE_ROOT}/.ctxify/repos/{REPO}/overview.md` and fill:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
-- **Architecture**: Request/data flow and why it's layered this way. 10-20 lines.
-- **Domain files**: Identify 3-5 domains. For each, run `ctxify domain add {REPO} <domain> "<one-line description>"` — this scaffolds the file and registers it. Do NOT list domains without creating their files.
+- **Architecture**: Request/data flow and why it's layered this way. 10-20 lines. If the repo has a CLAUDE.md, AGENTS.md, .cursorrules, or similar, read it first — write content that complements rather than duplicates. The overview must stand on its own even if those files are later removed.
+- **Domain files**: Identify domains only if the repo has areas complex enough to warrant dedicated context (30+ min to re-understand from scratch). Small or focused repos may need zero domains. For each, run `ctxify domain add {REPO} <domain> "<one-line description>"` — this scaffolds the file and registers it. Do NOT list domains without creating their files.
 
 ## Pass 2: Scaffold and fill patterns.md (PRIMARY DELIVERABLE)
 
@@ -74,6 +74,7 @@ Keep each domain file 50-150 lines total.
 5. Do NOT inline patterns in overview.md — patterns belong in patterns.md
 6. Do NOT list a domain in overview.md without creating it via `ctxify domain add`
 7. Do NOT log anti-patterns liberally — max 2 per repo, use ctxify:rules
+8. Use bullet points, short paragraphs (2-3 sentences), and code blocks. No dense prose walls.
 ```
 
 ### Other platforms
@@ -91,7 +92,8 @@ These passes are independent per repo. If you delegated them above, skip to pass
 For each `repos/{name}/overview.md`:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Describe request/data flow and why it's layered this way. What would surprise someone coming from a different codebase? 10-20 lines total.
-- **Domain files**: Identify 3-5 domains to document. For each, invoke **ctxify:domain** — this scaffolds the file and registers it. Do NOT list domains without creating their files.
+- **Existing context check:** Before writing the Architecture section, check if the repo has a CLAUDE.md, AGENTS.md, .cursorrules, or .github/copilot-instructions.md. If it does, read it first — write content that complements rather than duplicates. Focus the overview on the mental model, domain mapping, and cross-repo role. The overview must stand on its own even if those files are later removed.
+- **Domain files**: Identify domains only if the repo has areas complex enough to warrant dedicated context (30+ min to re-understand from scratch). Small or focused repos may need zero domains. For each, invoke **ctxify:domain** — this scaffolds the file and registers it. Do NOT list domains without creating their files.
 
 #### Pass 2: Scaffold and fill patterns.md (THE PRIMARY DELIVERABLE)
 
@@ -133,6 +135,13 @@ These describe what high-signal context looks like:
 3. **Write the workflows** users actually perform (not API surface)
 4. **Write the traps** — things that look right but break in production
 5. **Write cross-boundary interactions** that span files, repos, or services
+
+## Formatting
+
+1. **Bullet points over prose** — use bulleted lists for sequences, options, and grouped facts. Never write a dense paragraph when bullets would be clearer.
+2. **Short paragraphs** — 2-3 sentences max. If exceeding 4 sentences, break up or convert to bullets.
+3. **Code blocks over prose descriptions of code** — show a 3-5 line pattern instead of describing it in words.
+4. **Scannable headings** — agents find information by scanning headings, not reading linearly.
 
 ## STOP Rules
 
