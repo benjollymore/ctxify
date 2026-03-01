@@ -310,8 +310,7 @@ function findEmptySections(lines: string[]): EmptySection[] {
       // Don't flag the last heading if it's at EOF with nothing after it
       // (but do flag heading followed by another heading)
       const nextHeadingOrEof =
-        i + 1 < lines.length &&
-        lines.slice(i + 1).some((l) => l.trim() !== '');
+        i + 1 < lines.length && lines.slice(i + 1).some((l) => l.trim() !== '');
 
       if (nextHeadingOrEof) {
         empties.push({

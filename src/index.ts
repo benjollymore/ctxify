@@ -20,7 +20,13 @@ export type { ValidationResult } from './core/validate.js';
 export { validateShards } from './core/validate.js';
 
 // Audit
-export type { AuditResult, FileAudit, AuditIssue, AuditSummary, RepoSummary } from './core/audit.js';
+export type {
+  AuditResult,
+  FileAudit,
+  AuditIssue,
+  AuditSummary,
+  RepoSummary,
+} from './core/audit.js';
 export { auditShards } from './core/audit.js';
 
 // Detection
