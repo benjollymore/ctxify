@@ -152,7 +152,6 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 
 - `discoverEntryPoints` in manifest.ts re-reads package.json that the caller already parsed
 - `validateShards` reads each file twice (once for segment markers, once for TODOs)
-- No `ctxify update` / `ctxify refresh` command to re-scaffold without losing agent-filled content
 - No support for Cargo.toml (Rust) manifest parsing — only framework detection via deps
 - `git add -A` in `stageAndCommit` stages everything including potentially unrelated files
 

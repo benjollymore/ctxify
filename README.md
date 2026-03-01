@@ -90,6 +90,7 @@ ctxify init --repos ./api ./web
 | `ctxify domain add <repo> <domain>` | Scaffold a domain file with TODO placeholders + update overview.md index. Flags: `--tags`, `--description` |
 | `ctxify domain list` | List registered domain files. Flags: `--repo` |
 | `ctxify feedback <repo>` | Log feedback. Corrections go to `corrections.md`, rules and anti-patterns go to `rules.md`. Flags: `--body` (required), `--type correction\|rule\|antipattern`, `--source file:line` |
+| `ctxify update` | Re-detect repos and refresh mechanical data (language, framework, repo list) in context shards. Preserves all agent-written prose. Flags: `--dry-run` |
 | `ctxify upgrade` | Upgrade ctxify and reinstall all tracked agent skills |
 | `ctxify clean` | Remove `.ctxify/` and `ctx.yaml` |
 | `ctxify branch <name>` | Create a branch across all repos (multi-repo only) |
