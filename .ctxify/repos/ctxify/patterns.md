@@ -7,28 +7,55 @@ type: patterns
 
 How we build features here — the patterns and conventions that aren't obvious from reading one file.
 
-**Pattern:** Commands are registered in `bin/ctxify.ts` (e.g., `registerInitCommand(program)`), implemented in `src/cli/commands/*.ts`. Command handler receives typed options, calls business logic (e.g., `scaffoldWorkspace()` from `src/core/`), outputs JSON to stdout. Template generators in `src/templates/` take typed data and return markdown strings (pure functions, no I/O). File writing happens only in command handlers or orchestrator functions. Example: `ctxify init` → `registerInitCommand()` → `scaffoldWorkspace()` → `parseRepoManifest()` (reads manifest) → `generateRepoTemplate()` (returns string) → `writeFileSync()` (writes to disk).
+## Adding a CLI Command
 
-## Validation
+1. Create `/src/cli/commands/{command-name}.ts` with a `register{CommandName}Command(program)` function
+2. Import and call the registration in `bin/ctxify.ts`: `register{CommandName}Command(program)`
+3. Command handler parses args, calls business logic, outputs JSON to stdout: `console.log(JSON.stringify(result))`
+4. Errors output `{ error: "message" }` and exit with code 1
 
-`validateShards()` checks three things: (1) index.md exists with valid YAML frontmatter, (2) segment markers are balanced (e.g., `<!-- endpoint:GET:/users -->...<!-- /endpoint -->`), (3) domain files listed in overview.md exist on disk. Returns `{valid, errors[], warnings[]}`. Errors are structural (missing files, bad frontmatter). Warnings are content issues (TODO markers still present).
+Example: Adding `ctxify patterns <repo>` in `src/cli/commands/patterns.ts`:
+```typescript
+export function registerPatternsCommand(program: Command): void {
+  program
+    .command('patterns <repo>')
+    .description('Scaffold patterns.md')
+    .action(async (repo, options) => {
+      const config = loadConfig(configPath);
+      const content = generatePatternsTemplate({ repo });
+      writeFileSync(patternsPath, content, 'utf-8');
+      console.log(JSON.stringify({ status: 'scaffolded', repo, path: patternsPath }, null, 2));
+    });
+}
+```
 
-## Testing
+## Testing Pattern
 
-Every test creates a temp directory in `beforeEach()` and cleans up in `afterEach()` — no test depends on another. For scaffold tests: use `mkdtempSync()`, write test fixtures (e.g., `package.json`), call the function, assert files exist and have correct content. For manifest tests: create a temp repo with a manifest file, call `parseRepoManifest()`, assert the result fields match expectations. Integration tests invoke the built CLI with `execFileSync()` and verify JSON output and side effects.
+Use vitest with isolated temp directories. Every test creates a temp dir in `beforeEach` and deletes it in `afterEach`. No shared state between tests.
+
+```typescript
+describe('validateShards', () => {
+  let tmpDir: string;
+  beforeEach(() => { tmpDir = mkdtempSync(join(tmpdir(), 'ctxify-test-')); });
+  afterEach(() => { rmSync(tmpDir, { recursive: true, force: true }); });
+  it('validates well-formed shards', () => { /* ... */ });
+});
+```
+
+## Validation Approach
+
+`validateShards()` does 5 checks: (1) index.md exists, (2) valid YAML frontmatter, (3) segment markers matched (<!-- tag -->...<!-- /tag -->), (4) TODO markers reported as warnings, (5) domain files referenced in index exist. See `src/core/validate.ts`.
 
 ## Naming Conventions
 
-- **Commands:** kebab-case (e.g., `context-hook`, `domain`, `install-skill`)
-- **Functions:** camelCase. Prefixes signal intent: `parse*` (read + transform), `validate*` (check + return errors), `detect*` (infer from filesystem), `generate*` (templates), `register*` (CLI registration)
-- **Types:** PascalCase. Suffixes: `*Result` (return type), `*Options` (input), `*Data` (template input)
-- **Files:** kebab-case for utilities (`install-skill.ts`), PascalCase for class-like files, lowercase for domain modules
-- **Markdown YAML:** snake_case (e.g., `ctxify: "2.0"`, `scanned_at`)
+- Commands in kebab-case: `patterns`, `context-hook`
+- Types: PascalCase + suffix (ValidateResult, ScaffoldOptions, RepoTemplateData)
+- Files: kebab-case (init.ts, install-skill.ts, manifest.ts)
+- JSON output keys: snake_case (status, shards_written, file_existed)
 
 ## Gotchas
 
-- **Manifest parsing is fallback-based:** tries package.json → go.mod → pyproject.toml → requirements.txt. First found wins. Returns empty defaults (`language: '', framework: ''`) if none found — agents need to handle this gracefully.
-- **Interactive vs. flags:** `ctxify init` without `--repos`/`--mono` flags and with a TTY stdin enters interactive mode (`runInteractiveFlow()`). Non-TTY or flag-provided bypasses prompts. Both call the same `scaffoldWorkspace()`.
-- **All repos must be subdirectories of workspace root:** Simplifies path resolution. Enforced implicitly in most code; violations cause path issues in manifest parsing.
-- **Skills are installed before ctx.yaml is written:** This allows skill paths to be stored in ctx.yaml. If skill install fails, workspace is left partially initialized.
-- **Template generators are imported in commands, not in core:** Keep core modules pure. CLI commands handle all imports and file I/O to enable testing of core logic without mocking.
+- **JSON output is mandatory** — All commands must `console.log(JSON.stringify(...))`. Agents parse JSON; prose errors break parsing.
+- **Temp dir cleanup in tests** — Forgetting `afterEach` cleanup can cause flaky test failures. Always pair `mkdtempSync` with `rmSync(dir, { recursive: true })`.
+- **Manifest parsing fallback chain** — Try package.json first, then go.mod, then pyproject.toml. Return empty defaults if none found. See `parseRepoManifest()`.
+- **Segment markers strip TODO blocks** — The validator ignores segment markers inside TODO comment blocks to avoid false positives on example code.

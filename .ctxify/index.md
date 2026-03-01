@@ -1,54 +1,50 @@
 ---
 ctxify: '2.0'
+type: index
 mode: single-repo
 repos:
   - ctxify
-scanned_at: '2026-03-01T02:15:35.512Z'
+scanned_at: '2026-03-01T18:30:43.088Z'
 ---
 
 # ctxify
 
-ctxify scaffolds and validates workspace context for AI coding agents. It handles the mechanical parts (manifest parsing, framework detection, template generation) so agents can focus on semantic analysis — reading source code and documenting architecture, patterns, and decisions. Output is CLAUDE.md-style markdown consumed by Claude Code, Copilot, Cursor, and Codex.
+ctxify scaffolds and validates persistent context files for AI coding agents. It detects repo structure, parses manifests, and generates `.ctxify/` markdown templates that agents fill with architecture, patterns, and domain knowledge. Published as an npm CLI and library — consumed by developers setting up agent-ready workspaces and by agents loading context at session start.
 
 ## Repos
 
 | Repo | Language | Framework | Role |
 |------|----------|-----------|------|
-| [ctxify](repos/ctxify/overview.md) | typescript | commander | CLI tool + library |
+| [ctxify](repos/ctxify/overview.md) | typescript | commander | CLI + library: scaffolds context, validates shards, installs agent skills |
 
 ## Relationships
 
-Single-repo workspace — no cross-repo relationships. The CLI (`bin/ctxify.ts`) and library (`src/index.ts`) share the same core modules. Skills in `skills/` are read at install time and written to agent-specific paths.
+Single-repo workspace — no cross-repo relationships. The CLI binary (`bin/ctxify.ts`) and the library (`src/index.ts`) share all business logic in `src/core/`. Skills in `skills/` are installed to agent-specific paths by the CLI but are not imported by the library.
 
 ## Commands
 
-- **Build:** `npm run build` (tsup → `dist/index.js` + `dist/bin/ctxify.js`)
-- **Test:** `npm test` (vitest, ~279 tests) · `npx vitest run test/unit/<file>.test.ts` for one file
-- **Typecheck:** `npm run typecheck` (tsc --noEmit, strict mode)
-- **Dev:** `npm run dev` (tsup --watch)
+- **Build:** `npm run build` — tsup produces `dist/index.js` (library) + `dist/bin/ctxify.js` (CLI)
+- **Test:** `npm test` — vitest, ~326 tests. Single file: `npx vitest run test/unit/validate.test.ts`
+- **Typecheck:** `npm run typecheck` — tsc --noEmit (strict mode)
+- **Dev:** `npm run dev` — tsup --watch
 
 ## Workflows
 
-**Adding a new CLI command:**
-1. Create `src/cli/commands/<name>.ts` with a `register<Name>Command(program)` function
-2. Add business logic in `src/core/` if non-trivial (keep command handler thin)
-3. Register in `bin/ctxify.ts` — import and call the register function
-4. Add tests in `test/unit/` (unit) and `test/integration/` (CLI invocation)
-5. Update README.md commands table
+### Adding a new CLI command
+1. Create `src/cli/commands/{name}.ts` with `register{Name}Command(program)` — outputs JSON to stdout
+2. Register in `bin/ctxify.ts` — import and call the register function
+3. Add unit tests in `test/unit/{name}.test.ts` using isolated temp dirs
+4. Add integration test in `test/integration/` invoking the built binary with `execFileSync`
+5. Update `README.md` Commands table
 
-**Adding a new template:**
-1. Create pure function in `src/templates/` — takes typed data, returns markdown string
-2. Define the input type (e.g., `FooTemplateData`) in the same file or `src/types.ts`
-3. Call from the relevant command handler — template generates, command writes
+### Adding a new manifest parser (new language)
+1. Add parser case in `src/core/manifest.ts` → `parseRepoManifest()` fallback chain
+2. Add framework detection in the same file (deps → framework mapping)
+3. Add test fixtures and unit tests in `test/unit/manifest.test.ts`
+4. Template generators may need new language-specific defaults in `src/templates/`
 
-**Supporting a new agent:**
-1. Add entry to `AGENT_CONFIGS` in `src/cli/install-skill.ts` with destDir, primaryFilename, frontmatter generator
-2. Choose multi-file or single-file strategy based on agent capabilities
-3. Add to interactive init's agent checkbox list in `src/cli/commands/init.ts`
-4. Test with `ctxify init --agent <name>` and verify file placement
-
-**Adding a new manifest type (e.g., Cargo.toml):**
-1. Add detection in `parseRepoManifest()` fallback chain (`src/core/manifest.ts`)
-2. Add framework indicators to `FRAMEWORK_INDICATORS` map
-3. Implement entry point discovery for the language
-4. Add test fixtures and unit tests
+### Adding or modifying a skill
+1. Edit/create the skill file in `skills/` (SKILL.md or satellite)
+2. Update `src/cli/install-skill.ts` if the skill needs special installation logic
+3. Test with `ctxify init --agent claude` on a fresh workspace to verify installation paths
+4. Bump version — installed skills include a version comment header
