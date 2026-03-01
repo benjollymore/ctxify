@@ -82,7 +82,7 @@ ctxify init --repos ./api ./web
 
 | Command | Purpose |
 |---------|---------|
-| `ctxify init` | Scaffold `.ctxify/`. Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force`, `--hook`/`--no-hook` |
+| `ctxify init` | Scaffold `.ctxify/`. Re-running preserves existing filled shards (use `--force` to overwrite). Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force`, `--hook`/`--no-hook` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
 | `ctxify audit` | Quality analysis of context shards: token budget, unfilled TODOs, prose walls, size issues. Flags: `--repo <name>` |
@@ -99,20 +99,20 @@ All commands output JSON to stdout.
 
 ## Supported agents
 
-`ctxify init` installs 7 focused skills that teach your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
+`ctxify init` installs 6 focused skills that teach your agent the progressive disclosure workflow. Select agents interactively or via `--agent`:
 
 | Agent | Flag | Primary skill | Files installed |
 |-------|------|---------------|-----------------|
-| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` | 7 separate skill files |
+| Claude Code | `--agent claude` | `.claude/skills/ctxify/SKILL.md` | 6 separate skill files |
 | GitHub Copilot | `--agent copilot` | `.github/instructions/ctxify.instructions.md` | 1 combined file |
-| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` | 7 separate rule files |
+| Cursor | `--agent cursor` | `.cursor/rules/ctxify.md` | 6 separate rule files |
 | OpenAI Codex | `--agent codex` | `AGENTS.md` | 1 combined file |
 
 **Skill scope:** During `ctxify init`, you'll be prompted to choose where to install skills for each agent that supports global installation (Claude Code and Codex). Choose **workspace** (default) to install skills local to the current project, or **global** to install to your home directory (e.g., `~/.claude/skills/`) so skills are available in every project.
 
 Multiple agents: `ctxify init --agent claude copilot cursor`
 
-The 7 skills are: `ctxify` (loads context before coding — the main entry point), `ctxify:startup` (troubleshooting), `ctxify:reading-context` (detailed loading reference), `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:rules`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
+The 6 skills are: `ctxify` (loads context before coding — the main entry point), `ctxify:filling-context`, `ctxify:domain`, `ctxify:corrections`, `ctxify:rules`, `ctxify:multi-repo`. Each has a focused trigger description so agents self-activate at the right moment — without being prompted.
 
 **Sub-agent delegation (Claude Code):** The `ctxify:filling-context` skill delegates per-repo context filling (passes 1-3) to Haiku sub-agents — cheaper, faster, and parallel. Pass 4 (cross-repo index.md) stays with the orchestrator. Other agents fall back to sequential execution automatically.
 

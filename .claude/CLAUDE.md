@@ -12,7 +12,7 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 311 tests, 23 files
+npm test             # vitest run — 319 tests, 23 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -87,7 +87,7 @@ When `ctxify init` is run without `--repos` or `--mono` flags and stdin is a TTY
 
 Flags (`--repos`, `--mono`, `--agent`) bypass interactivity for agent/CI use. Non-TTY stdin also falls through to the auto-detect path.
 
-The skill installer (`src/cli/install-skill.ts`) reads all 7 files from `skills/` (SKILL.md + 6 satellite skills). Multi-file agents (claude, cursor) install each skill as a separate file with agent-specific frontmatter. Single-file agents (copilot, codex) concatenate all skills into one file. All installed files include a version comment header (`<!-- ctxify v... -->`). Version is read from package.json at runtime.
+The skill installer (`src/cli/install-skill.ts`) reads all 6 files from `skills/` (SKILL.md + 5 satellite skills). Multi-file agents (claude, cursor) install each skill as a separate file with agent-specific frontmatter. Single-file agents (copilot, codex) concatenate all skills into one file. All installed files include a version comment header (`<!-- ctxify v... -->`). Version is read from package.json at runtime.
 
 ### Template generators are pure functions
 
@@ -146,7 +146,7 @@ After `ctxify init`, the `.ctxify/` directory contains:
             └── {domain}.md     # Domain deep dives (one per complex area)
 ```
 
-Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The 7 focused skills in `skills/` guide this workflow (installed to agent-specific paths by `ctxify init --agent`): `SKILL.md` (context loading — the main skill agents invoke before coding), `startup.md` (troubleshooting), `reading-context.md` (detailed loading reference), `filling-context.md`, `domain.md`, `corrections.md`, `rules.md`, `multi-repo.md`.
+Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The 6 focused skills in `skills/` guide this workflow (installed to agent-specific paths by `ctxify init --agent`): `SKILL.md` (context loading — the main skill agents invoke before coding), `filling-context.md`, `domain.md`, `corrections.md`, `rules.md`, `multi-repo.md`.
 
 ## Known gaps and future work
 
