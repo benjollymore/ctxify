@@ -96,7 +96,7 @@ Do NOT return until `total_issues` for your repo's files reaches 0 (or only `inf
 
 If your platform does not support sub-agent delegation or model selection, execute passes 1-3 sequentially as written below.
 
-## 4-Pass Workflow
+## 5-Pass Workflow
 
 ### Passes 1-3: Per-repo (delegatable)
 
