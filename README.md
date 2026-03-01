@@ -152,6 +152,8 @@ ctxify upgrade --dry-run   # show what would happen without executing
 
 The install method and installed agents are persisted in `ctx.yaml` automatically on `ctxify init`, so `upgrade` requires no flags.
 
+**Stale skill detection:** Installed skills include a `version` field in their frontmatter. On session start, the agent compares this against the installed `ctxify --version` and warns if they differ — so you know when to run `ctxify upgrade`.
+
 To suppress the update warning in CI or scripts, set `CI=true` (standard in GitHub Actions, CircleCI, etc.) or `CTXIFY_NO_UPDATE_CHECK=1`.
 
 ## Supported manifests and modes

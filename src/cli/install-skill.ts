@@ -12,7 +12,12 @@ interface AgentConfig {
   destDir: string;
   primaryFilename: string;
   // For agents that install each skill as a separate file (claude, cursor):
-  skillFrontmatter?: (opts: { name: string; description: string; isPrimary: boolean }) => string;
+  skillFrontmatter?: (opts: {
+    name: string;
+    description: string;
+    isPrimary: boolean;
+    version: string;
+  }) => string;
   // When set, each satellite skill gets its own sibling directory containing this filename.
   // Used by Claude Code, which requires one directory per skill with SKILL.md inside.
   satelliteFilename?: string;
@@ -31,8 +36,8 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     destDir: '.claude/skills/ctxify',
     primaryFilename: 'SKILL.md',
     satelliteFilename: 'SKILL.md',
-    skillFrontmatter: ({ name, description }) =>
-      `---\nname: ${name}\ndescription: ${description}\n---`,
+    skillFrontmatter: ({ name, description, version }) =>
+      `---\nname: ${name}\ndescription: ${description}\nversion: "${version}"\n---`,
     nextStepHint: 'open Claude Code and run /ctxify or ask Claude to set up workspace context',
     globalDestDir: '.claude/skills/ctxify',
   },
@@ -48,8 +53,8 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
     displayName: 'Cursor',
     destDir: '.cursor/rules',
     primaryFilename: 'ctxify.md',
-    skillFrontmatter: ({ description, isPrimary }) =>
-      `---\ndescription: ${description}\nalwaysApply: ${isPrimary}\n---`,
+    skillFrontmatter: ({ description, isPrimary, version }) =>
+      `---\ndescription: ${description}\nalwaysApply: ${isPrimary}\nversion: "${version}"\n---`,
     nextStepHint: 'open Cursor and ask it to set up workspace context',
   },
   codex: {
@@ -173,7 +178,7 @@ export function installSkill(
       const name = String(fm?.name ?? 'ctxify');
       const description = String(fm?.description ?? '');
       const isPrimary = filename === 'SKILL.md';
-      const agentFm = config.skillFrontmatter?.({ name, description, isPrimary }) ?? '';
+      const agentFm = config.skillFrontmatter?.({ name, description, isPrimary, version }) ?? '';
       const body = stripFrontmatter(raw);
       const installedContent = agentFm
         ? `${agentFm}\n${versionComment}\n${body}`
