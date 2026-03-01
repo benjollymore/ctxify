@@ -32,12 +32,11 @@ describe('installSkill', () => {
     // Primary skill
     expect(existsSync(join(skillsDir, 'ctxify', 'SKILL.md'))).toBe(true);
     // Each satellite gets its own sibling directory with SKILL.md
-    expect(existsSync(join(skillsDir, 'ctxify-reading-context', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-filling-context', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-domain', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-corrections', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-multi-repo', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(skillsDir, 'ctxify-startup', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-rules', 'SKILL.md'))).toBe(true);
 
     const primaryContent = readFileSync(join(skillsDir, 'ctxify', 'SKILL.md'), 'utf-8');
     expect(primaryContent).toContain('# ctxify');
@@ -69,12 +68,11 @@ describe('installSkill', () => {
     expect(relativePath).toBe('.cursor/rules/ctxify.md');
     const rulesDir = join(dir, '.cursor', 'rules');
     expect(existsSync(join(rulesDir, 'ctxify.md'))).toBe(true);
-    expect(existsSync(join(rulesDir, 'reading-context.md'))).toBe(true);
     expect(existsSync(join(rulesDir, 'filling-context.md'))).toBe(true);
     expect(existsSync(join(rulesDir, 'domain.md'))).toBe(true);
     expect(existsSync(join(rulesDir, 'corrections.md'))).toBe(true);
     expect(existsSync(join(rulesDir, 'multi-repo.md'))).toBe(true);
-    expect(existsSync(join(rulesDir, 'startup.md'))).toBe(true);
+    expect(existsSync(join(rulesDir, 'rules.md'))).toBe(true);
 
     const primaryContent = readFileSync(join(rulesDir, 'ctxify.md'), 'utf-8');
     expect(primaryContent).toContain('# ctxify');
@@ -123,8 +121,7 @@ describe('installSkill', () => {
       'ctxify-domain',
       'ctxify-filling-context',
       'ctxify-multi-repo',
-      'ctxify-reading-context',
-      'ctxify-startup',
+      'ctxify-rules',
     ];
     for (const dirName of satelliteDirs) {
       const content = readFileSync(join(skillsDir, dirName, 'SKILL.md'), 'utf-8');
@@ -156,8 +153,7 @@ describe('installSkill', () => {
       'domain.md',
       'filling-context.md',
       'multi-repo.md',
-      'reading-context.md',
-      'startup.md',
+      'rules.md',
     ];
     for (const filename of satellites) {
       const content = readFileSync(join(rulesDir, filename), 'utf-8');
@@ -213,12 +209,11 @@ describe('installSkill', () => {
     expect(returnedPath).toBe('~/.claude/skills/ctxify/SKILL.md');
     const skillsDir = join(fakeHome, '.claude', 'skills');
     expect(existsSync(join(skillsDir, 'ctxify', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(skillsDir, 'ctxify-reading-context', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-filling-context', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-domain', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-corrections', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(skillsDir, 'ctxify-multi-repo', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(skillsDir, 'ctxify-startup', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-rules', 'SKILL.md'))).toBe(true);
   });
 
   it('installs codex skill to global path when scope is global', () => {
@@ -276,7 +271,7 @@ describe('installSkill', () => {
     }
   });
 
-  it('copilot combined file contains all 7 skill sections', () => {
+  it('copilot combined file contains all 5 skill sections', () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);
 
@@ -287,12 +282,34 @@ describe('installSkill', () => {
     );
 
     expect(content).toContain('# ctxify — Load Context Before Coding');
-    expect(content).toContain('ctxify:reading-context');
     expect(content).toContain('ctxify:filling-context');
     expect(content).toContain('ctxify:domain');
     expect(content).toContain('ctxify:corrections');
     expect(content).toContain('ctxify:multi-repo');
-    expect(content).toContain('ctxify:startup');
+    expect(content).toContain('ctxify:rules');
+  });
+
+  it('claude reinstall removes stale satellite directories', () => {
+    const dir = makeTmpDir();
+    tmpDirs.push(dir);
+
+    const skillsDir = join(dir, '.claude', 'skills');
+    // Simulate stale satellite directories from a previous install
+    const staleDir1 = join(skillsDir, 'ctxify-reading-context');
+    const staleDir2 = join(skillsDir, 'ctxify-startup');
+    mkdirSync(staleDir1, { recursive: true });
+    mkdirSync(staleDir2, { recursive: true });
+    writeFileSync(join(staleDir1, 'SKILL.md'), 'stale', 'utf-8');
+    writeFileSync(join(staleDir2, 'SKILL.md'), 'stale', 'utf-8');
+
+    installSkill(dir, 'claude');
+
+    // Stale directories should be removed
+    expect(existsSync(staleDir1)).toBe(false);
+    expect(existsSync(staleDir2)).toBe(false);
+    // Current satellites should still exist
+    expect(existsSync(join(skillsDir, 'ctxify-corrections', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(skillsDir, 'ctxify-domain', 'SKILL.md'))).toBe(true);
   });
 });
 
@@ -319,9 +336,9 @@ describe('listSkillSourceFiles', () => {
     expect(files[0].filename).toBe('SKILL.md');
   });
 
-  it('returns 8 skill files', () => {
+  it('returns 6 skill files', () => {
     const files = listSkillSourceFiles();
-    expect(files).toHaveLength(8);
+    expect(files).toHaveLength(6);
   });
 
   it('remaining files are alphabetically sorted after SKILL.md', () => {

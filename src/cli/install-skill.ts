@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -189,6 +189,31 @@ export function installSkill(
       } else {
         const destFilename = isPrimary ? config.primaryFilename : filename;
         writeFileSync(join(baseDir, destFilename), installedContent, 'utf-8');
+      }
+    }
+
+    // Clean up stale satellite directories (e.g. from deleted skills)
+    if (config.satelliteFilename) {
+      const parentDir = dirname(baseDir);
+      const prefix = `${basename(baseDir)}-`;
+      const expectedSatellites = new Set(
+        skillFiles
+          .filter(({ filename }) => filename !== 'SKILL.md')
+          .map(({ filename }) => `${prefix}${filename.replace(/\.md$/, '')}`),
+      );
+      if (existsSync(parentDir)) {
+        try {
+          const siblings = readdirSync(parentDir, { withFileTypes: true })
+            .filter((d) => d.isDirectory() && d.name.startsWith(prefix))
+            .map((d) => d.name);
+          for (const dir of siblings) {
+            if (!expectedSatellites.has(dir)) {
+              rmSync(join(parentDir, dir), { recursive: true, force: true });
+            }
+          }
+        } catch {
+          // Best-effort cleanup — ignore errors
+        }
       }
     }
   }
