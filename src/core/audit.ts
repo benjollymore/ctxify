@@ -24,6 +24,7 @@ export interface AuditIssue {
 
 export interface FileAudit {
   path: string;
+  workspace_path: string;
   type: string;
   repo: string | null;
   tokens: number;
@@ -83,7 +84,7 @@ export function auditShards(
   const fileAudits: FileAudit[] = [];
 
   for (const filePath of mdFiles) {
-    const audit = auditFile(filePath, ctxifyPath);
+    const audit = auditFile(filePath, ctxifyPath, dir);
     if (repoFilter && audit.repo !== repoFilter) continue;
     fileAudits.push(audit);
   }
@@ -94,12 +95,19 @@ export function auditShards(
 
 // ── Per-file audit ─────────────────────────────────────────────────────
 
-function auditFile(filePath: string, ctxifyPath: string): FileAudit {
+function inferType(relativePath: string): string {
+  const base = (relativePath.split('/').pop() ?? '').replace(/\.md$/, '');
+  if (['index', 'overview', 'patterns', 'corrections', 'rules'].includes(base)) return base;
+  if (relativePath.startsWith('repos/')) return 'domain';
+  return 'unknown';
+}
+
+function auditFile(filePath: string, ctxifyPath: string, dir: string): FileAudit {
   const content = readFileSync(filePath, 'utf-8');
   const relativePath = relative(ctxifyPath, filePath);
   const lines = content.split('\n');
   const frontmatter = parseFrontmatter(content);
-  const type = (frontmatter?.type as string) ?? 'unknown';
+  const type = (frontmatter?.type as string) ?? inferType(relativePath);
   const repo = (frontmatter?.repo as string) ?? null;
   const issues: AuditIssue[] = [];
 
@@ -145,6 +153,7 @@ function auditFile(filePath: string, ctxifyPath: string): FileAudit {
 
   return {
     path: relativePath,
+    workspace_path: join(dir, relativePath),
     type,
     repo,
     tokens: Math.floor(content.length / 4),

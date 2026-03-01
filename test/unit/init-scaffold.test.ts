@@ -366,6 +366,107 @@ describe('scaffoldWorkspace', () => {
     expect(settings.hooks.SessionStart).toHaveLength(1);
   });
 
+  describe('shard protection', () => {
+    it('skips existing index.md when force is not set', async () => {
+      const dir = makeTmpDir();
+      tmpDirs.push(dir);
+      createPackageJson(dir, 'my-app');
+
+      // First scaffold
+      await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+      });
+
+      // Write custom content into index.md
+      const indexPath = join(dir, '.ctxify', 'index.md');
+      writeFileSync(indexPath, '# Filled by agent\nReal content here.', 'utf-8');
+
+      // Re-scaffold without force
+      const result = await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+      });
+
+      expect(result.shards_skipped).toContain('index.md');
+      expect(readFileSync(indexPath, 'utf-8')).toBe('# Filled by agent\nReal content here.');
+    });
+
+    it('skips existing overview.md when force is not set', async () => {
+      const dir = makeTmpDir();
+      tmpDirs.push(dir);
+      createPackageJson(dir, 'my-app');
+
+      // First scaffold
+      await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+      });
+
+      // Write custom content into overview.md
+      const overviewPath = join(dir, '.ctxify', 'repos', 'my-app', 'overview.md');
+      writeFileSync(overviewPath, '# Filled overview\nAgent content.', 'utf-8');
+
+      // Re-scaffold without force
+      const result = await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+      });
+
+      expect(result.shards_skipped).toContain('repos/my-app/overview.md');
+      expect(readFileSync(overviewPath, 'utf-8')).toBe('# Filled overview\nAgent content.');
+    });
+
+    it('overwrites both when force is true', async () => {
+      const dir = makeTmpDir();
+      tmpDirs.push(dir);
+      createPackageJson(dir, 'my-app');
+
+      // First scaffold
+      await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+      });
+
+      // Write custom content
+      const indexPath = join(dir, '.ctxify', 'index.md');
+      const overviewPath = join(dir, '.ctxify', 'repos', 'my-app', 'overview.md');
+      writeFileSync(indexPath, '# Filled by agent', 'utf-8');
+      writeFileSync(overviewPath, '# Filled overview', 'utf-8');
+
+      // Re-scaffold with force
+      const result = await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+        force: true,
+      });
+
+      expect(result.shards_skipped).toBeUndefined();
+      expect(readFileSync(indexPath, 'utf-8')).toContain('<!-- TODO:');
+      expect(readFileSync(overviewPath, 'utf-8')).toContain('<!-- TODO:');
+    });
+
+    it('has no shards_skipped on first run', async () => {
+      const dir = makeTmpDir();
+      tmpDirs.push(dir);
+      createPackageJson(dir, 'my-app');
+
+      const result = await scaffoldWorkspace({
+        workspaceRoot: dir,
+        mode: 'single-repo',
+        repos: [{ path: '.', name: 'my-app' }],
+      });
+
+      expect(result.shards_skipped).toBeUndefined();
+    });
+  });
+
   it('skips hook installation when hook: false', async () => {
     const dir = makeTmpDir();
     tmpDirs.push(dir);

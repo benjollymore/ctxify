@@ -23,6 +23,7 @@ export function generateIndexTemplate(
   // ── Frontmatter ──
   const fm = dumpYaml({
     ctxify: '2.0',
+    type: 'index',
     mode,
     repos: repos.map((r) => r.name),
     scanned_at: scannedAt,
