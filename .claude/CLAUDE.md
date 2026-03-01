@@ -146,7 +146,7 @@ After `ctxify init`, the `.ctxify/` directory contains:
             └── {domain}.md     # Domain deep dives (one per complex area)
 ```
 
-Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The 7 focused skills in `skills/` guide this workflow (installed to agent-specific paths by `ctxify init --agent`): `SKILL.md` (orientation), `reading-context.md`, `filling-context.md`, `domain.md`, `corrections.md`, `rules.md`, `multi-repo.md`.
+Progressive disclosure: overview.md is the table of contents (always loaded), patterns.md and domain files are the content (loaded on demand). The 7 focused skills in `skills/` guide this workflow (installed to agent-specific paths by `ctxify init --agent`): `SKILL.md` (context loading — the main skill agents invoke before coding), `startup.md` (troubleshooting), `reading-context.md` (detailed loading reference), `filling-context.md`, `domain.md`, `corrections.md`, `rules.md`, `multi-repo.md`.
 
 ## Known gaps and future work
 

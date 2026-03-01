@@ -4,7 +4,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
 
 /**
- * Reads .ctxify/ corrections and outputs context for Claude Code SessionStart hook.
+ * Outputs a compact summary of available corrections/rules for Claude Code SessionStart hook.
+ * Counts segment markers instead of injecting full file content — agents invoke /ctxify to load details.
  * Designed to be fast and silent — exits 0 with no output if nothing is found.
  */
 export function getContextHookOutput(workspaceRoot: string): string {
@@ -28,9 +29,6 @@ export function getContextHookOutput(workspaceRoot: string): string {
 
   if (!existsSync(reposDir)) return '';
 
-  const parts: string[] = [];
-
-  // Collect corrections from all repos
   let repoDirs: string[];
   try {
     repoDirs = readdirSync(reposDir, { withFileTypes: true })
@@ -40,26 +38,49 @@ export function getContextHookOutput(workspaceRoot: string): string {
     return '';
   }
 
+  // Count entries per repo
+  const repoSummaries: string[] = [];
+
   for (const repo of repoDirs) {
-    for (const filename of ['corrections.md', 'rules.md']) {
-      const filePath = join(reposDir, repo, filename);
-      if (existsSync(filePath)) {
-        try {
-          const content = readFileSync(filePath, 'utf-8').trim();
-          if (content) {
-            parts.push(content);
-          }
-        } catch {
-          // Skip unreadable files
-        }
+    let corrections = 0;
+    let rules = 0;
+
+    const correctionsPath = join(reposDir, repo, 'corrections.md');
+    if (existsSync(correctionsPath)) {
+      try {
+        const content = readFileSync(correctionsPath, 'utf-8');
+        corrections = (content.match(/<!-- correction:/g) || []).length;
+      } catch {
+        // Skip unreadable files
       }
     }
+
+    const rulesPath = join(reposDir, repo, 'rules.md');
+    if (existsSync(rulesPath)) {
+      try {
+        const content = readFileSync(rulesPath, 'utf-8');
+        rules = (content.match(/<!-- (?:rule|antipattern):/g) || []).length;
+      } catch {
+        // Skip unreadable files
+      }
+    }
+
+    if (corrections === 0 && rules === 0) continue;
+
+    const counts: string[] = [];
+    if (corrections > 0) counts.push(`${corrections} correction${corrections === 1 ? '' : 's'}`);
+    if (rules > 0) counts.push(`${rules} rule${rules === 1 ? '' : 's'}`);
+    repoSummaries.push(`${repo} (${counts.join(', ')})`);
   }
 
-  // Add nudge message
-  parts.push('ctxify workspace detected. Invoke /ctxify to initialize context for this session.');
+  const nudge = 'ctxify workspace detected.';
+  const cta = 'Invoke /ctxify to load codebase context before coding.';
 
-  return parts.join('\n\n');
+  if (repoSummaries.length > 0) {
+    return `${nudge} Context: ${repoSummaries.join(', ')}. ${cta}`;
+  }
+
+  return `${nudge} ${cta}`;
 }
 
 export function registerContextHookCommand(program: Command): void {

@@ -286,7 +286,7 @@ describe('installSkill', () => {
       'utf-8',
     );
 
-    expect(content).toContain('# ctxify — Orientation');
+    expect(content).toContain('# ctxify — Load Context Before Coding');
     expect(content).toContain('ctxify:reading-context');
     expect(content).toContain('ctxify:filling-context');
     expect(content).toContain('ctxify:domain');
