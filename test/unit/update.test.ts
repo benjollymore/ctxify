@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runUpdate, updateRepoTable } from '../../src/cli/commands/update.js';
 import { serializeConfig, generateDefaultConfig } from '../../src/core/config.js';
-import type { CtxConfig, RepoEntry } from '../../src/core/config.js';
+import type { CtxConfig } from '../../src/core/config.js';
 import { dumpYaml } from '../../src/utils/yaml.js';
 
 function makeTmpDir(): string {

@@ -15,7 +15,7 @@ Works with single repos, monorepos, and multi-repo workspaces. Supports Claude C
 
 **ctxify scaffolds, your agent fills.** Mechanical extraction (parsing package.json, detecting frameworks) is deterministic and cheap — ctxify handles that. Semantic analysis (understanding architecture, patterns, conventions) requires reading code — your agent handles that.
 
-1. **`ctxify init`** detects your repos, parses their manifests (package.json, go.mod, pyproject.toml, requirements.txt), and scaffolds `.ctxify/` with lightweight markdown templates pre-filled with mechanical data and TODO placeholders. It also installs agent skills that guide the filling process.
+1. **`ctxify init`** detects your repos, parses their manifests (package.json, go.mod, pyproject.toml, requirements.txt, Cargo.toml), and scaffolds `.ctxify/` with lightweight markdown templates pre-filled with mechanical data and TODO placeholders. It also installs agent skills that guide the filling process.
 
 2. **Your agent** reads the scaffolded templates, explores your source code, and fills in the semantic content: architecture descriptions, coding patterns, domain knowledge, and (for multi-repo workspaces) cross-repo relationships. As the agent works, it continues to learn — adding domain files for complex areas it discovers and logging corrections when you tell it something was wrong or it discovers a mistake on its own.
 
@@ -159,7 +159,7 @@ To suppress the update warning in CI or scripts, set `CI=true` (standard in GitH
 
 ## Supported manifests and modes
 
-**Manifests** (parsed in order, first found wins): package.json, go.mod, pyproject.toml, requirements.txt
+**Manifests** (parsed in order, first found wins): package.json, go.mod, pyproject.toml, requirements.txt, Cargo.toml
 
 **Modes**: single-repo, multi-repo (multiple repositories in shared directory with `ctxify` run from root directory), mono-repo (npm/yarn/pnpm/turborepo workspaces)
 
@@ -170,8 +170,9 @@ Requires Node >= 18. ESM-only.
 ```bash
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
 npm run dev          # tsup --watch
-npm test             # vitest run
+npm test             # vitest run — 380 tests
 npm run typecheck    # tsc --noEmit
+npm run eval         # run eval framework (requires ANTHROPIC_API_KEY)
 ```
 
 ## License
