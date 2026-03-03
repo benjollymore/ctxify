@@ -79,7 +79,6 @@ describe('runUpdate', () => {
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -125,7 +124,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -167,7 +165,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -206,7 +203,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -266,7 +262,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: mono-repo
 repos:
@@ -313,7 +308,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -356,7 +350,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -394,7 +387,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -460,7 +452,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:
@@ -493,7 +484,6 @@ scanned_at: '2025-01-01T00:00:00.000Z'
     writeIndexMd(
       tmpDir,
       `---
-ctxify: '2.0'
 type: index
 mode: single-repo
 repos:

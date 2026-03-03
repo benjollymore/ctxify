@@ -8,7 +8,6 @@ function writeIndex(ctxDir: string, repos: string[] = ['myapp']): void {
   writeFileSync(
     join(ctxDir, 'index.md'),
     `---
-ctxify: "2.0"
 mode: single-repo
 repos:
 ${repos.map((r) => `  - ${r}`).join('\n')}

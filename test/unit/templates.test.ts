@@ -68,10 +68,9 @@ describe('index template', () => {
     ctxifyVersion: '2.0.0',
   });
 
-  it('frontmatter has ctxify "2.0" and mode', () => {
+  it('frontmatter has mode', () => {
     const fm = parseFrontmatter(output);
     expect(fm).not.toBeNull();
-    expect(fm!.ctxify).toBe('2.0');
     expect(fm!.mode).toBe('multi-repo');
   });
 

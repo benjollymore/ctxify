@@ -22,7 +22,6 @@ describe('validateShards', () => {
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: multi-repo
 repos:
   - api-server
@@ -53,7 +52,6 @@ scanned_at: "2025-01-15T10:00:00.000Z"
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -96,7 +94,7 @@ Returns all payments.
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0
+type: "index
   bad indentation: [unterminated
 ---
 
@@ -118,7 +116,6 @@ ctxify: "2.0
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - my-app
@@ -144,7 +141,6 @@ scanned_at: "2025-01-15T10:00:00.000Z"
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -189,7 +185,6 @@ type: overview
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -249,7 +244,6 @@ The validator checks that opening and closing markers are balanced.
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -292,7 +286,6 @@ Database uses UUID, not integer IDs.
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -331,7 +324,6 @@ Auth middleware is not global.
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -374,7 +366,6 @@ Silent catch swallows errors.
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -413,7 +404,6 @@ Unclosed rule marker.
     writeFileSync(
       join(ctxDir, 'index.md'),
       `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -470,7 +460,6 @@ domain: payments
       writeFileSync(
         join(ctxDir, 'index.md'),
         `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -511,7 +500,6 @@ type: overview
       writeFileSync(
         join(ctxDir, 'index.md'),
         `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -564,7 +552,6 @@ domain: auth
       writeFileSync(
         join(ctxDir, 'index.md'),
         `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -604,7 +591,6 @@ type: overview
       writeFileSync(
         join(ctxDir, 'index.md'),
         `---
-ctxify: "2.0"
 mode: single-repo
 repos:
   - api
@@ -643,7 +629,6 @@ No domain index here.
       writeFileSync(
         join(ctxDir, 'index.md'),
         `---
-ctxify: "2.0"
 mode: multi-repo
 repos:
   - api

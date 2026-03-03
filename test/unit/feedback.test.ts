@@ -39,7 +39,6 @@ function createWorkspace(dir: string, repoNames: string[]): void {
   writeFileSync(
     join(ctxDir, 'index.md'),
     `---
-ctxify: "2.0"
 mode: multi-repo
 repos:
 ${repoNames.map((n) => `  - ${n}`).join('\n')}
