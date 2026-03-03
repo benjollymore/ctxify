@@ -2,7 +2,11 @@ import type { Command } from 'commander';
 import { join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { resolveRepoCtxDir, resolveWorkspaceRulesDir, resolveWorkspaceRootOrThrow } from '../../core/paths.js';
+import {
+  resolveRepoCtxDir,
+  resolveWorkspaceRulesDir,
+  resolveWorkspaceRootOrThrow,
+} from '../../core/paths.js';
 import { ConfigError } from '../../core/errors.js';
 import {
   generateCorrectionsTemplate,
@@ -36,7 +40,9 @@ export function registerFeedbackCommand(program: Command): void {
           const resolved = resolveWorkspaceRootOrThrow(options.dir);
           workspaceRoot = resolved.root;
           if (resolved.fromParent) {
-            console.error(`Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`);
+            console.error(
+              `Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`,
+            );
           }
         } catch (e) {
           if (e instanceof ConfigError) {

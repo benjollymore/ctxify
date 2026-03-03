@@ -65,7 +65,7 @@ export function resolveWorkspaceRulesDir(
  */
 export function findWorkspaceRoot(startDir: string): string | null {
   let dir = resolve(startDir);
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     if (existsSync(join(dir, 'ctx.yaml'))) {
       return dir;
