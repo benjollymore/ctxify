@@ -22,7 +22,7 @@ function betaIncomplete(x: number, a: number, b: number): number {
   const lnBeta = lgamma(a) + lgamma(b) - lgamma(a + b);
   const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lnBeta) / a;
 
-  let f = 1;
+  let f = 1; // eslint-disable-line no-useless-assignment -- overwritten in continued fraction loop
   let c = 1;
   let d = 1 - ((a + b) * x) / (a + 1);
   if (Math.abs(d) < eps) d = eps;
