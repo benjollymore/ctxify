@@ -106,10 +106,6 @@ function stripFrontmatter(content: string): string {
   return content.slice(match[0].length);
 }
 
-function getVersion(): string {
-  return getCtxifyVersion();
-}
-
 // ── Backward-compat alias ─────────────────────────────────────────────────
 
 export function getPrimarySkillSourcePath(): string {
@@ -141,7 +137,7 @@ export function installSkill(
   }
 
   const skillFiles = listSkillSourceFiles();
-  const version = getVersion();
+  const version = getCtxifyVersion();
   const versionComment = `<!-- ctxify v${version} — do not edit manually, managed by ctxify init -->`;
 
   const resolvedHome = homeDir ?? homedir();
