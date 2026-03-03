@@ -193,11 +193,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
           if (mergedRules) {
             writeFileSync(rulesPath, mergedRules, 'utf-8');
           } else {
-            writeFileSync(
-              rulesPath,
-              generateRulesTemplate({ ctxifyVersion }),
-              'utf-8',
-            );
+            writeFileSync(rulesPath, generateRulesTemplate({ ctxifyVersion }), 'utf-8');
           }
         }
       }
@@ -256,11 +252,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
       if (mergedRules) {
         writeFileSync(rulesPath, mergedRules, 'utf-8');
       } else {
-        writeFileSync(
-          rulesPath,
-          generateRulesTemplate({ ctxifyVersion }),
-          'utf-8',
-        );
+        writeFileSync(rulesPath, generateRulesTemplate({ ctxifyVersion }), 'utf-8');
       }
     }
   }
@@ -476,7 +468,13 @@ function mergePerRepoRules(
     // Strip frontmatter and heading — only keep entries
     const stripped = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
     // Skip if only heading and no entries
-    if (!stripped || stripped === '# Rules' || stripped === '# Rules\n\nBehavioral instructions and anti-patterns. Always loaded — these are the highest-signal context.') continue;
+    if (
+      !stripped ||
+      stripped === '# Rules' ||
+      stripped ===
+        '# Rules\n\nBehavioral instructions and anti-patterns. Always loaded — these are the highest-signal context.'
+    )
+      continue;
     entries.push(stripped);
   }
 
