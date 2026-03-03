@@ -9,6 +9,7 @@ import {
   ANTI_PATTERNS_SECTION_HEADER,
 } from '../../templates/corrections.js';
 import { generateRulesTemplate, formatRuleEntry } from '../../templates/rules.js';
+import { getCtxifyVersion } from '../../utils/version.js';
 
 // ── Command ─────────────────────────────────────────────────────────────
 
@@ -71,7 +72,11 @@ export function registerFeedbackCommand(program: Command): void {
 
           if (!existsSync(targetPath)) {
             mkdirSync(repoDir, { recursive: true });
-            writeFileSync(targetPath, generateCorrectionsTemplate({ repo }), 'utf-8');
+            writeFileSync(
+              targetPath,
+              generateCorrectionsTemplate({ repo, ctxifyVersion: getCtxifyVersion() }),
+              'utf-8',
+            );
             createdFile = true;
           }
 
@@ -84,7 +89,11 @@ export function registerFeedbackCommand(program: Command): void {
 
           if (!existsSync(targetPath)) {
             mkdirSync(repoDir, { recursive: true });
-            writeFileSync(targetPath, generateRulesTemplate({ repo }), 'utf-8');
+            writeFileSync(
+              targetPath,
+              generateRulesTemplate({ repo, ctxifyVersion: getCtxifyVersion() }),
+              'utf-8',
+            );
             createdFile = true;
           }
 

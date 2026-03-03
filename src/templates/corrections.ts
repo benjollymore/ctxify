@@ -4,6 +4,7 @@ import { dumpYaml } from '../utils/yaml.js';
 
 interface CorrectionsTemplateData {
   repo: string;
+  ctxifyVersion?: string;
 }
 
 interface CorrectionEntryData {
@@ -28,6 +29,7 @@ export function generateCorrectionsTemplate(data: CorrectionsTemplateData): stri
   const fm = dumpYaml({
     repo: data.repo,
     type: 'corrections',
+    ctxify_version: data.ctxifyVersion || undefined,
   });
 
   return `---

@@ -4,12 +4,17 @@ import { dumpYaml } from '../utils/yaml.js';
 
 interface PatternsTemplateData {
   repo: string;
+  ctxifyVersion?: string;
 }
 
 // ── Generator ────────────────────────────────────────────────────────────
 
 export function generatePatternsTemplate(data: PatternsTemplateData): string {
-  const fm = dumpYaml({ repo: data.repo, type: 'patterns' });
+  const fm = dumpYaml({
+    repo: data.repo,
+    type: 'patterns',
+    ctxify_version: data.ctxifyVersion || undefined,
+  });
   return (
     `---\n${fm.trimEnd()}\n---\n\n` +
     `# How to Build Features\n\n` +

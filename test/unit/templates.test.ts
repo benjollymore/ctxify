@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { parseFrontmatter } from '../../src/utils/frontmatter.js';
 import { generateIndexTemplate, type RepoTemplateData } from '../../src/templates/index-md.js';
 import { generateRepoTemplate } from '../../src/templates/repo.js';
+import { generateCorrectionsTemplate } from '../../src/templates/corrections.js';
+import { generateRulesTemplate } from '../../src/templates/rules.js';
+import { generateDomainTemplate } from '../../src/templates/domain.js';
+import { generateRelationshipsTemplate } from '../../src/templates/relationships.js';
 
 // ── Test fixtures ────────────────────────────────────────────────────────
 
@@ -71,6 +75,21 @@ describe('index template', () => {
     expect(fm!.mode).toBe('multi-repo');
   });
 
+  it('frontmatter includes ctxify_version when provided in metadata', () => {
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBe('2.0.0');
+  });
+
+  it('frontmatter omits ctxify_version when metadata has no version', () => {
+    const noVersion = generateIndexTemplate([makeRepo()], '/workspace', 'single-repo', {
+      generatedAt: '2025-01-15T10:00:00.000Z',
+    });
+    const fm = parseFrontmatter(noVersion);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBeUndefined();
+  });
+
   it('frontmatter has repos list and scanned_at', () => {
     const fm = parseFrontmatter(output);
     expect(fm!.scanned_at).toBe('2025-01-15T10:00:00.000Z');
@@ -132,6 +151,19 @@ describe('repo template', () => {
     // Mechanical fields removed
     expect(fm!.entry_points).toBeUndefined();
     expect(fm!.file_count).toBeUndefined();
+  });
+
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const withVersion = generateRepoTemplate(makeRepo(), '0.7.1');
+    const fm = parseFrontmatter(withVersion);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBeUndefined();
   });
 
   it('has name heading', () => {
@@ -200,5 +232,76 @@ describe('repo template', () => {
 
   it('has TODO markers', () => {
     expect(output).toContain('<!-- TODO:');
+  });
+});
+
+// ── Corrections template ──────────────────────────────────────────────────
+
+describe('corrections template', () => {
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const output = generateCorrectionsTemplate({ repo: 'api', ctxifyVersion: '0.7.1' });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const output = generateCorrectionsTemplate({ repo: 'api' });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBeUndefined();
+  });
+});
+
+// ── Rules template ────────────────────────────────────────────────────────
+
+describe('rules template', () => {
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const output = generateRulesTemplate({ repo: 'api', ctxifyVersion: '0.7.1' });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const output = generateRulesTemplate({ repo: 'api' });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBeUndefined();
+  });
+});
+
+// ── Domain template ───────────────────────────────────────────────────────
+
+describe('domain template', () => {
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const output = generateDomainTemplate({ repo: 'api', domain: 'auth', ctxifyVersion: '0.7.1' });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const output = generateDomainTemplate({ repo: 'api', domain: 'auth' });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBeUndefined();
+  });
+});
+
+// ── Relationships template ────────────────────────────────────────────────
+
+describe('relationships template', () => {
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const output = generateRelationshipsTemplate({
+      workspace: '/workspace',
+      repos: ['api', 'web'],
+      ctxifyVersion: '0.7.1',
+    });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const output = generateRelationshipsTemplate({
+      workspace: '/workspace',
+      repos: ['api', 'web'],
+    });
+    const fm = parseFrontmatter(output);
+    expect(fm!.ctxify_version).toBeUndefined();
   });
 });

@@ -90,6 +90,20 @@ describe('generatePatternsTemplate', () => {
     const output = generatePatternsTemplate({ repo: 'my-service' });
     expect(output).toContain('repo: my-service');
   });
+
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const output = generatePatternsTemplate({ repo: 'api', ctxifyVersion: '0.7.1' });
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const output = generatePatternsTemplate({ repo: 'api' });
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBeUndefined();
+  });
 });
 
 // ── CLI: ctxify patterns <repo> ───────────────────────────────────────────

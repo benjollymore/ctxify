@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { parseFrontmatter } from '../utils/frontmatter.js';
 import type { SkillScope } from '../core/config.js';
+import { getCtxifyVersion } from '../utils/version.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -105,19 +106,6 @@ function stripFrontmatter(content: string): string {
   return content.slice(match[0].length);
 }
 
-function getVersion(): string {
-  let dir = __dirname;
-  for (let i = 0; i < 5; i++) {
-    try {
-      const content = readFileSync(join(dir, 'package.json'), 'utf-8');
-      return JSON.parse(content).version || '0.0.0';
-    } catch {
-      dir = dirname(dir);
-    }
-  }
-  return '0.0.0';
-}
-
 // ── Backward-compat alias ─────────────────────────────────────────────────
 
 export function getPrimarySkillSourcePath(): string {
@@ -149,7 +137,7 @@ export function installSkill(
   }
 
   const skillFiles = listSkillSourceFiles();
-  const version = getVersion();
+  const version = getCtxifyVersion();
   const versionComment = `<!-- ctxify v${version} — do not edit manually, managed by ctxify init -->`;
 
   const resolvedHome = homeDir ?? homedir();

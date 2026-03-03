@@ -9,6 +9,7 @@ import { buildMultiRepoEntries } from './init.js';
 import { parseFrontmatter, replaceFrontmatter } from '../../utils/frontmatter.js';
 import { generateRepoTemplate } from '../../templates/repo.js';
 import type { RepoTemplateData } from '../../templates/index-md.js';
+import { getCtxifyVersion } from '../../utils/version.js';
 
 export interface UpdateResult {
   status: 'updated';
@@ -102,10 +103,13 @@ export async function runUpdate(
 
   // --- Actual update ---
 
+  const ctxifyVersion = getCtxifyVersion();
+
   // 1. Update ctx.yaml — merge fresh repos, preserve relationships/skills/options/user fields
   const mergedRepos = mergeRepos(config.repos, freshRepos, freshManifests);
   const updatedConfig: CtxConfig = {
     ...config,
+    ctxify_version: ctxifyVersion,
     repos: mergedRepos,
   };
   writeFileSync(configPath, serializeConfig(updatedConfig), 'utf-8');
@@ -118,6 +122,7 @@ export async function runUpdate(
     if (existingFm) {
       const newFm = {
         ...existingFm,
+        ctxify_version: ctxifyVersion,
         repos: mergedRepos.map((r) => r.name),
         scanned_at: new Date().toISOString(),
       };
@@ -147,6 +152,7 @@ export async function runUpdate(
     if (existing) {
       const newFm = {
         ...existing,
+        ctxify_version: ctxifyVersion,
         language: manifest.language || undefined,
         framework: manifest.framework || undefined,
       };
@@ -165,7 +171,7 @@ export async function runUpdate(
     mkdirSync(repoDir, { recursive: true });
     const overviewPath = join(repoDir, 'overview.md');
     if (!existsSync(overviewPath)) {
-      writeFileSync(overviewPath, generateRepoTemplate(manifest), 'utf-8');
+      writeFileSync(overviewPath, generateRepoTemplate(manifest, ctxifyVersion), 'utf-8');
     }
   }
 

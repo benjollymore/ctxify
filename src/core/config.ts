@@ -43,6 +43,7 @@ export interface SkillEntry {
 
 export interface CtxConfig {
   version: string;
+  ctxify_version?: string;
   workspace: string;
   mode: OperatingMode;
   monoRepo?: MonoRepoOptions;
@@ -113,8 +114,11 @@ function validateConfig(raw: unknown): CtxConfig {
   const skills = validateSkills(obj.skills);
   const install_method = validateInstallMethod(obj.install_method);
 
+  const ctxify_version = typeof obj.ctxify_version === 'string' ? obj.ctxify_version : undefined;
+
   return {
     version: obj.version,
+    ...(ctxify_version ? { ctxify_version } : {}),
     workspace: obj.workspace,
     mode,
     ...(monoRepo ? { monoRepo } : {}),
@@ -282,9 +286,11 @@ export function generateDefaultConfig(
   relationships?: Relationship[],
   skills?: Record<string, SkillEntry>,
   install_method?: 'global' | 'local' | 'npx',
+  ctxify_version?: string,
 ): CtxConfig {
   return {
     version: '1',
+    ...(ctxify_version ? { ctxify_version } : {}),
     workspace: workspacePath,
     mode,
     ...(monoRepoOptions ? { monoRepo: monoRepoOptions } : {}),

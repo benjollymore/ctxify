@@ -7,6 +7,7 @@ interface DomainTemplateData {
   domain: string;
   tags?: string[];
   description?: string;
+  ctxifyVersion?: string;
 }
 
 // ── Generator ────────────────────────────────────────────────────────────
@@ -15,6 +16,7 @@ export function generateDomainTemplate(data: DomainTemplateData): string {
   const fm = dumpYaml({
     repo: data.repo,
     type: 'domain',
+    ctxify_version: data.ctxifyVersion || undefined,
     domain: data.domain,
     tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
   });

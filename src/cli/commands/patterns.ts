@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
 import { generatePatternsTemplate } from '../../templates/patterns.js';
+import { getCtxifyVersion } from '../../utils/version.js';
 
 export function registerPatternsCommand(program: Command): void {
   program
@@ -47,7 +48,7 @@ export function registerPatternsCommand(program: Command): void {
       }
 
       mkdirSync(repoDir, { recursive: true });
-      const content = generatePatternsTemplate({ repo });
+      const content = generatePatternsTemplate({ repo, ctxifyVersion: getCtxifyVersion() });
       writeFileSync(patternsPath, content, 'utf-8');
 
       const result = {
