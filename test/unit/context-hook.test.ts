@@ -221,7 +221,11 @@ describe('getContextHookOutput', () => {
         dir,
         repos,
         'multi-repo',
-        undefined, undefined, undefined, undefined, undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
         primaryRepo,
       );
       writeFileSync(join(dir, 'ctx.yaml'), serializeConfig(config), 'utf-8');

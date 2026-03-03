@@ -394,8 +394,15 @@ repos:
         { path: './web', name: 'web' },
       ];
       const config = generateDefaultConfig(
-        '/tmp/ws', repos, 'multi-repo',
-        undefined, undefined, undefined, undefined, undefined, 'api',
+        '/tmp/ws',
+        repos,
+        'multi-repo',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'api',
       );
       expect(config.primary_repo).toBe('api');
 
