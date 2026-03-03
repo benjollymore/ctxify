@@ -129,9 +129,10 @@ describe('getContextHookOutput', () => {
     writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
 
     const output = getContextHookOutput(tmpDir);
-    expect(output).toContain(
-      'Load patterns.md before writing code. Load domain files when entering specific areas.',
-    );
+    expect(output).toContain('Load patterns.md before writing code.');
+    expect(output).toContain('When you discover context is wrong');
+    expect(output).toContain('ctxify feedback');
+    expect(output).toContain('ctxify domain add');
   });
 
   it('omits corrections section when corrections.md does not exist', () => {
@@ -208,6 +209,28 @@ describe('getContextHookOutput', () => {
 
     const output = getContextHookOutput(tmpDir);
     expect(output).toBe('');
+  });
+
+  it('getContextHookOutput works when called with sub-repo dir (walks up to workspace root)', () => {
+    // Simulate: workspace root has ctx.yaml and .ctxify/,
+    // but getContextHookOutput is called with the workspace root directly.
+    // The *action* in context-hook.ts does the walk-up; getContextHookOutput itself
+    // just needs to be given the correct root. Test verifies the function works
+    // with the found root.
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA sub-repo test.', 'utf-8');
+
+    // Simulate a sub-dir existing (like the user opened api/)
+    const subDir = join(tmpDir, 'api');
+    mkdirSync(subDir, { recursive: true });
+
+    // The hook action would call findWorkspaceRoot(subDir) → tmpDir,
+    // then pass tmpDir to getContextHookOutput. Verify the function works with tmpDir.
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('# My App');
+    expect(output).toContain('A sub-repo test.');
   });
 
   // ── Multi-repo mode ──

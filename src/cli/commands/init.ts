@@ -20,7 +20,7 @@ import { generateRepoTemplate } from '../../templates/repo.js';
 import { generateWorkspaceTemplate } from '../../templates/workspace.js';
 import { generateCorrectionsTemplate } from '../../templates/corrections.js';
 import { generateRulesTemplate } from '../../templates/rules.js';
-import { resolveRepoCtxDir, resolvePrimaryRepo } from '../../core/paths.js';
+import { resolveRepoCtxDir, resolvePrimaryRepo, findWorkspaceRoot } from '../../core/paths.js';
 import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
 import { installClaudeHook } from '../install-hooks.js';
 import { runInteractiveFlow } from './init-interactive.js';
@@ -300,6 +300,19 @@ export function registerInitCommand(program: Command): void {
       ) => {
         const workspaceRoot = resolve(dir || '.');
         const configPath = join(workspaceRoot, 'ctx.yaml');
+
+        // 0. If CWD is inside an existing workspace, refuse
+        if (!existsSync(configPath)) {
+          const parentRoot = findWorkspaceRoot(workspaceRoot);
+          if (parentRoot) {
+            console.log(
+              JSON.stringify({
+                error: `This directory is inside an existing ctxify workspace at ${parentRoot}. Run "ctxify init" from the workspace root, or use --dir to specify a different root.`,
+              }),
+            );
+            process.exit(1);
+          }
+        }
 
         // 1. If ctx.yaml exists and --force not set -> error + exit
         if (existsSync(configPath) && !options?.force) {

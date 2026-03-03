@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { resolveRepoCtxDir, resolvePrimaryRepo } from '../../core/paths.js';
+import { resolveRepoCtxDir, resolvePrimaryRepo, findWorkspaceRoot } from '../../core/paths.js';
 
 /**
  * Outputs the content of always-load context files for Claude Code SessionStart hook.
@@ -11,6 +11,12 @@ import { resolveRepoCtxDir, resolvePrimaryRepo } from '../../core/paths.js';
  * When context is unfilled (TODO markers in overview.md), outputs a nudge to fill context.
  * Designed to be fast and silent — exits 0 with no output if nothing is found.
  */
+
+const CONTEXT_FOOTER = `Load patterns.md before writing code. Load domain files when entering specific areas.
+
+When you discover context is wrong → \`ctxify feedback <repo> --body "what's wrong and what's correct"\`
+When the user corrects your behavior → \`ctxify feedback <repo> --type rule --body "the rule"\`
+When you identify a complex domain area → \`ctxify domain add <repo> <domain-name>\``;
 
 function stripFrontmatter(content: string): string {
   const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
@@ -120,9 +126,7 @@ export function getContextHookOutput(workspaceRoot: string): string {
 
   if (sections.length === 0) return '';
 
-  const footer =
-    'Load patterns.md before writing code. Load domain files when entering specific areas.';
-  return sections.join('\n\n') + '\n\n' + footer;
+  return sections.join('\n\n') + '\n\n' + CONTEXT_FOOTER;
 }
 
 function getMultiRepoHookOutput(
@@ -220,9 +224,7 @@ function getMultiRepoHookOutput(
 
   if (sections.length === 0) return '';
 
-  const footer =
-    'Load patterns.md before writing code. Load domain files when entering specific areas.';
-  return sections.join('\n\n') + '\n\n' + footer;
+  return sections.join('\n\n') + '\n\n' + CONTEXT_FOOTER;
 }
 
 export function registerContextHookCommand(program: Command): void {
@@ -230,7 +232,14 @@ export function registerContextHookCommand(program: Command): void {
     .command('context-hook')
     .description('Output context for Claude Code SessionStart hook (internal)')
     .action(() => {
-      const workspaceRoot = resolve('.');
+      let workspaceRoot = resolve('.');
+      // If no ctx.yaml at CWD, walk up to find the workspace root
+      if (!existsSync(join(workspaceRoot, 'ctx.yaml'))) {
+        const found = findWorkspaceRoot(workspaceRoot);
+        if (found) {
+          workspaceRoot = found;
+        }
+      }
       const output = getContextHookOutput(workspaceRoot);
       if (output) {
         console.log(output);
