@@ -5,7 +5,14 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['dist/', 'node_modules/', 'benchmarks/', 'eval-results/', '*.js', '!eslint.config.js'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'benchmarks/',
+      'eval-results/',
+      '*.js',
+      '!eslint.config.js',
+    ],
   },
   {
     rules: {
