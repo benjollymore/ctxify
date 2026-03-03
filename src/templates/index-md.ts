@@ -22,7 +22,6 @@ export function generateIndexTemplate(
 
   // ── Frontmatter ──
   const fm = dumpYaml({
-    ctxify: '2.0',
     type: 'index',
     ctxify_version: metadata?.ctxifyVersion || undefined,
     mode,

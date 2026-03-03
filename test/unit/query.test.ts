@@ -119,7 +119,6 @@ describe('segment extraction: domain-index', () => {
 describe('frontmatter parsing', () => {
   it('parses YAML frontmatter from index', () => {
     const content = `---
-ctxify: "2.0"
 mode: multi-repo
 totals:
   repos: 2
@@ -129,7 +128,6 @@ totals:
 `;
     const fm = parseFrontmatter(content);
     expect(fm).not.toBeNull();
-    expect(fm!.ctxify).toBe('2.0');
     expect(fm!.mode).toBe('multi-repo');
     expect((fm!.totals as Record<string, number>).repos).toBe(2);
   });
