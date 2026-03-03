@@ -20,6 +20,7 @@ import { generateRepoTemplate } from '../../templates/repo.js';
 import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
 import { installClaudeHook } from '../install-hooks.js';
 import { runInteractiveFlow } from './init-interactive.js';
+import { getCtxifyVersion } from '../../utils/version.js';
 
 export type AgentType = 'claude' | 'copilot' | 'cursor' | 'codex';
 
@@ -88,6 +89,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   const install_method = options.install_method ?? detectInstallMethod();
 
   // Generate and write ctx.yaml with skills and install_method
+  const ctxifyVersion = getCtxifyVersion();
   const config = generateDefaultConfig(
     workspaceRoot,
     repos,
@@ -96,6 +98,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     undefined,
     Object.keys(skillsMap).length > 0 ? skillsMap : undefined,
     install_method,
+    ctxifyVersion,
   );
   writeFileSync(configPath, serializeConfig(config), 'utf-8');
 
@@ -121,7 +124,9 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   if (!existsSync(indexPath) || options.force) {
     writeFileSync(
       indexPath,
-      generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode),
+      generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode, {
+        ctxifyVersion,
+      }),
       'utf-8',
     );
   } else {
@@ -134,7 +139,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     mkdirSync(repoDir, { recursive: true });
     const overviewPath = join(repoDir, 'overview.md');
     if (!existsSync(overviewPath) || options.force) {
-      writeFileSync(overviewPath, generateRepoTemplate(repo), 'utf-8');
+      writeFileSync(overviewPath, generateRepoTemplate(repo, ctxifyVersion), 'utf-8');
     } else {
       skipped.push(`repos/${repo.name}/overview.md`);
     }

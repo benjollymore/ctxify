@@ -24,6 +24,7 @@ export function generateIndexTemplate(
   const fm = dumpYaml({
     ctxify: '2.0',
     type: 'index',
+    ctxify_version: metadata?.ctxifyVersion || undefined,
     mode,
     repos: repos.map((r) => r.name),
     scanned_at: scannedAt,

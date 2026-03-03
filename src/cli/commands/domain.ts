@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 
 import { loadConfig } from '../../core/config.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { generateDomainTemplate } from '../../templates/domain.js';
+import { getCtxifyVersion } from '../../utils/version.js';
 
 // ── Validation ───────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ export function registerDomainCommand(program: Command): void {
             domain: domainName,
             tags,
             description: options.description,
+            ctxifyVersion: getCtxifyVersion(),
           });
           writeFileSync(domainPath, content, 'utf-8');
         }

@@ -4,6 +4,7 @@ import { dumpYaml } from '../utils/yaml.js';
 
 interface RulesTemplateData {
   repo: string;
+  ctxifyVersion?: string;
 }
 
 interface RuleEntryData {
@@ -18,6 +19,7 @@ export function generateRulesTemplate(data: RulesTemplateData): string {
   const fm = dumpYaml({
     repo: data.repo,
     type: 'rules',
+    ctxify_version: data.ctxifyVersion || undefined,
   });
 
   return `---

@@ -33,11 +33,15 @@ function filterKeyDirs(dirs: string[]): string[] {
 
 // ── Generator ────────────────────────────────────────────────────────────
 
-export function generateRepoTemplate(repo: RepoTemplateData): string {
+export function generateRepoTemplate(
+  repo: RepoTemplateData,
+  ctxifyVersion?: string,
+): string {
   // ── Frontmatter ──
   const fm = dumpYaml({
     repo: repo.name,
     type: 'overview',
+    ctxify_version: ctxifyVersion || undefined,
     language: repo.language || undefined,
     framework: repo.framework || undefined,
   });

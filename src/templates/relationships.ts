@@ -5,6 +5,7 @@ import { dumpYaml } from '../utils/yaml.js';
 interface RelationshipsTemplateData {
   workspace: string;
   repos: string[];
+  ctxifyVersion?: string;
 }
 
 // ── Generator ────────────────────────────────────────────────────────────
@@ -13,6 +14,7 @@ export function generateRelationshipsTemplate(data: RelationshipsTemplateData): 
   const fm = dumpYaml({
     workspace: data.workspace,
     type: 'relationships',
+    ctxify_version: data.ctxifyVersion || undefined,
   });
 
   const repoRows = data.repos.map((repo) => `| ${repo} | |`).join('\n');

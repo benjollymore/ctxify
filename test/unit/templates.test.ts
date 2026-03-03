@@ -71,6 +71,24 @@ describe('index template', () => {
     expect(fm!.mode).toBe('multi-repo');
   });
 
+  it('frontmatter includes ctxify_version when provided in metadata', () => {
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBe('2.0.0');
+  });
+
+  it('frontmatter omits ctxify_version when metadata has no version', () => {
+    const noVersion = generateIndexTemplate(
+      [makeRepo()],
+      '/workspace',
+      'single-repo',
+      { generatedAt: '2025-01-15T10:00:00.000Z' },
+    );
+    const fm = parseFrontmatter(noVersion);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBeUndefined();
+  });
+
   it('frontmatter has repos list and scanned_at', () => {
     const fm = parseFrontmatter(output);
     expect(fm!.scanned_at).toBe('2025-01-15T10:00:00.000Z');
@@ -132,6 +150,19 @@ describe('repo template', () => {
     // Mechanical fields removed
     expect(fm!.entry_points).toBeUndefined();
     expect(fm!.file_count).toBeUndefined();
+  });
+
+  it('includes ctxify_version in frontmatter when provided', () => {
+    const withVersion = generateRepoTemplate(makeRepo(), '0.7.1');
+    const fm = parseFrontmatter(withVersion);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBe('0.7.1');
+  });
+
+  it('omits ctxify_version from frontmatter when not provided', () => {
+    const fm = parseFrontmatter(output);
+    expect(fm).not.toBeNull();
+    expect(fm!.ctxify_version).toBeUndefined();
   });
 
   it('has name heading', () => {
