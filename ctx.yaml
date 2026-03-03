@@ -1,0 +1,28 @@
+version: '1'
+ctxify_version: 0.7.1
+workspace: .
+mode: single-repo
+repos:
+  - path: .
+    name: ctxify
+relationships: []
+options:
+  outputDir: .ctxify
+  maxFileSize: 100000
+  maxDepth: 5
+  includePatterns: []
+  excludePatterns:
+    - node_modules
+    - .git
+    - dist
+    - build
+    - coverage
+    - __pycache__
+    - .venv
+    - fixtures
+    - __fixtures__
+skills:
+  claude:
+    path: .claude/skills/ctxify/SKILL.md
+    scope: workspace
+install_method: global

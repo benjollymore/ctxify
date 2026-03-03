@@ -4,7 +4,6 @@ dist/
 .claude/*
 !.claude/CLAUDE.md
 .qodo/
-ctx.yaml
 coverage/
 eval-results/
 benchmarks/
