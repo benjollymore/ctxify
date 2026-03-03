@@ -17,17 +17,29 @@ describe('validateMultiRepoShards', () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  function makeConfig(repos: Array<{ path: string; name: string }>, primaryRepo?: string): CtxConfig {
+  function makeConfig(
+    repos: Array<{ path: string; name: string }>,
+    primaryRepo?: string,
+  ): CtxConfig {
     return generateDefaultConfig(
-      tmpDir, repos, 'multi-repo',
-      undefined, undefined, undefined, undefined, undefined,
+      tmpDir,
+      repos,
+      'multi-repo',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       primaryRepo,
     );
   }
 
   it('passes when all per-repo .ctxify/ directories have overview.md', () => {
     const config = makeConfig(
-      [{ path: 'api', name: 'api' }, { path: 'web', name: 'web' }],
+      [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ],
       'api',
     );
 
