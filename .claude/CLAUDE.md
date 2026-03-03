@@ -12,7 +12,7 @@ Default branch is `main`. PRs target `main`.
 
 ```
 npm run build        # tsup → dist/index.js (library) + dist/bin/ctxify.js (CLI)
-npm test             # vitest run — 326 tests, 23 files
+npm test             # vitest run — 380 tests, 27 files
 npm run typecheck    # tsc --noEmit (strict mode)
 npm run dev          # tsup --watch
 ```
@@ -152,7 +152,6 @@ Progressive disclosure: overview.md is the table of contents (always loaded), pa
 
 - `discoverEntryPoints` in manifest.ts re-reads package.json that the caller already parsed
 - `validateShards` reads each file twice (once for segment markers, once for TODOs)
-- No support for Cargo.toml (Rust) manifest parsing — only framework detection via deps
 - `git add -A` in `stageAndCommit` stages everything including potentially unrelated files
 
 ## README hygiene
