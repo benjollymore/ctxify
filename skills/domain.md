@@ -7,23 +7,28 @@ description: Use when identifying a new complex area of a codebase that needs it
 
 ## Hard Gate
 
-Run `ctxify domain add <repo> <domain>` BEFORE writing any content. This scaffolds the file and registers it in overview.md's domain index. Never create domain files manually.
+Run `ctxify domain add <repo> <domain> --description "..."` BEFORE writing any content. This scaffolds the file and registers it in overview.md's domain index. Never create domain files manually.
+
+**The command takes exactly 2 positional args** (`<repo>` and `<domain>`). The description MUST be passed via the `--description` flag — not as a third positional argument.
+
+```
+# CORRECT:
+ctxify domain add backend payments --description "Stripe integration and billing flows"
+
+# WRONG — "Stripe integration..." is treated as a third positional arg:
+ctxify domain add backend payments "Stripe integration and billing flows"
+```
 
 ## Command
 
 ```
-ctxify domain add <repo> <domain-name> [options]
+ctxify domain add <repo> <domain-name> --description "what it covers" [options]
 ```
 
 Options:
-- `--description "what it covers"` — one-line description (appears in overview.md index)
+- `--description "what it covers"` — one-line description (appears in overview.md index). Pass via flag, not positional arg.
 - `--tags tag1,tag2` — tags for frontmatter (optional)
 - `-d, --dir <path>` — workspace directory (default: `.`)
-
-Example:
-```
-ctxify domain add backend payments --description "Stripe integration and billing flows" --tags billing,stripe
-```
 
 ## When to Create a Domain
 
