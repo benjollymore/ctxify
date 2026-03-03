@@ -105,14 +105,15 @@ describe('getContextHookOutput', () => {
     expect(output).toContain('# Corrections');
   });
 
-  it('includes rules content when rules.md exists', () => {
+  it('includes rules content when workspace rules.md exists', () => {
     writeCtxYaml(tmpDir);
     const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
     mkdirSync(repoDir, { recursive: true });
     writeFileSync(join(repoDir, 'overview.md'), '# My App\n\nA test application.', 'utf-8');
+    // Workspace-level rules.md at .ctxify/rules.md (not per-repo)
     writeFileSync(
-      join(repoDir, 'rules.md'),
-      '---\nrepo: my-app\ntype: rules\n---\n\n# Rules\n\n<!-- rule:2025-06-15 -->\nDo not fragment CSS.\n<!-- /rule -->',
+      join(tmpDir, '.ctxify', 'rules.md'),
+      '---\ntype: rules\n---\n\n# Rules\n\n<!-- rule:2025-06-15 -->\nDo not fragment CSS.\n<!-- /rule -->',
       'utf-8',
     );
 
@@ -294,7 +295,7 @@ describe('getContextHookOutput', () => {
       expect(output).toContain('Context is unfilled');
     });
 
-    it('includes corrections and rules from per-repo .ctxify/', () => {
+    it('includes corrections from per-repo and rules from primary repo', () => {
       const repos = [{ path: 'api', name: 'api' }];
       writeMultiRepoCtxYaml(tmpDir, repos, 'api');
 
@@ -306,6 +307,7 @@ describe('getContextHookOutput', () => {
         '<!-- correction:2025-01-01 -->\nFix it.\n<!-- /correction -->',
         'utf-8',
       );
+      // Workspace-level rules.md in primary repo's .ctxify/
       writeFileSync(
         join(apiCtx, 'rules.md'),
         '<!-- rule:2025-01-01 -->\nAlways test.\n<!-- /rule -->',
@@ -315,6 +317,39 @@ describe('getContextHookOutput', () => {
       const output = getContextHookOutput(tmpDir);
       expect(output).toContain('Fix it.');
       expect(output).toContain('Always test.');
+    });
+
+    it('loads rules from primary repo only, not from non-primary repos', () => {
+      const repos = [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ];
+      writeMultiRepoCtxYaml(tmpDir, repos, 'api');
+
+      const apiCtx = join(tmpDir, 'api', '.ctxify');
+      const webCtx = join(tmpDir, 'web', '.ctxify');
+      mkdirSync(apiCtx, { recursive: true });
+      mkdirSync(webCtx, { recursive: true });
+
+      writeFileSync(join(apiCtx, 'overview.md'), '# API\n\nThe API.', 'utf-8');
+      writeFileSync(join(webCtx, 'overview.md'), '# Web\n\nThe web.', 'utf-8');
+
+      // rules.md in primary repo (api) — should be loaded
+      writeFileSync(
+        join(apiCtx, 'rules.md'),
+        '<!-- rule:2025-01-01 -->\nPrimary rule.\n<!-- /rule -->',
+        'utf-8',
+      );
+      // rules.md in non-primary repo (web) — should NOT be loaded
+      writeFileSync(
+        join(webCtx, 'rules.md'),
+        '<!-- rule:2025-01-01 -->\nStale rule.\n<!-- /rule -->',
+        'utf-8',
+      );
+
+      const output = getContextHookOutput(tmpDir);
+      expect(output).toContain('Primary rule.');
+      expect(output).not.toContain('Stale rule.');
     });
   });
 });

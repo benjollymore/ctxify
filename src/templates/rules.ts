@@ -3,7 +3,7 @@ import { dumpYaml } from '../utils/yaml.js';
 // ── Types ────────────────────────────────────────────────────────────────
 
 interface RulesTemplateData {
-  repo: string;
+  workspace?: string;
   ctxifyVersion?: string;
 }
 
@@ -15,10 +15,10 @@ interface RuleEntryData {
 
 // ── Generator ────────────────────────────────────────────────────────────
 
-export function generateRulesTemplate(data: RulesTemplateData): string {
+export function generateRulesTemplate(data: RulesTemplateData = {}): string {
   const fm = dumpYaml({
-    repo: data.repo,
     type: 'rules',
+    ...(data.workspace ? { workspace: data.workspace } : {}),
     ctxify_version: data.ctxifyVersion || undefined,
   });
 

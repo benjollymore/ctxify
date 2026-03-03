@@ -126,9 +126,9 @@ describe('integration: ctxify init', () => {
     expect(ctxYaml).toContain('api');
     expect(ctxYaml).toContain('web');
 
-    // Per-repo overviews in new structure
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'web', 'overview.md'))).toBe(true);
+    // Per-repo overviews in multi-repo structure (each repo has its own .ctxify/)
+    expect(existsSync(join(dir, 'api', '.ctxify', 'overview.md'))).toBe(true);
+    expect(existsSync(join(dir, 'web', '.ctxify', 'overview.md'))).toBe(true);
 
     // Old structure should NOT exist
     expect(existsSync(join(dir, '.ctxify', 'endpoints'))).toBe(false);
