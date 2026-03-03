@@ -270,10 +270,7 @@ export function registerInitCommand(program: Command): void {
       '--agent <agents...>',
       'Install playbook for specified agents (claude, copilot, cursor, codex)',
     )
-    .option(
-      '--primary-repo <name>',
-      'Multi-repo: repo that hosts workspace context (workspace.md)',
-    )
+    .option('--primary-repo <name>', 'Multi-repo: repo that hosts workspace context (workspace.md)')
     .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
     .option(
       '--hook',
