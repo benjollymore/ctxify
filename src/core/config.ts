@@ -114,8 +114,7 @@ function validateConfig(raw: unknown): CtxConfig {
   const skills = validateSkills(obj.skills);
   const install_method = validateInstallMethod(obj.install_method);
 
-  const ctxify_version =
-    typeof obj.ctxify_version === 'string' ? obj.ctxify_version : undefined;
+  const ctxify_version = typeof obj.ctxify_version === 'string' ? obj.ctxify_version : undefined;
 
   return {
     version: obj.version,

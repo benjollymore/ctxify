@@ -78,12 +78,9 @@ describe('index template', () => {
   });
 
   it('frontmatter omits ctxify_version when metadata has no version', () => {
-    const noVersion = generateIndexTemplate(
-      [makeRepo()],
-      '/workspace',
-      'single-repo',
-      { generatedAt: '2025-01-15T10:00:00.000Z' },
-    );
+    const noVersion = generateIndexTemplate([makeRepo()], '/workspace', 'single-repo', {
+      generatedAt: '2025-01-15T10:00:00.000Z',
+    });
     const fm = parseFrontmatter(noVersion);
     expect(fm).not.toBeNull();
     expect(fm!.ctxify_version).toBeUndefined();
