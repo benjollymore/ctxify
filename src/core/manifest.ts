@@ -198,7 +198,7 @@ function detectRustFramework(cargo: string): string {
 
 function parseCargoTomlDependencies(cargo: string): Record<string, string> {
   const deps: Record<string, string> = {};
-  const depMatch = cargo.match(/\[dependencies\]\s*\n((?:[^\[].+\n)*)/);
+  const depMatch = cargo.match(/\[dependencies]\s*\n((?:[^[].+\n)*)/);
   if (!depMatch) return deps;
 
   const lines = depMatch[1].split('\n');
