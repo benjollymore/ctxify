@@ -33,6 +33,9 @@ export { auditShards } from './core/audit.js';
 export type { ModeDetectionResult } from './core/detect.js';
 export { autoDetectMode } from './core/detect.js';
 
+// Templates
+export { generateRelationshipsTemplate } from './templates/relationships.js';
+
 // Utilities
 export { parseFrontmatter } from './utils/frontmatter.js';
 export { extractSegments } from './utils/segments.js';

@@ -6,5 +6,7 @@ dist/
 .qodo/
 ctx.yaml
 coverage/
+eval-results/
+benchmarks/
 .DS_Store
 *.log

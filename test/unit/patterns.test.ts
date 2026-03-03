@@ -57,18 +57,21 @@ describe('generatePatternsTemplate', () => {
     expect(fm!.repo).toBe('backend');
   });
 
-  it('contains consolidated TODO with end-to-end guidance', () => {
+  it('contains structured section prompts', () => {
     const output = generatePatternsTemplate({ repo: 'api' });
     expect(output).toContain('# How to Build Features');
     expect(output).toContain('How we build features here');
-    expect(output).toContain('end-to-end');
-    expect(output).toContain('testing patterns');
+    expect(output).toContain('Adding a Feature');
+    expect(output).toContain('Constraints');
+    expect(output).toContain('Testing');
+    expect(output).toContain('Gotchas');
     expect(output).toContain('Skip sections');
   });
 
-  it('first TODO asks for end-to-end patterns, not route/controller catalogs', () => {
+  it('asks for constraints and placement, not route/controller catalogs', () => {
     const output = generatePatternsTemplate({ repo: 'api' });
-    expect(output).toContain('end-to-end');
+    expect(output).toContain('NOT');
+    expect(output).toContain('Where new features get wired in');
     expect(output).not.toContain('route/controller structure');
   });
 
