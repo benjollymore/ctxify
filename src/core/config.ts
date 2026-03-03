@@ -291,7 +291,7 @@ export function generateDefaultConfig(
   return {
     version: '1',
     ...(ctxify_version ? { ctxify_version } : {}),
-    workspace: workspacePath,
+    workspace: '.',
     mode,
     ...(monoRepoOptions ? { monoRepo: monoRepoOptions } : {}),
     repos,

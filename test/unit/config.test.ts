@@ -244,7 +244,7 @@ monoRepo:
       const config = generateDefaultConfig('/tmp/workspace', repos);
 
       expect(config.version).toBe('1');
-      expect(config.workspace).toBe('/tmp/workspace');
+      expect(config.workspace).toBe('.');
       expect(config.mode).toBe('multi-repo');
       expect(config.repos).toHaveLength(2);
       expect(config.repos[0].name).toBe('frontend');
