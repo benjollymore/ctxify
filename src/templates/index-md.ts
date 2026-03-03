@@ -15,16 +15,18 @@ export function generateIndexTemplate(
   repos: RepoTemplateData[],
   workspacePath: string,
   mode: 'single-repo' | 'multi-repo' | 'mono-repo',
-  metadata?: { generatedAt?: string; ctxifyVersion?: string },
+  metadata?: { generatedAt?: string; ctxifyVersion?: string; primaryRepo?: string },
 ): string {
   const scannedAt = metadata?.generatedAt ?? new Date().toISOString();
   const dirName = basename(workspacePath) || workspacePath;
+  const isMultiRepo = mode === 'multi-repo';
 
   // ── Frontmatter ──
   const fm = dumpYaml({
     type: 'index',
     ctxify_version: metadata?.ctxifyVersion || undefined,
     mode,
+    ...(isMultiRepo && metadata?.primaryRepo ? { primary_repo: metadata.primaryRepo } : {}),
     repos: repos.map((r) => r.name),
     scanned_at: scannedAt,
   });
@@ -33,8 +35,33 @@ export function generateIndexTemplate(
   const tableHeader = '| Repo | Language | Framework | Role |';
   const tableSep = '|------|----------|-----------|------|';
   const tableRows = repos.map((r) => {
-    return `| [${r.name}](repos/${r.name}/overview.md) | ${r.language || '--'} | ${r.framework || '--'} | <!-- TODO: role --> |`;
+    const overviewLink = isMultiRepo
+      ? `${r.path}/.ctxify/overview.md`
+      : `repos/${r.name}/overview.md`;
+    return `| [${r.name}](${overviewLink}) | ${r.language || '--'} | ${r.framework || '--'} | <!-- TODO: role --> |`;
   });
+
+  // ── Multi-repo note ──
+  const workspaceNote =
+    isMultiRepo && metadata?.primaryRepo
+      ? `\n> Workspace context: see [\`${metadata.primaryRepo}/.ctxify/workspace.md\`](${metadata.primaryRepo}/.ctxify/workspace.md)\n`
+      : '';
+
+  if (isMultiRepo) {
+    // Minimal hub for multi-repo — workspace.md in primary repo is the source of truth
+    return `---
+${fm.trimEnd()}
+---
+
+# ${dirName}
+${workspaceNote}
+## Repos
+
+${tableHeader}
+${tableSep}
+${tableRows.join('\n')}
+`;
+  }
 
   return `---
 ${fm.trimEnd()}

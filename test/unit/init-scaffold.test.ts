@@ -65,8 +65,19 @@ describe('scaffoldWorkspace', () => {
     expect(result.status).toBe('initialized');
     expect(result.mode).toBe('multi-repo');
     expect(result.repos).toEqual(['api', 'web']);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'))).toBe(true);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'web', 'overview.md'))).toBe(true);
+    // Multi-repo: per-repo .ctxify/ directories
+    expect(existsSync(join(dir, 'api', '.ctxify', 'overview.md'))).toBe(true);
+    expect(existsSync(join(dir, 'web', '.ctxify', 'overview.md'))).toBe(true);
+    expect(existsSync(join(dir, 'api', '.ctxify', 'corrections.md'))).toBe(true);
+    expect(existsSync(join(dir, 'web', '.ctxify', 'corrections.md'))).toBe(true);
+    expect(existsSync(join(dir, 'api', '.ctxify', 'rules.md'))).toBe(true);
+    expect(existsSync(join(dir, 'web', '.ctxify', 'rules.md'))).toBe(true);
+    // workspace.md in primary repo (defaults to first)
+    expect(existsSync(join(dir, 'api', '.ctxify', 'workspace.md'))).toBe(true);
+    expect(existsSync(join(dir, 'web', '.ctxify', 'workspace.md'))).toBe(false);
+    // Root .ctxify/ has only index.md (no repos/ subdir)
+    expect(existsSync(join(dir, '.ctxify', 'index.md'))).toBe(true);
+    expect(existsSync(join(dir, '.ctxify', 'repos'))).toBe(false);
   });
 
   it('does not include skills_installed when no agents specified', async () => {
