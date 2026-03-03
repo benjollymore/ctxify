@@ -37,5 +37,5 @@ export { autoDetectMode } from './core/detect.js';
 export { generateRelationshipsTemplate } from './templates/relationships.js';
 
 // Utilities
-export { parseFrontmatter } from './utils/frontmatter.js';
+export { parseFrontmatter, replaceFrontmatter } from './utils/frontmatter.js';
 export { extractSegments } from './utils/segments.js';
