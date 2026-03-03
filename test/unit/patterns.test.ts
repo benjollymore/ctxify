@@ -41,7 +41,7 @@ function createWorkspace(dir: string, repoNames: string[]): void {
   writeFileSync(join(dir, 'ctx.yaml'), serializeConfig(config), 'utf-8');
 
   for (const name of repoNames) {
-    const repoDir = join(dir, '.ctxify', 'repos', name);
+    const repoDir = join(dir, name, '.ctxify');
     mkdirSync(repoDir, { recursive: true });
   }
 }
@@ -127,7 +127,7 @@ describe('ctxify patterns <repo>', () => {
     expect(result.status).toBe('scaffolded');
     expect(result.repo).toBe('api');
     expect(result.file_existed).toBe(false);
-    expect(existsSync(join(dir, '.ctxify', 'repos', 'api', 'patterns.md'))).toBe(true);
+    expect(existsSync(join(dir, 'api', '.ctxify', 'patterns.md'))).toBe(true);
   });
 
   it('created patterns.md has correct frontmatter', () => {
@@ -137,7 +137,7 @@ describe('ctxify patterns <repo>', () => {
 
     runCli(['patterns', 'api', '-d', dir], dir);
 
-    const content = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'patterns.md'), 'utf-8');
+    const content = readFileSync(join(dir, 'api', '.ctxify', 'patterns.md'), 'utf-8');
     const fm = parseFrontmatter(content);
     expect(fm).not.toBeNull();
     expect(fm!.type).toBe('patterns');
@@ -161,7 +161,7 @@ describe('ctxify patterns <repo>', () => {
     tmpDirs.push(dir);
     createWorkspace(dir, ['api']);
 
-    const patternsPath = join(dir, '.ctxify', 'repos', 'api', 'patterns.md');
+    const patternsPath = join(dir, 'api', '.ctxify', 'patterns.md');
     runCli(['patterns', 'api', '-d', dir], dir);
     writeFileSync(patternsPath, 'old content', 'utf-8');
 

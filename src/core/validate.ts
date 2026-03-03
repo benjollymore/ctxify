@@ -124,7 +124,7 @@ export function validateMultiRepoShards(
     }
   }
 
-  // Check workspace.md exists in primary repo
+  // Check workspace.md and rules.md exist in primary repo
   const primaryName = resolvePrimaryRepo(config);
   if (primaryName) {
     const primaryEntry = config.repos.find((r) => r.name === primaryName);
@@ -134,6 +134,12 @@ export function validateMultiRepoShards(
       if (!existsSync(workspaceMdPath)) {
         warnings.push(
           `workspace.md not found in primary repo ${primaryName} (${primaryEntry.path}/.ctxify/)`,
+        );
+      }
+      const rulesMdPath = join(primaryDir, 'rules.md');
+      if (!existsSync(rulesMdPath)) {
+        warnings.push(
+          `rules.md not found in primary repo ${primaryName} (${primaryEntry.path}/.ctxify/)`,
         );
       }
     }

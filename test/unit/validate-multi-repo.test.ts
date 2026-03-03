@@ -51,10 +51,27 @@ describe('validateMultiRepoShards', () => {
     writeFileSync(join(apiCtx, 'overview.md'), '---\ntype: overview\n---\n\n# API', 'utf-8');
     writeFileSync(join(webCtx, 'overview.md'), '---\ntype: overview\n---\n\n# Web', 'utf-8');
     writeFileSync(join(apiCtx, 'workspace.md'), '---\ntype: workspace\n---\n\n# WS', 'utf-8');
+    writeFileSync(join(apiCtx, 'rules.md'), '---\ntype: rules\n---\n\n# Rules', 'utf-8');
 
     const result = validateMultiRepoShards(tmpDir, config);
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it('warns when rules.md is missing in primary repo', () => {
+    const config = makeConfig([{ path: 'api', name: 'api' }], 'api');
+
+    const apiCtx = join(tmpDir, 'api', '.ctxify');
+    mkdirSync(apiCtx, { recursive: true });
+    writeFileSync(join(apiCtx, 'overview.md'), '---\ntype: overview\n---\n\n# API', 'utf-8');
+    writeFileSync(join(apiCtx, 'workspace.md'), '---\ntype: workspace\n---\n\n# WS', 'utf-8');
+    // No rules.md
+
+    const result = validateMultiRepoShards(tmpDir, config);
+    expect(result.valid).toBe(true); // warning, not error
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('rules.md not found')]),
+    );
   });
 
   it('errors when per-repo overview.md is missing', () => {
