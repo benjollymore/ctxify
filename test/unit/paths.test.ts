@@ -1,9 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   resolveRepoCtxDir,
   resolvePrimaryRepo,
   resolveWorkspaceRulesDir,
+  findWorkspaceRoot,
+  resolveWorkspaceRootOrThrow,
 } from '../../src/core/paths.js';
+import { ConfigError } from '../../src/core/errors.js';
 import type { CtxConfig, RepoEntry } from '../../src/core/config.js';
 
 describe('resolveRepoCtxDir', () => {
@@ -117,5 +123,75 @@ describe('resolveWorkspaceRulesDir', () => {
     } as CtxConfig;
     const result = resolveWorkspaceRulesDir('/workspace', config, '.context');
     expect(result).toBe('/workspace/.context');
+  });
+});
+
+describe('findWorkspaceRoot', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'ctxify-findroot-'));
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns dir when ctx.yaml exists at startDir', () => {
+    writeFileSync(join(tmpDir, 'ctx.yaml'), 'mode: single-repo', 'utf-8');
+    expect(findWorkspaceRoot(tmpDir)).toBe(tmpDir);
+  });
+
+  it('walks up and finds ctx.yaml in parent', () => {
+    writeFileSync(join(tmpDir, 'ctx.yaml'), 'mode: multi-repo', 'utf-8');
+    const subDir = join(tmpDir, 'api', 'src');
+    mkdirSync(subDir, { recursive: true });
+    expect(findWorkspaceRoot(subDir)).toBe(tmpDir);
+  });
+
+  it('returns null when no ctx.yaml anywhere', () => {
+    const subDir = join(tmpDir, 'deep', 'nested');
+    mkdirSync(subDir, { recursive: true });
+    expect(findWorkspaceRoot(subDir)).toBeNull();
+  });
+
+  it('stops at filesystem root without infinite loop', () => {
+    // This test simply verifies it terminates and returns null
+    expect(findWorkspaceRoot('/')).toBeNull();
+  });
+});
+
+describe('resolveWorkspaceRootOrThrow', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'ctxify-resolve-'));
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns root with fromParent=false when ctx.yaml at dir', () => {
+    writeFileSync(join(tmpDir, 'ctx.yaml'), 'mode: single-repo', 'utf-8');
+    const result = resolveWorkspaceRootOrThrow(tmpDir);
+    expect(result.root).toBe(tmpDir);
+    expect(result.fromParent).toBe(false);
+  });
+
+  it('returns root with fromParent=true when ctx.yaml in parent', () => {
+    writeFileSync(join(tmpDir, 'ctx.yaml'), 'mode: multi-repo', 'utf-8');
+    const subDir = join(tmpDir, 'api');
+    mkdirSync(subDir, { recursive: true });
+    const result = resolveWorkspaceRootOrThrow(subDir);
+    expect(result.root).toBe(tmpDir);
+    expect(result.fromParent).toBe(true);
+  });
+
+  it('throws ConfigError when no ctx.yaml found', () => {
+    const subDir = join(tmpDir, 'empty');
+    mkdirSync(subDir, { recursive: true });
+    expect(() => resolveWorkspaceRootOrThrow(subDir)).toThrow(ConfigError);
+    expect(() => resolveWorkspaceRootOrThrow(subDir)).toThrow('No ctx.yaml found');
   });
 });

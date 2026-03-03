@@ -34,7 +34,7 @@ export type { ModeDetectionResult } from './core/detect.js';
 export { autoDetectMode } from './core/detect.js';
 
 // Paths
-export { resolveRepoCtxDir, resolvePrimaryRepo } from './core/paths.js';
+export { resolveRepoCtxDir, resolvePrimaryRepo, findWorkspaceRoot, resolveWorkspaceRootOrThrow } from './core/paths.js';
 
 // Templates
 export { generateRelationshipsTemplate } from './templates/relationships.js';

@@ -1,8 +1,10 @@
 import type { Command } from 'commander';
-import { resolve, join } from 'node:path';
+import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { validateShards, validateMultiRepoShards } from '../../core/validate.js';
 import { loadConfig } from '../../core/config.js';
+import { resolveWorkspaceRootOrThrow } from '../../core/paths.js';
+import { ConfigError } from '../../core/errors.js';
 
 export function registerValidateCommand(program: Command): void {
   program
@@ -10,7 +12,20 @@ export function registerValidateCommand(program: Command): void {
     .description('Validate structural integrity of .ctxify shards')
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .action(async (options: { dir?: string }) => {
-      const workspaceRoot = resolve(options.dir || '.');
+      let workspaceRoot: string;
+      try {
+        const resolved = resolveWorkspaceRootOrThrow(options.dir);
+        workspaceRoot = resolved.root;
+        if (resolved.fromParent) {
+          console.error(`Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`);
+        }
+      } catch (e) {
+        if (e instanceof ConfigError) {
+          console.log(JSON.stringify({ error: e.message }));
+          process.exit(1);
+        }
+        throw e;
+      }
 
       // Check if multi-repo mode — use per-repo validation
       const configPath = join(workspaceRoot, 'ctx.yaml');

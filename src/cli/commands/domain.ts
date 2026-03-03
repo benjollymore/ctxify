@@ -1,8 +1,9 @@
 import type { Command } from 'commander';
-import { resolve, join } from 'node:path';
+import { join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { resolveRepoCtxDir } from '../../core/paths.js';
+import { resolveRepoCtxDir, resolveWorkspaceRootOrThrow } from '../../core/paths.js';
+import { ConfigError } from '../../core/errors.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { generateDomainTemplate } from '../../templates/domain.js';
 import { getCtxifyVersion } from '../../utils/version.js';
@@ -94,13 +95,21 @@ export function registerDomainCommand(program: Command): void {
           dir?: string;
         },
       ) => {
-        const workspaceRoot = resolve(options.dir || '.');
-        const configPath = join(workspaceRoot, 'ctx.yaml');
-
-        if (!existsSync(configPath)) {
-          console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.' }));
-          process.exit(1);
+        let workspaceRoot: string;
+        try {
+          const resolved = resolveWorkspaceRootOrThrow(options.dir);
+          workspaceRoot = resolved.root;
+          if (resolved.fromParent) {
+            console.error(`Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`);
+          }
+        } catch (e) {
+          if (e instanceof ConfigError) {
+            console.log(JSON.stringify({ error: e.message }));
+            process.exit(1);
+          }
+          throw e;
         }
+        const configPath = join(workspaceRoot, 'ctx.yaml');
 
         // Validate domain name
         if (!isValidDomainName(domainName)) {
@@ -184,13 +193,21 @@ export function registerDomainCommand(program: Command): void {
     .option('--repo <name>', 'Filter by repo name')
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .action(async (options: { repo?: string; dir?: string }) => {
-      const workspaceRoot = resolve(options.dir || '.');
-      const configPath = join(workspaceRoot, 'ctx.yaml');
-
-      if (!existsSync(configPath)) {
-        console.log(JSON.stringify({ error: 'No ctx.yaml found. Run "ctxify init" first.' }));
-        process.exit(1);
+      let workspaceRoot: string;
+      try {
+        const resolved = resolveWorkspaceRootOrThrow(options.dir);
+        workspaceRoot = resolved.root;
+        if (resolved.fromParent) {
+          console.error(`Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`);
+        }
+      } catch (e) {
+        if (e instanceof ConfigError) {
+          console.log(JSON.stringify({ error: e.message }));
+          process.exit(1);
+        }
+        throw e;
       }
+      const configPath = join(workspaceRoot, 'ctx.yaml');
 
       const config = loadConfig(configPath);
       const outputDir = config.options.outputDir || '.ctxify';

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffoldWorkspace, detectInstallMethod } from '../../src/cli/commands/init.js';
 import { loadConfig } from '../../src/core/config.js';
+import { findWorkspaceRoot } from '../../src/core/paths.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'ctxify-scaffold-'));
@@ -516,5 +517,41 @@ describe('detectInstallMethod', () => {
 
   it('detects global for homebrew-style path', () => {
     expect(detectInstallMethod('/opt/homebrew/bin/ctxify')).toBe('global');
+  });
+});
+
+describe('init refuses inside existing workspace', () => {
+  const tmpDirs: string[] = [];
+
+  afterEach(() => {
+    for (const d of tmpDirs) rmSync(d, { recursive: true, force: true });
+    tmpDirs.length = 0;
+  });
+
+  it('findWorkspaceRoot detects parent workspace from sub-repo dir', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'ctxify-init-subrepo-'));
+    tmpDirs.push(workspace);
+
+    // Create workspace with ctx.yaml
+    writeFileSync(join(workspace, 'ctx.yaml'), 'mode: multi-repo\nrepos: []', 'utf-8');
+
+    // Create sub-repo directory
+    const subRepo = join(workspace, 'api');
+    mkdirSync(subRepo, { recursive: true });
+
+    // From sub-repo, findWorkspaceRoot should find the parent
+    const found = findWorkspaceRoot(subRepo);
+    expect(found).toBe(workspace);
+  });
+
+  it('findWorkspaceRoot returns null when no parent workspace exists', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'ctxify-init-noparent-'));
+    tmpDirs.push(workspace);
+
+    const subDir = join(workspace, 'some', 'deep', 'dir');
+    mkdirSync(subDir, { recursive: true });
+
+    const found = findWorkspaceRoot(subDir);
+    expect(found).toBeNull();
   });
 });
