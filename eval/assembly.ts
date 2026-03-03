@@ -69,7 +69,13 @@ function extractFromJsonl(content: string): string {
       for (const part of msg.content) {
         if (typeof part === 'string') {
           textParts.push(part);
-        } else if (part && typeof part === 'object' && 'type' in part && part.type === 'text' && 'text' in part) {
+        } else if (
+          part &&
+          typeof part === 'object' &&
+          'type' in part &&
+          part.type === 'text' &&
+          'text' in part
+        ) {
           textParts.push(part.text as string);
         }
       }

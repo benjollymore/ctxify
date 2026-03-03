@@ -21,12 +21,10 @@ function buildCriterionDeltas(
 ): CriterionDelta[] {
   return task.rubric.map((criterion) => {
     const baselineScores = baselineRuns.map(
-      (r) =>
-        r.judgeResult.scores.find((s) => s.criterionId === criterion.id)?.score ?? 0,
+      (r) => r.judgeResult.scores.find((s) => s.criterionId === criterion.id)?.score ?? 0,
     );
     const contextScores = contextRuns.map(
-      (r) =>
-        r.judgeResult.scores.find((s) => s.criterionId === criterion.id)?.score ?? 0,
+      (r) => r.judgeResult.scores.find((s) => s.criterionId === criterion.id)?.score ?? 0,
     );
 
     const baselineMean = mean(baselineScores);
@@ -42,10 +40,7 @@ function buildCriterionDeltas(
   });
 }
 
-export function buildTaskReport(
-  task: EvalTask,
-  scoredRuns: ScoredRun[],
-): TaskReport {
+export function buildTaskReport(task: EvalTask, scoredRuns: ScoredRun[]): TaskReport {
   const baselineRuns = scoredRuns.filter((r) => r.condition === 'baseline');
   const contextRuns = scoredRuns.filter((r) => r.condition === 'with-context');
 
@@ -126,7 +121,9 @@ export function formatMarkdownReport(report: EvalReport): string {
 
   lines.push(`# Eval Report — ${report.timestamp}`);
   lines.push('');
-  lines.push(`**Model:** ${report.model} | **Runs/condition:** ${report.runsPerCondition} | **Cost:** $${report.cost.estimatedCost.toFixed(2)}`);
+  lines.push(
+    `**Model:** ${report.model} | **Runs/condition:** ${report.runsPerCondition} | **Cost:** $${report.cost.estimatedCost.toFixed(2)}`,
+  );
   lines.push('');
 
   // Summary table

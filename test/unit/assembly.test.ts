@@ -147,10 +147,7 @@ describe('assembleFromRawDir', () => {
   });
 
   it('falls back to filename matching when no eval-key marker', () => {
-    writeFileSync(
-      join(tmpDir, 'task-a_baseline_0.txt'),
-      '```ts\nno marker code\n```',
-    );
+    writeFileSync(join(tmpDir, 'task-a_baseline_0.txt'), '```ts\nno marker code\n```');
 
     const result = assembleFromRawDir(tmpDir, ['task-a:baseline:0'], { extractCode: true });
     expect(result.found).toBe(1);
@@ -188,10 +185,7 @@ describe('assembleFromRawDir', () => {
   });
 
   it('skips dotfiles', () => {
-    writeFileSync(
-      join(tmpDir, '.hidden'),
-      '<!-- eval-key: task-a:baseline:0 -->\ncontent',
-    );
+    writeFileSync(join(tmpDir, '.hidden'), '<!-- eval-key: task-a:baseline:0 -->\ncontent');
 
     const result = assembleFromRawDir(tmpDir, ['task-a:baseline:0'], { extractCode: false });
     expect(result.found).toBe(0);
@@ -200,7 +194,10 @@ describe('assembleFromRawDir', () => {
   it('preserves expected key order in items', () => {
     const orderedKeys = ['z-task:baseline:0', 'a-task:baseline:0', 'm-task:baseline:0'];
     for (const key of orderedKeys) {
-      writeFileSync(join(tmpDir, `${keyToFilenameStem(key)}.txt`), `<!-- eval-key: ${key} -->\ncontent`);
+      writeFileSync(
+        join(tmpDir, `${keyToFilenameStem(key)}.txt`),
+        `<!-- eval-key: ${key} -->\ncontent`,
+      );
     }
 
     const result = assembleFromRawDir(tmpDir, orderedKeys, { extractCode: false });

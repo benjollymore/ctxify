@@ -1,10 +1,4 @@
-import type {
-  EvalTask,
-  JudgeResult,
-  PreScreenResult,
-  SignalResult,
-  ScoredRun,
-} from './types.js';
+import type { EvalTask, JudgeResult, PreScreenResult, SignalResult, ScoredRun } from './types.js';
 
 // ── Pre-Screening ───────────────────────────────────────────────────────
 

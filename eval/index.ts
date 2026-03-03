@@ -45,7 +45,13 @@ const BENCHMARKS: Record<string, EvalTask[]> = {
 
 interface CliArgs {
   mode: 'sdk' | 'agent';
-  phase: 'generate-prompts' | 'generate-judge-prompts' | 'assemble-tasks' | 'assemble-judges' | 'report' | null;
+  phase:
+    | 'generate-prompts'
+    | 'generate-judge-prompts'
+    | 'assemble-tasks'
+    | 'assemble-judges'
+    | 'report'
+    | null;
   taskFilter: string | null;
   benchmark: string;
   runsPerCondition: number;
@@ -125,13 +131,7 @@ async function runSdkMode(
         const result = await runTask(client, task, condition, model);
         allUsages.push(result.usage);
 
-        const judgeResult = await judgeOutput(
-          client,
-          task,
-          result.output,
-          condition,
-          model,
-        );
+        const judgeResult = await judgeOutput(client, task, result.output, condition, model);
         allUsages.push(judgeResult.usage);
 
         const scored = buildScoredRun(task, judgeResult, result.output, run);
@@ -269,7 +269,9 @@ function agentGenerateJudgePrompts(benchmark: string, taskFilter: string | null)
   console.log(`Individual prompts: ${splitDir}/`);
   console.log('');
   console.log(`Next: run each prompt, save outputs to ${agentPath('raw-judges')}/`);
-  console.log(`Then: npm run eval -- --mode agent --phase assemble-judges --benchmark ${benchmark}`);
+  console.log(
+    `Then: npm run eval -- --mode agent --phase assemble-judges --benchmark ${benchmark}`,
+  );
 }
 
 // ── Agent Mode: Assemble Tasks ──────────────────────────────────────────
@@ -312,7 +314,9 @@ function agentAssembleTasks(
   }
   console.log(`Written to: ${outPath}`);
   console.log('');
-  console.log(`Next: npm run eval -- --mode agent --phase generate-judge-prompts --benchmark ${benchmark}`);
+  console.log(
+    `Next: npm run eval -- --mode agent --phase generate-judge-prompts --benchmark ${benchmark}`,
+  );
 }
 
 // ── Agent Mode: Assemble Judges ─────────────────────────────────────────
@@ -387,12 +391,7 @@ function agentReport(benchmark: string, taskFilter: string | null, runsPerCondit
         condition as 'baseline' | 'with-context',
       );
 
-      const scored = buildScoredRun(
-        task,
-        judgeResult,
-        taskOutput,
-        parseInt(runStr, 10),
-      );
+      const scored = buildScoredRun(task, judgeResult, taskOutput, parseInt(runStr, 10));
       allScoredRuns.push(scored);
     }
   }
@@ -410,9 +409,7 @@ function agentReport(benchmark: string, taskFilter: string | null, runsPerCondit
 
 function filterTasks(benchmark: string, taskFilter: string | null) {
   const allTasks = BENCHMARKS[benchmark]!;
-  const tasks = taskFilter
-    ? allTasks.filter((t) => t.id === taskFilter)
-    : allTasks;
+  const tasks = taskFilter ? allTasks.filter((t) => t.id === taskFilter) : allTasks;
 
   if (tasks.length === 0) {
     console.error(`Error: No task found matching "${taskFilter}" in benchmark "${benchmark}".`);
@@ -436,7 +433,9 @@ async function main(): Promise<void> {
   // Agent mode
   if (!phase) {
     console.error('Error: --phase is required in agent mode.');
-    console.error('Phases: generate-prompts, assemble-tasks, generate-judge-prompts, assemble-judges, report');
+    console.error(
+      'Phases: generate-prompts, assemble-tasks, generate-judge-prompts, assemble-judges, report',
+    );
     process.exit(1);
   }
 

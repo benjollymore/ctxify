@@ -22,10 +22,7 @@ Write the complete implementation file and show how it would be registered in th
       'src/cli/commands/audit.ts',
       'src/core/config.ts',
     ],
-    contextFiles: [
-      '.ctxify/repos/ctxify/overview.md',
-      '.ctxify/repos/ctxify/patterns.md',
-    ],
+    contextFiles: ['.ctxify/repos/ctxify/overview.md', '.ctxify/repos/ctxify/patterns.md'],
     rubric: [
       {
         id: 'file-placement',
@@ -99,10 +96,7 @@ Write the complete test file.`,
       'test/unit/feedback.test.ts',
       'src/core/config.ts',
     ],
-    contextFiles: [
-      '.ctxify/repos/ctxify/overview.md',
-      '.ctxify/repos/ctxify/patterns.md',
-    ],
+    contextFiles: ['.ctxify/repos/ctxify/overview.md', '.ctxify/repos/ctxify/patterns.md'],
     rubric: [
       {
         id: 'temp-dir-isolation',
@@ -112,7 +106,8 @@ Write the complete test file.`,
       },
       {
         id: 'vitest-imports',
-        description: 'Imports describe/it/expect/beforeEach/afterEach from vitest, not jest or mocha',
+        description:
+          'Imports describe/it/expect/beforeEach/afterEach from vitest, not jest or mocha',
         weight: 1.5,
       },
       {
@@ -158,11 +153,7 @@ Currently the function reads each .md file twice: once for segment marker checki
 Refactor so each file is read once into a Map<string, string> (path → content), then both checks reuse the cached content. The public API (function signature and return type) must not change. All existing validation checks must still run.
 
 Show the complete refactored file.`,
-    sourceFiles: [
-      'src/core/validate.ts',
-      'src/utils/frontmatter.ts',
-      'test/unit/validate.test.ts',
-    ],
+    sourceFiles: ['src/core/validate.ts', 'src/utils/frontmatter.ts', 'test/unit/validate.test.ts'],
     contextFiles: [
       '.ctxify/repos/ctxify/overview.md',
       '.ctxify/repos/ctxify/patterns.md',
@@ -223,11 +214,7 @@ Requirements:
 - Write tests covering: basic Cargo.toml, each framework, entry point discovery, empty deps
 
 Show the changes to manifest.ts and the new test cases.`,
-    sourceFiles: [
-      'src/core/manifest.ts',
-      'src/utils/fs.ts',
-      'test/unit/manifest.test.ts',
-    ],
+    sourceFiles: ['src/core/manifest.ts', 'src/utils/fs.ts', 'test/unit/manifest.test.ts'],
     contextFiles: [
       '.ctxify/repos/ctxify/overview.md',
       '.ctxify/repos/ctxify/patterns.md',
@@ -297,15 +284,11 @@ Show the complete template file and the index.ts export addition.`,
       'src/index.ts',
       'src/core/config.ts',
     ],
-    contextFiles: [
-      '.ctxify/repos/ctxify/overview.md',
-      '.ctxify/repos/ctxify/patterns.md',
-    ],
+    contextFiles: ['.ctxify/repos/ctxify/overview.md', '.ctxify/repos/ctxify/patterns.md'],
     rubric: [
       {
         id: 'pure-function',
-        description:
-          'No I/O, no side effects, takes RelationshipsTemplateData → returns string',
+        description: 'No I/O, no side effects, takes RelationshipsTemplateData → returns string',
         weight: 2.5,
       },
       {
@@ -321,8 +304,7 @@ Show the complete template file and the index.ts export addition.`,
       },
       {
         id: 'index-export',
-        description:
-          "Added to src/index.ts exports with .js extension on the import path",
+        description: 'Added to src/index.ts exports with .js extension on the import path',
         weight: 1.5,
       },
       {
