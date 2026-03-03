@@ -553,10 +553,7 @@ describe('feedback command', () => {
     createSingleRepoWorkspace(dir, 'api');
 
     // Passing repo arg with rule type — should still write to workspace rules.md
-    const { parsed } = runFeedback(
-      ['api', '--type', 'rule', '--body', 'With repo arg'],
-      dir,
-    );
+    const { parsed } = runFeedback(['api', '--type', 'rule', '--body', 'With repo arg'], dir);
     expect(parsed.status).toBe('recorded');
 
     const content = readFileSync(join(dir, '.ctxify', 'rules.md'), 'utf-8');

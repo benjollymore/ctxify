@@ -55,7 +55,8 @@ export function registerFeedbackCommand(program: Command): void {
         if (entryType === 'correction' && !repo) {
           console.log(
             JSON.stringify({
-              error: 'Repo argument is required for corrections. Usage: ctxify feedback <repo> --body "..."',
+              error:
+                'Repo argument is required for corrections. Usage: ctxify feedback <repo> --body "..."',
             }),
           );
           process.exit(1);
