@@ -3,6 +3,7 @@ import { resolve, join, basename } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig, serializeConfig } from '../../core/config.js';
 import type { RepoEntry, CtxConfig } from '../../core/config.js';
+import { resolveRepoCtxDir } from '../../core/paths.js';
 import { parseRepoManifest } from '../../core/manifest.js';
 import { detectMonoRepo } from '../../utils/monorepo.js';
 import { buildMultiRepoEntries } from './init.js';
@@ -66,7 +67,9 @@ export async function runUpdate(
   if (dryRun) {
     // Still compute what would change for frontmatter
     for (const name of repos_current) {
-      const overviewPath = join(outputRoot, 'repos', name, 'overview.md');
+      const repoEntry = freshRepos.find((r) => r.name === name) ?? { path: name, name };
+      const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
+      const overviewPath = join(repoCtxDir, 'overview.md');
       if (existsSync(overviewPath)) {
         const manifest = freshManifests.get(name)!;
         const existing = parseFrontmatter(readFileSync(overviewPath, 'utf-8'));
@@ -142,7 +145,9 @@ export async function runUpdate(
 
   // 4. Update overview.md frontmatter per existing repo
   for (const name of repos_current) {
-    const overviewPath = join(outputRoot, 'repos', name, 'overview.md');
+    const repoEntry = mergedRepos.find((r) => r.name === name) ?? { path: name, name };
+    const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
+    const overviewPath = join(repoCtxDir, 'overview.md');
     if (!existsSync(overviewPath)) continue;
 
     const manifest = freshManifests.get(name)!;
@@ -167,7 +172,8 @@ export async function runUpdate(
   // 5. Scaffold new repos
   for (const name of repos_added) {
     const manifest = freshManifests.get(name)!;
-    const repoDir = join(outputRoot, 'repos', name);
+    const repoEntry = freshRepos.find((r) => r.name === name) ?? { path: name, name };
+    const repoDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
     mkdirSync(repoDir, { recursive: true });
     const overviewPath = join(repoDir, 'overview.md');
     if (!existsSync(overviewPath)) {

@@ -14,6 +14,7 @@ export interface InteractiveAnswers {
   confirmedMode: OperatingMode;
   repos: RepoEntry[];
   monoRepoOptions?: MonoRepoOptions;
+  primaryRepo?: string;
   hook?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function resolveInteractiveOptions(answers: InteractiveAnswers): Scaffold
     mode: answers.confirmedMode,
     repos: answers.repos,
     monoRepoOptions: answers.monoRepoOptions,
+    primaryRepo: answers.primaryRepo,
     agents: answers.agents,
     agentScopes: answers.agentScopes,
     hook: answers.hook,
@@ -157,6 +159,18 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     }
   }
 
+  // Step 4: Primary repo selection (multi-repo only, 2+ repos)
+  let primaryRepo: string | undefined;
+  if (mode === 'multi-repo' && repos.length >= 2) {
+    primaryRepo = await select<string>({
+      message:
+        'Which repo should host workspace context (cross-repo relationships, shared workflows)?',
+      choices: repos.map((r) => ({ name: `${r.name} (./${r.path})`, value: r.name })),
+    });
+  } else if (mode === 'multi-repo' && repos.length === 1) {
+    primaryRepo = repos[0].name;
+  }
+
   return resolveInteractiveOptions({
     workspaceRoot,
     agents,
@@ -164,6 +178,7 @@ export async function runInteractiveFlow(workspaceRoot: string): Promise<Scaffol
     confirmedMode: mode,
     repos,
     monoRepoOptions,
+    primaryRepo,
     hook,
   });
 }
