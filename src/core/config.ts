@@ -46,6 +46,7 @@ export interface CtxConfig {
   ctxify_version?: string;
   workspace: string;
   mode: OperatingMode;
+  primary_repo?: string;
   monoRepo?: MonoRepoOptions;
   repos: RepoEntry[];
   relationships: Relationship[];
@@ -109,6 +110,7 @@ function validateConfig(raw: unknown): CtxConfig {
   const mode = validateMode(obj.mode);
   const monoRepo = mode === 'mono-repo' ? validateMonoRepoOptions(obj.monoRepo) : undefined;
   const repos = validateRepos(obj.repos);
+  const primary_repo = validatePrimaryRepo(obj.primary_repo, repos, mode);
   const relationships = validateRelationships(obj.relationships);
   const options = validateOptions(obj.options);
   const skills = validateSkills(obj.skills);
@@ -121,6 +123,7 @@ function validateConfig(raw: unknown): CtxConfig {
     ...(ctxify_version ? { ctxify_version } : {}),
     workspace: obj.workspace,
     mode,
+    ...(primary_repo ? { primary_repo } : {}),
     ...(monoRepo ? { monoRepo } : {}),
     repos,
     relationships,
@@ -249,6 +252,23 @@ function validateSkills(raw: unknown): Record<string, SkillEntry> | undefined {
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+function validatePrimaryRepo(
+  raw: unknown,
+  repos: RepoEntry[],
+  mode: OperatingMode,
+): string | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'string') {
+    throw new ConfigError('"primary_repo" must be a string');
+  }
+  if (mode === 'multi-repo' && repos.length > 0 && !repos.some((r) => r.name === raw)) {
+    throw new ConfigError(
+      `"primary_repo" value "${raw}" not found in repos. Available: ${repos.map((r) => r.name).join(', ')}`,
+    );
+  }
+  return raw;
+}
+
 function validateInstallMethod(raw: unknown): 'global' | 'local' | 'npx' | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (raw !== 'global' && raw !== 'local' && raw !== 'npx') {
@@ -287,12 +307,14 @@ export function generateDefaultConfig(
   skills?: Record<string, SkillEntry>,
   install_method?: 'global' | 'local' | 'npx',
   ctxify_version?: string,
+  primaryRepo?: string,
 ): CtxConfig {
   return {
     version: '1',
     ...(ctxify_version ? { ctxify_version } : {}),
     workspace: '.',
     mode,
+    ...(primaryRepo ? { primary_repo: primaryRepo } : {}),
     ...(monoRepoOptions ? { monoRepo: monoRepoOptions } : {}),
     repos,
     relationships: relationships ?? [],

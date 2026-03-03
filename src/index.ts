@@ -17,7 +17,7 @@ export { parseRepoManifest } from './core/manifest.js';
 
 // Validation
 export type { ValidationResult } from './core/validate.js';
-export { validateShards } from './core/validate.js';
+export { validateShards, validateMultiRepoShards } from './core/validate.js';
 
 // Audit
 export type {
@@ -33,8 +33,12 @@ export { auditShards } from './core/audit.js';
 export type { ModeDetectionResult } from './core/detect.js';
 export { autoDetectMode } from './core/detect.js';
 
+// Paths
+export { resolveRepoCtxDir, resolvePrimaryRepo } from './core/paths.js';
+
 // Templates
 export { generateRelationshipsTemplate } from './templates/relationships.js';
+export { generateWorkspaceTemplate } from './templates/workspace.js';
 
 // Utilities
 export { parseFrontmatter, replaceFrontmatter } from './utils/frontmatter.js';

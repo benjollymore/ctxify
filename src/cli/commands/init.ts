@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { resolve, join, basename, relative } from 'node:path';
-import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { generateDefaultConfig, serializeConfig } from '../../core/config.js';
 import type {
   RepoEntry,
@@ -17,6 +17,10 @@ import type { RepoTemplateData } from '../../templates/index-md.js';
 
 import { generateIndexTemplate } from '../../templates/index-md.js';
 import { generateRepoTemplate } from '../../templates/repo.js';
+import { generateWorkspaceTemplate } from '../../templates/workspace.js';
+import { generateCorrectionsTemplate } from '../../templates/corrections.js';
+import { generateRulesTemplate } from '../../templates/rules.js';
+import { resolveRepoCtxDir, resolvePrimaryRepo } from '../../core/paths.js';
 import { installSkill, AGENT_CONFIGS } from '../install-skill.js';
 import { installClaudeHook } from '../install-hooks.js';
 import { runInteractiveFlow } from './init-interactive.js';
@@ -29,6 +33,7 @@ export interface ScaffoldOptions {
   mode: OperatingMode;
   repos: RepoEntry[];
   monoRepoOptions?: MonoRepoOptions;
+  primaryRepo?: string;
   force?: boolean;
   agents?: AgentType[];
   install_method?: 'global' | 'local' | 'npx';
@@ -99,6 +104,7 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
     Object.keys(skillsMap).length > 0 ? skillsMap : undefined,
     install_method,
     ctxifyVersion,
+    mode === 'multi-repo' ? options.primaryRepo : undefined,
   );
   writeFileSync(configPath, serializeConfig(config), 'utf-8');
 
@@ -119,29 +125,126 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
   mkdirSync(outputRoot, { recursive: true });
   const skipped: string[] = [];
 
-  // index.md — skip if already exists (unless force)
-  const indexPath = join(outputRoot, 'index.md');
-  if (!existsSync(indexPath) || options.force) {
-    writeFileSync(
-      indexPath,
-      generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode, {
-        ctxifyVersion,
-      }),
-      'utf-8',
+  if (mode === 'multi-repo') {
+    // Multi-repo: per-repo .ctxify/ directories inside each repo
+    const primaryRepoName = resolvePrimaryRepo(config);
+
+    for (const repo of repoTemplateDataList) {
+      const perRepoDir = resolveRepoCtxDir(workspaceRoot, repo, mode, outputDir);
+      mkdirSync(perRepoDir, { recursive: true });
+
+      // overview.md
+      const overviewPath = join(perRepoDir, 'overview.md');
+      if (!existsSync(overviewPath) || options.force) {
+        // Smart migration: copy from root .ctxify/repos/{name}/ if it has filled content
+        const legacyOverview = join(outputRoot, 'repos', repo.name, 'overview.md');
+        if (existsSync(legacyOverview)) {
+          const legacyContent = readFileSync(legacyOverview, 'utf-8');
+          if (!legacyContent.includes('<!-- TODO:')) {
+            writeFileSync(overviewPath, legacyContent, 'utf-8');
+            continue;
+          }
+        }
+        writeFileSync(overviewPath, generateRepoTemplate(repo, ctxifyVersion), 'utf-8');
+      } else {
+        skipped.push(`${repo.path}/.ctxify/overview.md`);
+      }
+
+      // corrections.md
+      const correctionsPath = join(perRepoDir, 'corrections.md');
+      if (!existsSync(correctionsPath) || options.force) {
+        const legacyCorrections = join(outputRoot, 'repos', repo.name, 'corrections.md');
+        if (existsSync(legacyCorrections)) {
+          writeFileSync(correctionsPath, readFileSync(legacyCorrections, 'utf-8'), 'utf-8');
+        } else {
+          writeFileSync(
+            correctionsPath,
+            generateCorrectionsTemplate({ repo: repo.name, ctxifyVersion }),
+            'utf-8',
+          );
+        }
+      }
+
+      // rules.md
+      const rulesPath = join(perRepoDir, 'rules.md');
+      if (!existsSync(rulesPath) || options.force) {
+        const legacyRules = join(outputRoot, 'repos', repo.name, 'rules.md');
+        if (existsSync(legacyRules)) {
+          writeFileSync(rulesPath, readFileSync(legacyRules, 'utf-8'), 'utf-8');
+        } else {
+          writeFileSync(
+            rulesPath,
+            generateRulesTemplate({ repo: repo.name, ctxifyVersion }),
+            'utf-8',
+          );
+        }
+      }
+    }
+
+    // workspace.md in primary repo's .ctxify/ only
+    if (primaryRepoName) {
+      const primaryEntry = repos.find((r) => r.name === primaryRepoName);
+      if (primaryEntry) {
+        const primaryDir = resolveRepoCtxDir(workspaceRoot, primaryEntry, mode, outputDir);
+        mkdirSync(primaryDir, { recursive: true });
+        const workspaceMdPath = join(primaryDir, 'workspace.md');
+        if (!existsSync(workspaceMdPath) || options.force) {
+          writeFileSync(
+            workspaceMdPath,
+            generateWorkspaceTemplate(repoTemplateDataList, workspaceRoot, primaryRepoName, {
+              ctxifyVersion,
+            }),
+            'utf-8',
+          );
+        } else {
+          skipped.push(`${primaryEntry.path}/.ctxify/workspace.md`);
+        }
+      }
+    }
+
+    // Root .ctxify/index.md — generated hub with links to per-repo files
+    const indexPath = join(outputRoot, 'index.md');
+    if (!existsSync(indexPath) || options.force) {
+      writeFileSync(
+        indexPath,
+        generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode, {
+          ctxifyVersion,
+          primaryRepo: primaryRepoName,
+        }),
+        'utf-8',
+      );
+    } else {
+      skipped.push('index.md');
+    }
+
+    // Messaging hint
+    console.error(
+      "Multi-repo mode: context persisted in each repo's .ctxify/ directory. Commit with regular git. Run agents from the workspace root for full context.",
     );
   } else {
-    skipped.push('index.md');
-  }
-
-  // Per-repo overview files: repos/{name}/overview.md
-  for (const repo of repoTemplateDataList) {
-    const repoDir = join(outputRoot, 'repos', repo.name);
-    mkdirSync(repoDir, { recursive: true });
-    const overviewPath = join(repoDir, 'overview.md');
-    if (!existsSync(overviewPath) || options.force) {
-      writeFileSync(overviewPath, generateRepoTemplate(repo, ctxifyVersion), 'utf-8');
+    // Single-repo and mono-repo: existing behavior — root .ctxify/repos/{name}/
+    const indexPath = join(outputRoot, 'index.md');
+    if (!existsSync(indexPath) || options.force) {
+      writeFileSync(
+        indexPath,
+        generateIndexTemplate(repoTemplateDataList, workspaceRoot, mode, {
+          ctxifyVersion,
+        }),
+        'utf-8',
+      );
     } else {
-      skipped.push(`repos/${repo.name}/overview.md`);
+      skipped.push('index.md');
+    }
+
+    for (const repo of repoTemplateDataList) {
+      const repoDir = join(outputRoot, 'repos', repo.name);
+      mkdirSync(repoDir, { recursive: true });
+      const overviewPath = join(repoDir, 'overview.md');
+      if (!existsSync(overviewPath) || options.force) {
+        writeFileSync(overviewPath, generateRepoTemplate(repo, ctxifyVersion), 'utf-8');
+      } else {
+        skipped.push(`repos/${repo.name}/overview.md`);
+      }
     }
   }
 
@@ -167,6 +270,10 @@ export function registerInitCommand(program: Command): void {
       '--agent <agents...>',
       'Install playbook for specified agents (claude, copilot, cursor, codex)',
     )
+    .option(
+      '--primary-repo <name>',
+      'Multi-repo: repo that hosts workspace context (workspace.md)',
+    )
     .option('-f, --force', 'Overwrite existing ctx.yaml and .ctxify/')
     .option(
       '--hook',
@@ -180,6 +287,7 @@ export function registerInitCommand(program: Command): void {
           repos?: string[];
           mono?: boolean;
           agent?: string[];
+          primaryRepo?: string;
           force?: boolean;
           hook?: boolean;
         },
@@ -276,6 +384,7 @@ export function registerInitCommand(program: Command): void {
             mode,
             repos,
             monoRepoOptions,
+            primaryRepo: options?.primaryRepo,
             force: options?.force,
             agents,
             hook: options?.hook,

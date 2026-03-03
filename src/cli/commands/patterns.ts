@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
+import { resolveRepoCtxDir } from '../../core/paths.js';
 import { generatePatternsTemplate } from '../../templates/patterns.js';
 import { getCtxifyVersion } from '../../utils/version.js';
 
@@ -34,7 +35,7 @@ export function registerPatternsCommand(program: Command): void {
         process.exit(1);
       }
 
-      const repoDir = join(workspaceRoot, outputDir, 'repos', repo);
+      const repoDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
       const patternsPath = join(repoDir, 'patterns.md');
       const fileExisted = existsSync(patternsPath);
 

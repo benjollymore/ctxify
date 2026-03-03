@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseFrontmatter } from '../utils/frontmatter.js';
+import type { CtxConfig } from './config.js';
+import { resolveRepoCtxDir, resolvePrimaryRepo } from './paths.js';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -72,6 +74,113 @@ export function validateShards(workspaceRoot: string, outputDir?: string): Valid
     errors,
     warnings,
   };
+}
+
+// ── Multi-repo validation ──────────────────────────────────────────────
+
+export function validateMultiRepoShards(
+  workspaceRoot: string,
+  config: CtxConfig,
+): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const outputDir = config.options.outputDir || '.ctxify';
+
+  // Check each repo has .ctxify/overview.md
+  for (const repo of config.repos) {
+    const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repo, config.mode, outputDir);
+    const overviewPath = join(repoCtxDir, 'overview.md');
+
+    if (!existsSync(overviewPath)) {
+      errors.push(`${repo.path}/.ctxify/overview.md not found`);
+      continue;
+    }
+
+    // Valid frontmatter
+    const overviewContent = readFileSync(overviewPath, 'utf-8');
+    const frontmatter = parseFrontmatter(overviewContent);
+    if (frontmatter === null) {
+      errors.push(`invalid frontmatter in ${repo.path}/.ctxify/overview.md`);
+    }
+
+    // Segment markers in all .md files in this repo's .ctxify/
+    if (existsSync(repoCtxDir)) {
+      const mdFiles = collectMdFiles(repoCtxDir);
+      for (const filePath of mdFiles) {
+        const content = stripTodoBlocks(readFileSync(filePath, 'utf-8'));
+        const relativePath = `${repo.path}/.ctxify/${filePath.slice(repoCtxDir.length + 1)}`;
+        checkSegmentMarkers(content, relativePath, errors);
+      }
+
+      // TODO warnings
+      for (const filePath of mdFiles) {
+        const content = readFileSync(filePath, 'utf-8');
+        const relativePath = `${repo.path}/.ctxify/${filePath.slice(repoCtxDir.length + 1)}`;
+        checkTodoMarkers(content, relativePath, warnings);
+      }
+
+      // Domain file existence
+      checkMissingDomainFilesInDir(repoCtxDir, `${repo.path}/.ctxify`, errors);
+    }
+  }
+
+  // Check workspace.md exists in primary repo
+  const primaryName = resolvePrimaryRepo(config);
+  if (primaryName) {
+    const primaryEntry = config.repos.find((r) => r.name === primaryName);
+    if (primaryEntry) {
+      const primaryDir = resolveRepoCtxDir(workspaceRoot, primaryEntry, config.mode, outputDir);
+      const workspaceMdPath = join(primaryDir, 'workspace.md');
+      if (!existsSync(workspaceMdPath)) {
+        warnings.push(
+          `workspace.md not found in primary repo ${primaryName} (${primaryEntry.path}/.ctxify/)`,
+        );
+      }
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * Check domain-index references within a single directory (for multi-repo per-repo dirs).
+ */
+function checkMissingDomainFilesInDir(
+  ctxDir: string,
+  displayPrefix: string,
+  errors: string[],
+): void {
+  const overviewPath = join(ctxDir, 'overview.md');
+  if (!existsSync(overviewPath)) return;
+
+  let overviewContent: string;
+  try {
+    overviewContent = readFileSync(overviewPath, 'utf-8');
+  } catch {
+    return;
+  }
+
+  const blockMatch = overviewContent.match(
+    /<!--\s*domain-index\s*-->([\s\S]*?)<!--\s*\/domain-index\s*-->/,
+  );
+  if (!blockMatch) return;
+
+  const block = blockMatch[1];
+  const entryPattern = /^\s*-\s*`([^`]+\.md)`/gm;
+  let entryMatch;
+  while ((entryMatch = entryPattern.exec(block)) !== null) {
+    const filename = entryMatch[1];
+    if (filename.includes('{') || filename.includes('}')) continue;
+    if (!existsSync(join(ctxDir, filename))) {
+      errors.push(
+        `domain file referenced in ${displayPrefix}/overview.md but not found: ${displayPrefix}/${filename}`,
+      );
+    }
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────

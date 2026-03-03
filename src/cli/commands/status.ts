@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
+import { resolveRepoCtxDir } from '../../core/paths.js';
 import { collectMdFiles } from '../../core/validate.js';
 
 export function registerStatusCommand(program: Command): void {
@@ -35,13 +36,23 @@ export function registerStatusCommand(program: Command): void {
 
       // Count <!-- TODO: markers across all .md files
       let todoCount = 0;
+      const allMdFiles: string[] = [];
       if (existsSync(outputRoot)) {
-        const mdFiles = collectMdFiles(outputRoot);
-        for (const filePath of mdFiles) {
-          const content = readFileSync(filePath, 'utf-8');
-          const matches = content.match(/<!--\s*TODO:/g);
-          if (matches) todoCount += matches.length;
+        allMdFiles.push(...collectMdFiles(outputRoot));
+      }
+      // Multi-repo: also collect from per-repo .ctxify/ directories
+      if (config.mode === 'multi-repo') {
+        for (const repo of config.repos) {
+          const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repo, config.mode, outputDir);
+          if (existsSync(repoCtxDir)) {
+            allMdFiles.push(...collectMdFiles(repoCtxDir));
+          }
         }
+      }
+      for (const filePath of allMdFiles) {
+        const content = readFileSync(filePath, 'utf-8');
+        const matches = content.match(/<!--\s*TODO:/g);
+        if (matches) todoCount += matches.length;
       }
 
       const result = {

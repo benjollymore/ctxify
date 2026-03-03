@@ -110,13 +110,29 @@ describe('index template', () => {
     expect(output).toContain('| Repo');
   });
 
-  it('repo table links to repos/{name}/overview.md', () => {
-    expect(output).toContain('repos/api-server/overview.md');
-    expect(output).toContain('repos/web-ui/overview.md');
+  it('repo table links to per-repo .ctxify/ in multi-repo mode', () => {
+    // Multi-repo links point to {path}/.ctxify/overview.md
+    expect(output).toContain('/workspace/api-server/.ctxify/overview.md');
+    expect(output).toContain('/workspace/web-ui/.ctxify/overview.md');
   });
 
-  it('has TODO markers', () => {
-    expect(output).toContain('<!-- TODO:');
+  it('repo table links to repos/{name}/overview.md in single-repo mode', () => {
+    const singleOutput = generateIndexTemplate([makeRepo()], '/workspace', 'single-repo', {
+      generatedAt: '2025-01-15T10:00:00.000Z',
+      ctxifyVersion: '2.0.0',
+    });
+    expect(singleOutput).toContain('repos/api-server/overview.md');
+  });
+
+  it('multi-repo index has only role TODO markers', () => {
+    expect(output).toContain('<!-- TODO: role -->');
+  });
+
+  it('single/mono-repo index has full TODO markers', () => {
+    const singleOutput = generateIndexTemplate([makeRepo()], '/workspace', 'single-repo', {
+      generatedAt: '2025-01-15T10:00:00.000Z',
+    });
+    expect(singleOutput).toContain('<!-- TODO: Agent');
   });
 
   it('does NOT have old shard links', () => {
@@ -127,10 +143,21 @@ describe('index template', () => {
     expect(output).not.toContain('_analysis.md');
   });
 
-  it('has Relationships, Commands, and Workflows sections', () => {
-    expect(output).toContain('## Relationships');
-    expect(output).toContain('## Commands');
-    expect(output).toContain('## Workflows');
+  it('multi-repo index is a minimal hub (no Relationships/Commands/Workflows)', () => {
+    // Multi-repo mode: these sections live in workspace.md, not index.md
+    expect(output).not.toContain('## Relationships');
+    expect(output).not.toContain('## Commands');
+    expect(output).not.toContain('## Workflows');
+  });
+
+  it('single/mono-repo index has Relationships, Commands, and Workflows sections', () => {
+    const singleOutput = generateIndexTemplate([makeRepo()], '/workspace', 'single-repo', {
+      generatedAt: '2025-01-15T10:00:00.000Z',
+      ctxifyVersion: '2.0.0',
+    });
+    expect(singleOutput).toContain('## Relationships');
+    expect(singleOutput).toContain('## Commands');
+    expect(singleOutput).toContain('## Workflows');
   });
 });
 
