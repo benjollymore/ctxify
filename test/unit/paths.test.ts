@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRepoCtxDir, resolvePrimaryRepo, resolveWorkspaceRulesDir } from '../../src/core/paths.js';
+import {
+  resolveRepoCtxDir,
+  resolvePrimaryRepo,
+  resolveWorkspaceRulesDir,
+} from '../../src/core/paths.js';
 import type { CtxConfig, RepoEntry } from '../../src/core/config.js';
 
 describe('resolveRepoCtxDir', () => {

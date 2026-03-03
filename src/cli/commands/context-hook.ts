@@ -199,7 +199,12 @@ function getMultiRepoHookOutput(
   if (primaryName) {
     const primaryEntryForRules = config.repos.find((r) => r.name === primaryName);
     if (primaryEntryForRules) {
-      const primaryDirForRules = resolveRepoCtxDir(workspaceRoot, primaryEntryForRules, config.mode, outputDir);
+      const primaryDirForRules = resolveRepoCtxDir(
+        workspaceRoot,
+        primaryEntryForRules,
+        config.mode,
+        outputDir,
+      );
       const rulesPath = join(primaryDirForRules, 'rules.md');
       if (existsSync(rulesPath)) {
         try {
