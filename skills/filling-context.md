@@ -7,7 +7,7 @@ description: Use when documenting what you've learned about a codebase — filli
 
 ## Hard Gate
 
-You are writing a briefing, not documentation. Capture what a senior engineer would tell someone on their first day: why things are the way they are, what traps to avoid, what the users actually do. Do NOT describe what agents can discover by reading source files.
+You are writing a briefing, not documentation. Capture what a senior engineer would tell a new contributor on their first day: why things are the way they are, what traps to avoid, how contributors actually build and test features internally. Do NOT describe what agents can discover by reading source files.
 
 Do NOT catalog endpoints, schemas, types, env vars, or dependencies. You are writing the mental model a senior engineer carries — not an inventory.
 
@@ -39,12 +39,11 @@ Open `{WORKSPACE_ROOT}/.ctxify/repos/{REPO}/overview.md` and fill:
 
 ## Pass 2: Scaffold and fill patterns.md (PRIMARY DELIVERABLE)
 
-Run `ctxify patterns {REPO}` to scaffold patterns.md with TODO placeholders. Read 3-5 key source files, then fill each TODO:
-- How a new feature gets wired up end-to-end (3-5 line example)
-- How validation works (2-3 line example)
-- How tests are written (brief example)
-- Naming conventions
-- Gotchas and tips that save time
+Run `ctxify patterns {REPO}` to scaffold patterns.md with TODO placeholders. Read 3-5 key source files (include at least 1 test file to learn internal testing conventions), then fill each TODO:
+- Where a new feature gets wired in — which files, which order. Show a 3-5 line code example.
+- Constraints — what NOT to import, what NOT to do, ordering requirements. One bullet per constraint.
+- How tests are structured — show the idiomatic test shape as a code example.
+- Gotchas — things that look right but break. Brief bullets only.
 
 High-entropy only: document what would genuinely surprise someone or save them from disaster. If discoverable from 1-2 source files, use a `file:line` reference instead.
 
@@ -54,17 +53,18 @@ Domain files were scaffolded in pass 1. Read entry points + 2-3 relevant source 
 - **Overview**: What this domain covers, key concepts, workflow/status flows
 - **Concepts**: Domain concepts, business rules, state machines, constraints
 - **Decisions**: Why is it built this way? What trade-offs shaped the design?
-- **Patterns**: Domain-specific patterns with brief examples
+- **Patterns**: How contributors extend or modify this domain — internal patterns with brief code examples
+- **Traps**: Things that look correct but break — wrong placement, wrong ordering, silent failures
 - **Cross-repo**: How this domain spans repos (if applicable)
 
 Keep each domain file 50-150 lines total.
 
 ## WRITE Rules
-1. Write *why* over *what* — decisions, trade-offs, constraints, history
-2. Write business rules not in code comments or obvious from source
-3. Write the workflows users actually perform (not API surface)
+1. Write constraints first — what NOT to do, what NOT to import, where NOT to put things
+2. Write code examples — show the canonical 3-5 line pattern, not a prose description of it
+3. Write placement rules — WHERE things go (which file, which function, which position in a chain)
 4. Write the traps — things that look right but break in production
-5. Write cross-boundary interactions spanning files, repos, or services
+5. Write *why* over *what* — decisions, trade-offs, history that shaped current constraints
 
 ## STOP Rules
 1. Do NOT catalog endpoints, schemas, types, env vars, or dependencies
@@ -114,12 +114,11 @@ For each `repos/{name}/overview.md`:
 
 Run `ctxify patterns <repo>` to scaffold `repos/{name}/patterns.md` with TODO placeholders.
 
-Read 3-5 key source files to understand patterns. Fill each TODO section:
-- How a new feature gets wired up end-to-end (3-5 line example)
-- How validation works (2-3 line example)
-- How tests are written (brief example)
-- Naming conventions
-- Gotchas and tips that save time
+Read 3-5 key source files to understand patterns — include at least 1 test file to learn internal testing conventions. Fill each TODO section:
+- Where a new feature gets wired in — which files, which order. Show a 3-5 line code example.
+- Constraints — what NOT to import, what NOT to do, ordering requirements. One bullet per constraint.
+- How tests are structured — show the idiomatic test shape as a code example.
+- Gotchas — things that look right but break. Brief bullets only.
 
 **High-entropy only:** Only document what would genuinely surprise someone or save them from disaster. If an agent can figure it out from 1-2 source files, use a `file:line` reference instead.
 
@@ -129,7 +128,8 @@ Domain files were scaffolded in Pass 1. Read entry points + 2-3 relevant source 
 - **Overview**: What this domain covers, key concepts, workflow/status flows
 - **Concepts**: Domain concepts, business rules, state machines, constraints
 - **Decisions**: Why is it built this way? What trade-offs shaped the design?
-- **Patterns**: Domain-specific patterns with brief examples
+- **Patterns**: How contributors extend or modify this domain — internal patterns with brief code examples
+- **Traps**: Things that look correct but break — wrong placement, wrong ordering, silent failures
 - **Cross-repo**: How this domain spans repos (if applicable)
 
 Keep each domain file 50-150 lines total.
@@ -164,11 +164,11 @@ If context needs refreshing later, do NOT re-run `ctxify init`. Edit files direc
 
 These describe what high-signal context looks like:
 
-1. **Write *why* over *what*** — decisions, trade-offs, constraints, history
-2. **Write business rules** that aren't in code comments or obvious from reading source
-3. **Write the workflows** users actually perform (not API surface)
+1. **Write constraints first** — what NOT to do, what NOT to import, where NOT to put things
+2. **Write code examples** — show the canonical 3-5 line pattern, not a prose description of it
+3. **Write placement rules** — WHERE things go (which file, which function, which position in a chain)
 4. **Write the traps** — things that look right but break in production
-5. **Write cross-boundary interactions** that span files, repos, or services
+5. **Write *why* over *what*** — decisions, trade-offs, history that shaped current constraints
 
 ## Formatting
 

@@ -61,7 +61,7 @@ ${fm.trimEnd()}
 
 ${dirLines}
 
-<!-- TODO: Agent — describe how a request flows through this system and why it's layered this way. What would surprise someone coming from a different codebase? 10-20 lines. -->
+<!-- TODO: Agent — describe how a request flows through this system and why it's layered this way. Include constraints: what NOT to import, where NOT to put things, ordering requirements. What would surprise someone coming from a different codebase? 10-20 lines. -->
 
 ## Domains
 
