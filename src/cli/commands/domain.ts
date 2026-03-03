@@ -100,7 +100,9 @@ export function registerDomainCommand(program: Command): void {
           const resolved = resolveWorkspaceRootOrThrow(options.dir);
           workspaceRoot = resolved.root;
           if (resolved.fromParent) {
-            console.error(`Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`);
+            console.error(
+              `Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`,
+            );
           }
         } catch (e) {
           if (e instanceof ConfigError) {
@@ -198,7 +200,9 @@ export function registerDomainCommand(program: Command): void {
         const resolved = resolveWorkspaceRootOrThrow(options.dir);
         workspaceRoot = resolved.root;
         if (resolved.fromParent) {
-          console.error(`Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`);
+          console.error(
+            `Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`,
+          );
         }
       } catch (e) {
         if (e instanceof ConfigError) {
