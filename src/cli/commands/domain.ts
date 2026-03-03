@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
+import { resolveRepoCtxDir } from '../../core/paths.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { generateDomainTemplate } from '../../templates/domain.js';
 import { getCtxifyVersion } from '../../utils/version.js';
@@ -135,7 +136,7 @@ export function registerDomainCommand(program: Command): void {
             )
           : undefined;
 
-        const repoDir = join(workspaceRoot, outputDir, 'repos', repo);
+        const repoDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
         const domainPath = join(repoDir, `${domainName}.md`);
         const overviewPath = join(repoDir, 'overview.md');
 
@@ -210,7 +211,7 @@ export function registerDomainCommand(program: Command): void {
       const result: Record<string, Array<{ domain: string; tags: string[]; path: string }>> = {};
 
       for (const repo of repos) {
-        const repoDir = join(workspaceRoot, outputDir, 'repos', repo.name);
+        const repoDir = resolveRepoCtxDir(workspaceRoot, repo, config.mode, outputDir);
         if (!existsSync(repoDir)) {
           result[repo.name] = [];
           continue;

@@ -63,6 +63,8 @@ ctxify init --repos ./api ./web
 
 ## What ctxify scaffolds
 
+**Single-repo and mono-repo:**
+
 ```
 .ctxify/
 ├── index.md                    # Workspace hub: overview, repo table, relationships, workflows
@@ -76,13 +78,32 @@ ctxify init --repos ./api ./web
             └── {domain}.md     # Domain deep dives (one per complex area)
 ```
 
+**Multi-repo** — context lives inside each repo for version control with regular git:
+
+```
+workspace/                              # plain directory, no .git
+  ctx.yaml                              # primary_repo: api
+  .ctxify/
+    index.md                            # generated hub (links to per-repo files)
+
+  api/                                  # git repo (PRIMARY)
+    .ctxify/
+      overview.md                       # committed with the repo
+      patterns.md, corrections.md, ...
+      workspace.md                      # workspace-level context (only in primary)
+
+  web/                                  # git repo
+    .ctxify/
+      overview.md, patterns.md, ...     # committed with the repo
+```
+
 **Progressive disclosure:** overview.md is a lightweight table of contents that agents always load. patterns.md and domain files hold the depth and are loaded on demand — only when the agent is working in that repo or domain.
 
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `ctxify init` | Scaffold `.ctxify/`. Re-running preserves existing filled shards (use `--force` to overwrite). Flags: `--repos <paths...>`, `--mono`, `--agent <agents...>`, `--force`, `--hook`/`--no-hook` |
+| `ctxify init` | Scaffold `.ctxify/`. Re-running preserves existing filled shards (use `--force` to overwrite). Flags: `--repos <paths...>`, `--mono`, `--primary-repo <name>`, `--agent <agents...>`, `--force`, `--hook`/`--no-hook` |
 | `ctxify status` | Report what's filled vs pending |
 | `ctxify validate` | Check shard structural integrity |
 | `ctxify audit` | Quality analysis of context shards: token budget, unfilled TODOs, prose walls, size issues. Flags: `--repo <name>` |

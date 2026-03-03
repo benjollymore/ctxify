@@ -21,18 +21,22 @@ This makes passes 1-3 ideal for sub-agent delegation: cheaper models, parallel e
 
 Use the `Agent` tool with `model: "haiku"` and `subagent_type: "general-purpose"`. Spawn one agent per repo, in parallel for multi-repo workspaces. Single-repo workspaces still delegate — it keeps the orchestrator context clean for pass 4.
 
-Each sub-agent receives this prompt (fill in `{REPO}` and `{WORKSPACE_ROOT}`):
+**Resolve `{CONTEXT_DIR}` before spawning agents.** Read `ctx.yaml`:
+- **Multi-repo:** `{CONTEXT_DIR}` = `{WORKSPACE_ROOT}/{REPO_PATH}/.ctxify` (where `REPO_PATH` is the repo's `path` from ctx.yaml)
+- **Single/mono-repo:** `{CONTEXT_DIR}` = `{WORKSPACE_ROOT}/.ctxify/repos/{REPO}`
+
+Each sub-agent receives this prompt (fill in `{REPO}`, `{WORKSPACE_ROOT}`, and `{CONTEXT_DIR}`):
 
 ```
 You are filling ctxify context files for the `{REPO}` repo in workspace `{WORKSPACE_ROOT}`.
 
 ## Your job
 
-Execute passes 1-3 below. Do NOT touch index.md — the orchestrator handles that.
+Execute passes 1-3 below. Do NOT touch index.md or workspace.md — the orchestrator handles those.
 
 ## Pass 1: Fill overview.md TODOs
 
-Open `{WORKSPACE_ROOT}/.ctxify/repos/{REPO}/overview.md` and fill:
+Open `{CONTEXT_DIR}/overview.md` and fill:
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Request/data flow and why it's layered this way. 10-20 lines. If the repo has a CLAUDE.md, AGENTS.md, .cursorrules, or similar, read it first — write content that complements rather than duplicates. The overview must stand on its own even if those files are later removed.
 - **Domain files**: Identify domains only if the repo has areas complex enough to warrant dedicated context (30+ min to re-understand from scratch). Small or focused repos may need zero domains. For each, run `ctxify domain add {REPO} <domain> "<one-line description>"` — this scaffolds the file and registers it. Do NOT list domains without creating their files.
@@ -104,7 +108,7 @@ These passes are independent per repo. If you delegated them above, skip to pass
 
 #### Pass 1: Fill overview.md TODOs (10 min per repo)
 
-For each `repos/{name}/overview.md`:
+For each repo's overview.md (use `{CONTEXT_DIR}/overview.md` — see path resolution above):
 - **Description** (1 paragraph): What this repo does, its role, who/what consumes it.
 - **Architecture**: Describe request/data flow and why it's layered this way. What would surprise someone coming from a different codebase? 10-20 lines total.
 - **Existing context check:** Before writing the Architecture section, check if the repo has a CLAUDE.md, AGENTS.md, .cursorrules, or .github/copilot-instructions.md. If it does, read it first — write content that complements rather than duplicates. Focus the overview on the mental model, domain mapping, and cross-repo role. The overview must stand on its own even if those files are later removed.
@@ -112,7 +116,7 @@ For each `repos/{name}/overview.md`:
 
 #### Pass 2: Scaffold and fill patterns.md (THE PRIMARY DELIVERABLE)
 
-Run `ctxify patterns <repo>` to scaffold `repos/{name}/patterns.md` with TODO placeholders.
+Run `ctxify patterns <repo>` to scaffold patterns.md with TODO placeholders (written to `{CONTEXT_DIR}/patterns.md`).
 
 Read 3-5 key source files to understand patterns — include at least 1 test file to learn internal testing conventions. Fill each TODO section:
 - Where a new feature gets wired in — which files, which order. Show a 3-5 line code example.
@@ -134,8 +138,13 @@ Domain files were scaffolded in Pass 1. Read entry points + 2-3 relevant source 
 
 Keep each domain file 50-150 lines total.
 
-### Pass 4: Fill index.md (orchestrator only)
+### Pass 4: Fill workspace-level context (orchestrator only)
 
+**Multi-repo mode:** Fill `workspace.md` in the primary repo's `.ctxify/` (identified by `primary_repo` in ctx.yaml). The root `.ctxify/index.md` is a generated hub — do not edit it.
+
+**Single/mono-repo mode:** Fill `.ctxify/index.md`.
+
+Content for either file:
 - **Overview**: 2-3 sentences about the workspace
 - **Relationships**: How repos connect (shared DB, API calls, auth). 5-10 lines.
 - **Commands**: Essential commands per repo. 1-2 lines each.
