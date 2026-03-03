@@ -12,7 +12,7 @@ ALWAYS run `ctxify feedback` with `--type rule` or `--type antipattern` — neve
 ## User Rules — when the user instructs behavior
 
 ```
-ctxify feedback <repo> --type rule --body "Don't fragment CSS into modules — keep styles colocated with components"
+ctxify feedback --type rule --body "Don't fragment CSS into modules — keep styles colocated with components"
 ```
 
 File a rule when the user:
@@ -25,7 +25,7 @@ Each entry: **what to do (or not do)** and **why** (if given).
 ## Anti-patterns — proactive issue logging
 
 ```
-ctxify feedback <repo> --type antipattern \
+ctxify feedback --type antipattern \
   --body "Silent catch swallows payment errors — never add catch-all here without re-throwing" \
   --source "src/payments/handler.ts:42"
 ```

@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { resolveRepoCtxDir } from '../../core/paths.js';
+import { resolveRepoCtxDir, resolveWorkspaceRulesDir } from '../../core/paths.js';
 import {
   generateCorrectionsTemplate,
   formatCorrectionEntry,
@@ -19,7 +19,7 @@ type EntryType = (typeof VALID_TYPES)[number];
 
 export function registerFeedbackCommand(program: Command): void {
   program
-    .command('feedback <repo>')
+    .command('feedback [repo]')
     .description('Log a correction, rule, or anti-pattern')
     .requiredOption('--body <text>', 'Entry body')
     .option('--type <type>', 'Entry type: correction, rule, or antipattern', 'correction')
@@ -27,7 +27,7 @@ export function registerFeedbackCommand(program: Command): void {
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .action(
       async (
-        repo: string,
+        repo: string | undefined,
         options: { body: string; type: string; source?: string; dir?: string },
       ) => {
         const workspaceRoot = resolve(options.dir || '.');
@@ -51,31 +51,44 @@ export function registerFeedbackCommand(program: Command): void {
         const config = loadConfig(configPath);
         const outputDir = config.options.outputDir || '.ctxify';
 
-        // Validate repo exists
-        const repoEntry = config.repos.find((r) => r.name === repo);
-        if (!repoEntry) {
+        // Corrections require a repo argument
+        if (entryType === 'correction' && !repo) {
           console.log(
             JSON.stringify({
-              error: `Repo "${repo}" not found in ctx.yaml. Available repos: ${config.repos.map((r) => r.name).join(', ')}`,
+              error: 'Repo argument is required for corrections. Usage: ctxify feedback <repo> --body "..."',
             }),
           );
           process.exit(1);
         }
 
-        const repoDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
+        // Validate repo exists when provided
+        let repoEntry;
+        if (repo) {
+          repoEntry = config.repos.find((r) => r.name === repo);
+          if (!repoEntry) {
+            console.log(
+              JSON.stringify({
+                error: `Repo "${repo}" not found in ctx.yaml. Available repos: ${config.repos.map((r) => r.name).join(', ')}`,
+              }),
+            );
+            process.exit(1);
+          }
+        }
+
         const timestamp = new Date().toISOString();
         let createdFile = false;
         let targetPath: string;
 
         if (entryType === 'correction') {
-          // Corrections go to corrections.md
+          // Corrections go to per-repo corrections.md
+          const repoDir = resolveRepoCtxDir(workspaceRoot, repoEntry!, config.mode, outputDir);
           targetPath = join(repoDir, 'corrections.md');
 
           if (!existsSync(targetPath)) {
             mkdirSync(repoDir, { recursive: true });
             writeFileSync(
               targetPath,
-              generateCorrectionsTemplate({ repo, ctxifyVersion: getCtxifyVersion() }),
+              generateCorrectionsTemplate({ repo: repo!, ctxifyVersion: getCtxifyVersion() }),
               'utf-8',
             );
             createdFile = true;
@@ -85,14 +98,15 @@ export function registerFeedbackCommand(program: Command): void {
           const entry = formatCorrectionEntry({ body: options.body, timestamp });
           writeFileSync(targetPath, current + entry, 'utf-8');
         } else {
-          // Rules and antipatterns go to rules.md
-          targetPath = join(repoDir, 'rules.md');
+          // Rules and antipatterns go to workspace-level rules.md
+          const rulesDir = resolveWorkspaceRulesDir(workspaceRoot, config, outputDir);
+          targetPath = join(rulesDir, 'rules.md');
 
           if (!existsSync(targetPath)) {
-            mkdirSync(repoDir, { recursive: true });
+            mkdirSync(rulesDir, { recursive: true });
             writeFileSync(
               targetPath,
-              generateRulesTemplate({ repo, ctxifyVersion: getCtxifyVersion() }),
+              generateRulesTemplate({ ctxifyVersion: getCtxifyVersion() }),
               'utf-8',
             );
             createdFile = true;
@@ -125,7 +139,7 @@ export function registerFeedbackCommand(program: Command): void {
             {
               status: 'recorded',
               type: entryType,
-              repo,
+              ...(repo ? { repo } : {}),
               path: targetPath,
               timestamp,
               created_file: createdFile,

@@ -28,3 +28,30 @@ export function resolvePrimaryRepo(config: CtxConfig): string | undefined {
   if (config.repos.length > 0) return config.repos[0].name;
   return undefined;
 }
+
+/**
+ * Resolve the directory where workspace-level rules.md lives.
+ *
+ * - multi-repo: `{workspaceRoot}/{primaryRepo.path}/.ctxify`
+ * - single-repo / mono-repo: `{workspaceRoot}/{outputDir}`
+ */
+export function resolveWorkspaceRulesDir(
+  workspaceRoot: string,
+  config: CtxConfig,
+  outputDir: string,
+): string {
+  if (config.mode === 'multi-repo') {
+    const primaryName = resolvePrimaryRepo(config);
+    if (primaryName) {
+      const primaryEntry = config.repos.find((r) => r.name === primaryName);
+      if (primaryEntry) {
+        return join(workspaceRoot, primaryEntry.path, '.ctxify');
+      }
+    }
+    // Fallback: first repo
+    if (config.repos.length > 0) {
+      return join(workspaceRoot, config.repos[0].path, '.ctxify');
+    }
+  }
+  return join(workspaceRoot, outputDir);
+}
