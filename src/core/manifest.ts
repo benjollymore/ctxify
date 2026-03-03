@@ -141,6 +141,20 @@ export function parseRepoManifest(repoPath: string, excludePatterns?: string[]):
     return data;
   }
 
+  // Try Cargo.toml
+  const cargo = readFileIfExists(join(repoPath, 'Cargo.toml'));
+  if (cargo) {
+    data.manifestType = 'Cargo.toml';
+    data.language = 'rust';
+    data.framework = detectRustFramework(cargo);
+    data.dependencies = parseCargoTomlDependencies(cargo);
+
+    data.entryPoints = discoverEntryPoints(repoPath, data.manifestType);
+    data.keyDirs = discoverKeyDirs(repoPath, excludes);
+    data.fileCount = countFiles(repoPath, excludes);
+    return data;
+  }
+
   // No manifest found — return empty defaults
   return data;
 }
@@ -172,6 +186,38 @@ function detectPythonFramework(content: string): string {
   if (lower.includes('flask')) return 'flask';
   if (lower.includes('starlette')) return 'starlette';
   return '';
+}
+
+function detectRustFramework(cargo: string): string {
+  if (cargo.includes('actix-web')) return 'actix-web';
+  if (cargo.includes('rocket')) return 'rocket';
+  if (cargo.includes('axum')) return 'axum';
+  if (cargo.includes('warp')) return 'warp';
+  return '';
+}
+
+function parseCargoTomlDependencies(cargo: string): Record<string, string> {
+  const deps: Record<string, string> = {};
+  const depMatch = cargo.match(/\[dependencies\]\s*\n((?:[^\[].+\n)*)/);
+  if (!depMatch) return deps;
+
+  const lines = depMatch[1].split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    // Match: name = "version" or name = { ... } or name = version
+    const match = trimmed.match(/^([a-z0-9\-_]+)\s*=\s*(.+)$/);
+    if (match) {
+      const [, name, value] = match;
+      // Extract version string from quoted or unquoted formats
+      const versionMatch = value.match(/^["']([^"']+)["']/) || value.match(/^(\S+)/);
+      if (versionMatch) {
+        deps[name] = versionMatch[1];
+      }
+    }
+  }
+  return deps;
 }
 
 // ── Entry point discovery ──────────────────────────────────────────────
@@ -230,6 +276,9 @@ function discoverEntryPoints(repoPath: string, manifestType: string): string[] {
         }
       }
     }
+  } else if (manifestType === 'Cargo.toml') {
+    if (isFile(join(repoPath, 'src', 'main.rs'))) entries.push('src/main.rs');
+    if (isFile(join(repoPath, 'src', 'lib.rs'))) entries.push('src/lib.rs');
   }
 
   return entries;

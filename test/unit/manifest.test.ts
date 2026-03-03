@@ -136,4 +136,132 @@ require (
     expect(result.entryPoints).toContain('main.go');
     expect(result.fileCount).toBeGreaterThan(0);
   });
+
+  it('should detect Rust with Cargo.toml', () => {
+    const cargoContent = `[package]
+name = "my-web-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.4"
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+`;
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('rust');
+    expect(result.framework).toBe('actix-web');
+    expect(result.manifestType).toBe('Cargo.toml');
+    expect(result.entryPoints).toContain('src/main.rs');
+    expect(result.dependencies).toHaveProperty('actix-web');
+    expect(result.fileCount).toBeGreaterThan(0);
+  });
+
+  it('should detect Rust framework: rocket', () => {
+    const cargoContent = `[package]
+name = "rocket-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5", features = ["json"] }
+`;
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('rust');
+    expect(result.framework).toBe('rocket');
+    expect(result.manifestType).toBe('Cargo.toml');
+  });
+
+  it('should detect Rust framework: axum', () => {
+    const cargoContent = `[package]
+name = "axum-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+`;
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('rust');
+    expect(result.framework).toBe('axum');
+    expect(result.manifestType).toBe('Cargo.toml');
+  });
+
+  it('should detect Rust framework: warp', () => {
+    const cargoContent = `[package]
+name = "warp-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+warp = "0.3"
+`;
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('rust');
+    expect(result.framework).toBe('warp');
+    expect(result.manifestType).toBe('Cargo.toml');
+  });
+
+  it('should discover both main.rs and lib.rs entry points', () => {
+    const cargoContent = `[package]
+name = "rust-lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+`;
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+    writeFileSync(join(tmpDir, 'src', 'lib.rs'), 'pub fn hello() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('rust');
+    expect(result.manifestType).toBe('Cargo.toml');
+    expect(result.entryPoints).toContain('src/main.rs');
+    expect(result.entryPoints).toContain('src/lib.rs');
+  });
+
+  it('should handle Cargo.toml with empty dependencies', () => {
+    const cargoContent = `[package]
+name = "minimal-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+`;
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.language).toBe('rust');
+    expect(result.framework).toBe('');
+    expect(result.manifestType).toBe('Cargo.toml');
+    expect(result.dependencies).toEqual({});
+    expect(result.entryPoints).toContain('src/main.rs');
+  });
 });
