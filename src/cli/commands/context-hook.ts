@@ -15,8 +15,8 @@ import { resolveRepoCtxDir, resolvePrimaryRepo, findWorkspaceRoot } from '../../
 const CONTEXT_FOOTER = `Load patterns.md before writing code. Load domain files when entering specific areas.
 
 When you discover context is wrong → \`ctxify feedback <repo> --body "what's wrong and what's correct"\`
-When the user corrects your behavior → \`ctxify feedback <repo> --type rule --body "the rule"\`
-When you identify a complex domain area → \`ctxify domain add <repo> <domain-name>\``;
+When the user corrects your behavior or says "don't do X" → STOP and run \`ctxify feedback --type rule --body "the rule"\` before continuing. No repo arg needed — rules are workspace-wide.
+Before working in a domain area that has no context file → \`ctxify domain add <repo> <domain-name> --description "..."\` then fill it before starting the feature.`;
 
 function stripFrontmatter(content: string): string {
   const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
