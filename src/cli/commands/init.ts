@@ -164,24 +164,9 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
           );
         }
       }
-
-      // rules.md
-      const rulesPath = join(perRepoDir, 'rules.md');
-      if (!existsSync(rulesPath) || options.force) {
-        const legacyRules = join(outputRoot, 'repos', repo.name, 'rules.md');
-        if (existsSync(legacyRules)) {
-          writeFileSync(rulesPath, readFileSync(legacyRules, 'utf-8'), 'utf-8');
-        } else {
-          writeFileSync(
-            rulesPath,
-            generateRulesTemplate({ repo: repo.name, ctxifyVersion }),
-            'utf-8',
-          );
-        }
-      }
     }
 
-    // workspace.md in primary repo's .ctxify/ only
+    // workspace.md and rules.md in primary repo's .ctxify/ only
     if (primaryRepoName) {
       const primaryEntry = repos.find((r) => r.name === primaryRepoName);
       if (primaryEntry) {
@@ -198,6 +183,18 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
           );
         } else {
           skipped.push(`${primaryEntry.path}/.ctxify/workspace.md`);
+        }
+
+        // Workspace-level rules.md
+        const rulesPath = join(primaryDir, 'rules.md');
+        if (!existsSync(rulesPath) || options.force) {
+          // Smart migration: merge any existing per-repo rules.md files
+          const mergedRules = mergePerRepoRules(workspaceRoot, repos, mode, outputDir, outputRoot);
+          if (mergedRules) {
+            writeFileSync(rulesPath, mergedRules, 'utf-8');
+          } else {
+            writeFileSync(rulesPath, generateRulesTemplate({ ctxifyVersion }), 'utf-8');
+          }
         }
       }
     }
@@ -244,6 +241,18 @@ export async function scaffoldWorkspace(options: ScaffoldOptions): Promise<Scaff
         writeFileSync(overviewPath, generateRepoTemplate(repo, ctxifyVersion), 'utf-8');
       } else {
         skipped.push(`repos/${repo.name}/overview.md`);
+      }
+    }
+
+    // Workspace-level rules.md at root .ctxify/
+    const rulesPath = join(outputRoot, 'rules.md');
+    if (!existsSync(rulesPath) || options.force) {
+      // Smart migration: merge any existing per-repo rules.md files
+      const mergedRules = mergePerRepoRules(workspaceRoot, repos, mode, outputDir, outputRoot);
+      if (mergedRules) {
+        writeFileSync(rulesPath, mergedRules, 'utf-8');
+      } else {
+        writeFileSync(rulesPath, generateRulesTemplate({ ctxifyVersion }), 'utf-8');
       }
     }
   }
@@ -431,4 +440,47 @@ export function buildMultiRepoEntries(workspaceRoot: string): RepoEntry[] {
     const relPath = relative(workspaceRoot, root) || '.';
     return { path: relPath, name };
   });
+}
+
+/**
+ * Smart migration: check for existing per-repo rules.md files with content
+ * and merge them into a single workspace-level rules.md.
+ * Returns merged content string, or null if no per-repo rules files have content.
+ */
+function mergePerRepoRules(
+  workspaceRoot: string,
+  repos: RepoEntry[],
+  mode: OperatingMode,
+  outputDir: string,
+  outputRoot: string,
+): string | null {
+  const entries: string[] = [];
+
+  for (const repo of repos) {
+    // Check per-repo location (multi-repo: {repo}/.ctxify/rules.md, single/mono: .ctxify/repos/{name}/rules.md)
+    const perRepoPath =
+      mode === 'multi-repo'
+        ? join(workspaceRoot, repo.path, '.ctxify', 'rules.md')
+        : join(outputRoot, 'repos', repo.name, 'rules.md');
+
+    if (!existsSync(perRepoPath)) continue;
+    const content = readFileSync(perRepoPath, 'utf-8');
+    // Strip frontmatter and heading — only keep entries
+    const stripped = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
+    // Skip if only heading and no entries
+    if (
+      !stripped ||
+      stripped === '# Rules' ||
+      stripped ===
+        '# Rules\n\nBehavioral instructions and anti-patterns. Always loaded — these are the highest-signal context.'
+    )
+      continue;
+    entries.push(stripped);
+  }
+
+  if (entries.length === 0) return null;
+
+  const ctxifyVersion = getCtxifyVersion();
+  const header = generateRulesTemplate({ ctxifyVersion });
+  return header + '\n' + entries.join('\n\n') + '\n';
 }

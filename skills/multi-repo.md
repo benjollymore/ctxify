@@ -17,8 +17,8 @@ If `ctx.yaml` has `mode: multi-repo`, you MUST read this skill before:
 In multi-repo mode, context files live **inside each repo** — not in a central `.ctxify/repos/` directory. This means context is version-controlled with the code it describes, using regular git.
 
 **Where context lives:**
-- Per-repo context: `{repo}/.ctxify/overview.md`, `patterns.md`, `corrections.md`, `rules.md`, domain files
-- Workspace context: `{primary_repo}/.ctxify/workspace.md` (cross-repo relationships, workflows)
+- Per-repo context: `{repo}/.ctxify/overview.md`, `patterns.md`, `corrections.md`, domain files
+- Workspace context: `{primary_repo}/.ctxify/workspace.md` (cross-repo relationships, workflows), `{primary_repo}/.ctxify/rules.md` (behavioral rules — workspace-wide, not per-repo)
 - Root `.ctxify/index.md`: generated hub with links — not the source of truth
 
 **Committing context:** Regular `git add .ctxify/ && git commit` from inside each repo. No special tooling needed. Context travels with the code.

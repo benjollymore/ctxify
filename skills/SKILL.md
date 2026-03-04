@@ -30,15 +30,15 @@ If no TODO markers → context is filled. Continue to "Load Context Files".
 ## Load Context Files
 
 **Path resolution** — all paths below are relative to workspace root:
-- **Multi-repo mode:** Replace `{CTX}/` with `{repo_path}/.ctxify/` (per-repo context). Also load `workspace.md` from the primary repo's `.ctxify/` (identified by `primary_repo` in ctx.yaml).
-- **Single/mono-repo mode:** Replace `{CTX}/` with `.ctxify/repos/{name}/`.
+- **Multi-repo mode:** Replace `{CTX}/` with `{repo_path}/.ctxify/` (per-repo context). Also load `workspace.md` and `rules.md` from the primary repo's `.ctxify/` (identified by `primary_repo` in ctx.yaml).
+- **Single/mono-repo mode:** Replace `{CTX}/` with `.ctxify/repos/{name}/`. `rules.md` lives at `.ctxify/rules.md` (workspace root).
 
 | File | Load when |
 |------|-----------|
 | `.ctxify/index.md` | Every session |
 | `{CTX}/overview.md` | Every session |
 | `{CTX}/corrections.md` | Every session — past mistakes to avoid |
-| `{CTX}/rules.md` | Every session — behavioral instructions |
+| `.ctxify/rules.md` | Every session — behavioral instructions (workspace level) |
 | `{CTX}/workspace.md` | Every session — multi-repo only, primary repo only |
 | `{CTX}/patterns.md` | Before writing or modifying code |
 | `{CTX}/{domain}.md` | When working in that specific domain |

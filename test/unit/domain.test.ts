@@ -26,9 +26,9 @@ function createWorkspace(dir: string, repoNames: string[]): void {
   };
   writeFileSync(join(dir, 'ctx.yaml'), serializeConfig(config), 'utf-8');
 
-  // Create .ctxify/repos/{name}/ dirs with overview.md
+  // Create per-repo .ctxify/ dirs with overview.md (multi-repo layout)
   for (const name of repoNames) {
-    const repoDir = join(dir, '.ctxify', 'repos', name);
+    const repoDir = join(dir, name, '.ctxify');
     mkdirSync(repoDir, { recursive: true });
     const overview = generateRepoTemplate({
       name,
@@ -139,7 +139,7 @@ describe('domain add', () => {
     expect(parsed.domain).toBe('payments');
     expect(parsed.file_existed).toBe(false);
 
-    const domainPath = join(dir, '.ctxify', 'repos', 'api', 'payments.md');
+    const domainPath = join(dir, 'api', '.ctxify', 'payments.md');
     expect(existsSync(domainPath)).toBe(true);
 
     const content = readFileSync(domainPath, 'utf-8');
@@ -161,7 +161,7 @@ describe('domain add', () => {
     );
     expect(parsed.overview_updated).toBe(true);
 
-    const overview = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'), 'utf-8');
+    const overview = readFileSync(join(dir, 'api', '.ctxify', 'overview.md'), 'utf-8');
     expect(overview).toContain('`payments.md`');
     expect(overview).toContain('Payment processing');
   });
@@ -175,7 +175,7 @@ describe('domain add', () => {
     runDomain(['add', 'api', 'payments'], dir);
 
     // Modify the domain file to simulate agent work
-    const domainPath = join(dir, '.ctxify', 'repos', 'api', 'payments.md');
+    const domainPath = join(dir, 'api', '.ctxify', 'payments.md');
     const original = readFileSync(domainPath, 'utf-8');
     writeFileSync(domainPath, original + '\nAgent-written content here\n', 'utf-8');
 
@@ -194,7 +194,7 @@ describe('domain add', () => {
     createWorkspace(dir, ['api']);
 
     // Create domain file manually (without overview entry)
-    const repoDir = join(dir, '.ctxify', 'repos', 'api');
+    const repoDir = join(dir, 'api', '.ctxify');
     const domainContent = generateDomainTemplate({ repo: 'api', domain: 'payments' });
     writeFileSync(join(repoDir, 'payments.md'), domainContent, 'utf-8');
 
@@ -246,7 +246,7 @@ describe('domain add', () => {
     const { parsed } = runDomain(['add', 'api', 'payments', '--description', 'Payment flows'], dir);
     expect(parsed.overview_updated).toBe(false);
 
-    const overview = readFileSync(join(dir, '.ctxify', 'repos', 'api', 'overview.md'), 'utf-8');
+    const overview = readFileSync(join(dir, 'api', '.ctxify', 'overview.md'), 'utf-8');
     const matches = overview.match(/`payments\.md`/g);
     expect(matches).toHaveLength(1);
   });
@@ -276,7 +276,7 @@ describe('domain list', () => {
     createWorkspace(dir, ['api', 'web']);
 
     // Create domain files
-    const apiDir = join(dir, '.ctxify', 'repos', 'api');
+    const apiDir = join(dir, 'api', '.ctxify');
     writeFileSync(
       join(apiDir, 'payments.md'),
       generateDomainTemplate({ repo: 'api', domain: 'payments', tags: ['billing'] }),
@@ -301,7 +301,7 @@ describe('domain list', () => {
     tmpDirs.push(dir);
     createWorkspace(dir, ['api', 'web']);
 
-    const apiDir = join(dir, '.ctxify', 'repos', 'api');
+    const apiDir = join(dir, 'api', '.ctxify');
     writeFileSync(
       join(apiDir, 'payments.md'),
       generateDomainTemplate({ repo: 'api', domain: 'payments' }),

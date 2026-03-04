@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRepoCtxDir, resolvePrimaryRepo } from '../../src/core/paths.js';
+import {
+  resolveRepoCtxDir,
+  resolvePrimaryRepo,
+  resolveWorkspaceRulesDir,
+} from '../../src/core/paths.js';
 import type { CtxConfig, RepoEntry } from '../../src/core/config.js';
 
 describe('resolveRepoCtxDir', () => {
@@ -59,5 +63,59 @@ describe('resolvePrimaryRepo', () => {
   it('returns undefined when no repos', () => {
     const config = { repos: [] } as unknown as CtxConfig;
     expect(resolvePrimaryRepo(config)).toBeUndefined();
+  });
+});
+
+describe('resolveWorkspaceRulesDir', () => {
+  it('returns primary repo .ctxify dir in multi-repo mode', () => {
+    const config = {
+      mode: 'multi-repo',
+      primary_repo: 'api',
+      repos: [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ],
+    } as CtxConfig;
+    const result = resolveWorkspaceRulesDir('/workspace', config, '.ctxify');
+    expect(result).toBe('/workspace/api/.ctxify');
+  });
+
+  it('falls back to first repo in multi-repo when no primary_repo', () => {
+    const config = {
+      mode: 'multi-repo',
+      repos: [
+        { path: 'web', name: 'web' },
+        { path: 'api', name: 'api' },
+      ],
+    } as CtxConfig;
+    const result = resolveWorkspaceRulesDir('/workspace', config, '.ctxify');
+    expect(result).toBe('/workspace/web/.ctxify');
+  });
+
+  it('returns root outputDir in single-repo mode', () => {
+    const config = {
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'myapp' }],
+    } as CtxConfig;
+    const result = resolveWorkspaceRulesDir('/workspace', config, '.ctxify');
+    expect(result).toBe('/workspace/.ctxify');
+  });
+
+  it('returns root outputDir in mono-repo mode', () => {
+    const config = {
+      mode: 'mono-repo',
+      repos: [{ path: 'packages/core', name: 'core' }],
+    } as CtxConfig;
+    const result = resolveWorkspaceRulesDir('/workspace', config, '.ctxify');
+    expect(result).toBe('/workspace/.ctxify');
+  });
+
+  it('respects custom outputDir in single-repo mode', () => {
+    const config = {
+      mode: 'single-repo',
+      repos: [{ path: '.', name: 'myapp' }],
+    } as CtxConfig;
+    const result = resolveWorkspaceRulesDir('/workspace', config, '.context');
+    expect(result).toBe('/workspace/.context');
   });
 });

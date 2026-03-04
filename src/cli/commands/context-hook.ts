@@ -91,9 +91,9 @@ export function getContextHookOutput(workspaceRoot: string): string {
     }
   }
 
-  // Per-repo: overview.md, corrections.md, rules.md
+  // Per-repo: overview.md, corrections.md
   for (const repo of repoNames) {
-    for (const filename of ['overview.md', 'corrections.md', 'rules.md']) {
+    for (const filename of ['overview.md', 'corrections.md']) {
       const filePath = join(reposDir, repo, filename);
       if (!existsSync(filePath)) continue;
       try {
@@ -103,6 +103,18 @@ export function getContextHookOutput(workspaceRoot: string): string {
       } catch {
         // Skip unreadable files
       }
+    }
+  }
+
+  // Workspace-level rules.md
+  const rulesPath = join(outputRoot, 'rules.md');
+  if (existsSync(rulesPath)) {
+    try {
+      const content = readFileSync(rulesPath, 'utf-8');
+      const body = stripFrontmatter(content).trim();
+      if (body) sections.push(body);
+    } catch {
+      // Skip unreadable files
     }
   }
 
@@ -166,11 +178,11 @@ function getMultiRepoHookOutput(
     }
   }
 
-  // Per-repo: overview.md, corrections.md, rules.md
+  // Per-repo: overview.md, corrections.md
   for (const repo of config.repos) {
     const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repo, config.mode, outputDir);
 
-    for (const filename of ['overview.md', 'corrections.md', 'rules.md']) {
+    for (const filename of ['overview.md', 'corrections.md']) {
       const filePath = join(repoCtxDir, filename);
       if (!existsSync(filePath)) continue;
       try {
@@ -179,6 +191,29 @@ function getMultiRepoHookOutput(
         if (body) sections.push(body);
       } catch {
         // Skip unreadable files
+      }
+    }
+  }
+
+  // Workspace-level rules.md from primary repo's .ctxify/
+  if (primaryName) {
+    const primaryEntryForRules = config.repos.find((r) => r.name === primaryName);
+    if (primaryEntryForRules) {
+      const primaryDirForRules = resolveRepoCtxDir(
+        workspaceRoot,
+        primaryEntryForRules,
+        config.mode,
+        outputDir,
+      );
+      const rulesPath = join(primaryDirForRules, 'rules.md');
+      if (existsSync(rulesPath)) {
+        try {
+          const content = readFileSync(rulesPath, 'utf-8');
+          const body = stripFrontmatter(content).trim();
+          if (body) sections.push(body);
+        } catch {
+          // Skip unreadable files
+        }
       }
     }
   }

@@ -70,8 +70,9 @@ describe('scaffoldWorkspace', () => {
     expect(existsSync(join(dir, 'web', '.ctxify', 'overview.md'))).toBe(true);
     expect(existsSync(join(dir, 'api', '.ctxify', 'corrections.md'))).toBe(true);
     expect(existsSync(join(dir, 'web', '.ctxify', 'corrections.md'))).toBe(true);
+    // rules.md at workspace level (primary repo only), not per-repo
     expect(existsSync(join(dir, 'api', '.ctxify', 'rules.md'))).toBe(true);
-    expect(existsSync(join(dir, 'web', '.ctxify', 'rules.md'))).toBe(true);
+    expect(existsSync(join(dir, 'web', '.ctxify', 'rules.md'))).toBe(false);
     // workspace.md in primary repo (defaults to first)
     expect(existsSync(join(dir, 'api', '.ctxify', 'workspace.md'))).toBe(true);
     expect(existsSync(join(dir, 'web', '.ctxify', 'workspace.md'))).toBe(false);
