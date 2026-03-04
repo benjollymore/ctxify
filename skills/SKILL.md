@@ -51,7 +51,7 @@ Read the "Every session" files now. Load patterns.md and domain files when you r
 
 If context looks stale or a `corrections.md` contradicts an overview, note it.
 When you discover wrong context during a task — invoke **ctxify:corrections**.
-**When the user corrects your behavior or says "don't do X" — STOP and invoke **ctxify:rules** before continuing.** Do not defer this.
+**When the user states a preference ("don't do X", "always use Y", "use X instead of Y", "X is deprecated") — STOP and invoke **ctxify:rules** before continuing.** Do not defer this.
 
 ## First-time Setup
 
@@ -86,7 +86,7 @@ To refresh context:
 - **Checking context quality** → run `ctxify audit` (token budget, unfilled TODOs, prose walls, size issues)
 - **Starting work in an undocumented domain** → invoke `ctxify:domain` before coding — create the domain file first, then build the feature
 - **Logging a correction** → invoke `ctxify:corrections`
-- **User corrects your behavior or says "don't do X"** → invoke `ctxify:rules` immediately, before continuing the task
+- **User states a preference ("don't do X", "use Y instead", "X is deprecated")** → invoke `ctxify:rules` immediately, before continuing the task
 - **Cross-repo branch/commit coordination** → invoke `ctxify:multi-repo`
 
 ## Multi-repo: When to Use Git Skills

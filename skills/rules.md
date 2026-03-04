@@ -18,9 +18,9 @@ ctxify feedback --type rule --body "Don't fragment CSS into modules — keep sty
 ```
 
 File a rule when the user:
-- Says "don't do X" or "always do Y"
+- Says "don't do X", "always use Y", "use X instead of Y", or "X is deprecated"
 - Corrects your approach (not factual context, but behavioral preference)
-- Establishes a workflow or convention
+- Establishes a workflow, convention, or tool preference
 
 Each entry: **what to do (or not do)** and **why** (if given).
 
