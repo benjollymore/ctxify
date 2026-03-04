@@ -2,7 +2,6 @@ import type { Command } from 'commander';
 import { join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { resolveRepoCtxDir, resolveWorkspaceRulesDir } from '../../core/paths.js';
 import {
   resolveRepoCtxDir,
   resolveWorkspaceRulesDir,
