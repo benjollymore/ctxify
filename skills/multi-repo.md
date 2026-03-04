@@ -10,7 +10,6 @@ description: Use when working in a ctxify multi-repo workspace — covers coordi
 If `ctx.yaml` has `mode: multi-repo`, you MUST read this skill before:
 - Starting any feature that touches 2+ repos
 - Committing changes across repos
-- Editing or reading context files
 
 ## Context Persistence
 

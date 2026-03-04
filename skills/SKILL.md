@@ -47,9 +47,11 @@ Read the "Every session" files now. Load patterns.md and domain files when you r
 
 **Claude Code note:** The SessionStart hook pre-loads always-load files (index.md, overview.md, corrections.md, rules.md, workspace.md) into context automatically. If you see this content already in session context, skip to loading patterns.md and domain files as needed.
 
+**Missing domain check:** When you start a task in a specific area, check overview.md's domain index. If the area is complex but has no domain file, invoke **ctxify:domain** to create one before starting the feature.
+
 If context looks stale or a `corrections.md` contradicts an overview, note it.
 When you discover wrong context during a task — invoke **ctxify:corrections**.
-When the user corrects your behavior — invoke **ctxify:rules**.
+**When the user corrects your behavior or says "don't do X" — STOP and invoke **ctxify:rules** before continuing.** Do not defer this.
 
 ## First-time Setup
 
@@ -82,9 +84,9 @@ To refresh context:
 
 - **Filling/writing context files** → invoke `ctxify:filling-context`
 - **Checking context quality** → run `ctxify audit` (token budget, unfilled TODOs, prose walls, size issues)
-- **Creating a new domain file** → invoke `ctxify:domain`
+- **Starting work in an undocumented domain** → invoke `ctxify:domain` before coding — create the domain file first, then build the feature
 - **Logging a correction** → invoke `ctxify:corrections`
-- **Logging a behavioral rule** → invoke `ctxify:rules`
+- **User corrects your behavior or says "don't do X"** → invoke `ctxify:rules` immediately, before continuing the task
 - **Cross-repo branch/commit coordination** → invoke `ctxify:multi-repo`
 
 ## Multi-repo: When to Use Git Skills
