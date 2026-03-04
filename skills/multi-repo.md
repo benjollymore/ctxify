@@ -51,6 +51,16 @@ Stages and commits in every repo that has changes. Clean repos are skipped autom
 - **When repos need different commit messages** — commit each repo individually with git
 - **When only one repo has changes** — use git directly in that repo
 
+## Running From the Workspace Root
+
+**Always open your editor at the workspace root** — the directory containing `ctx.yaml`. Do not open editors inside sub-repos (e.g., `workspace/api/`).
+
+If you open inside a sub-repo:
+- The context hook walks up and still loads context, but `.claude/settings.json` at the workspace root won't be found
+- CLI commands will warn and auto-resolve to the workspace root, but agents and hooks may not
+
+If context isn't loading, check that CWD is the workspace root (where `ctx.yaml` lives), not a sub-repo directory.
+
 ## Workflow
 
 1. `ctxify branch feat/your-feature` — create branches in all repos

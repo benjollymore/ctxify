@@ -1,5 +1,7 @@
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { existsSync } from 'node:fs';
 import type { RepoEntry, CtxConfig, OperatingMode } from './config.js';
+import { ConfigError } from './errors.js';
 
 /**
  * Resolve the directory where a repo's context files live.
@@ -54,4 +56,43 @@ export function resolveWorkspaceRulesDir(
     }
   }
   return join(workspaceRoot, outputDir);
+}
+
+/**
+ * Walk up from startDir looking for ctx.yaml.
+ * Returns the directory containing ctx.yaml, or null if not found.
+ * Stops at filesystem root.
+ */
+export function findWorkspaceRoot(startDir: string): string | null {
+  let dir = resolve(startDir);
+
+  while (true) {
+    if (existsSync(join(dir, 'ctx.yaml'))) {
+      return dir;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return null; // reached filesystem root
+    dir = parent;
+  }
+}
+
+/**
+ * Resolve workspace root from --dir option or CWD.
+ * If ctx.yaml isn't at the resolved dir, walks up to find it.
+ * Returns { root, fromParent } where fromParent indicates the user is inside a sub-repo.
+ * Throws ConfigError if no ctx.yaml found anywhere.
+ */
+export function resolveWorkspaceRootOrThrow(dirOption?: string): {
+  root: string;
+  fromParent: boolean;
+} {
+  const startDir = resolve(dirOption || '.');
+  if (existsSync(join(startDir, 'ctx.yaml'))) {
+    return { root: startDir, fromParent: false };
+  }
+  const found = findWorkspaceRoot(startDir);
+  if (found) {
+    return { root: found, fromParent: true };
+  }
+  throw new ConfigError('No ctx.yaml found. Run "ctxify init" first.');
 }

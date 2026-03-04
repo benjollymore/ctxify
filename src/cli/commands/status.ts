@@ -1,8 +1,9 @@
 import type { Command } from 'commander';
-import { resolve, join } from 'node:path';
+import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
-import { resolveRepoCtxDir } from '../../core/paths.js';
+import { resolveRepoCtxDir, resolveWorkspaceRootOrThrow } from '../../core/paths.js';
+import { ConfigError } from '../../core/errors.js';
 import { collectMdFiles } from '../../core/validate.js';
 
 export function registerStatusCommand(program: Command): void {
@@ -11,18 +12,28 @@ export function registerStatusCommand(program: Command): void {
     .description('JSON status report for workspace context shards')
     .option('-d, --dir <path>', 'Workspace directory', '.')
     .action(async (options: { dir?: string }) => {
-      const workspaceRoot = resolve(options.dir || '.');
-
-      const configPath = join(workspaceRoot, 'ctx.yaml');
-      if (!existsSync(configPath)) {
-        console.log(
-          JSON.stringify({
-            error: 'No ctx.yaml found. Run "ctxify init" first.',
-            has_config: false,
-          }),
-        );
-        return;
+      let workspaceRoot: string;
+      try {
+        const resolved = resolveWorkspaceRootOrThrow(options.dir);
+        workspaceRoot = resolved.root;
+        if (resolved.fromParent) {
+          console.error(
+            `Warning: Running from sub-repo. Using workspace root at ${resolved.root}.`,
+          );
+        }
+      } catch (e) {
+        if (e instanceof ConfigError) {
+          console.log(
+            JSON.stringify({
+              error: e.message,
+              has_config: false,
+            }),
+          );
+          return;
+        }
+        throw e;
       }
+      const configPath = join(workspaceRoot, 'ctx.yaml');
 
       const config = loadConfig(configPath);
       const outputDir = config.options.outputDir || '.ctxify';
