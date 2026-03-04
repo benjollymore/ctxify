@@ -47,6 +47,8 @@ Create a domain file when an area is:
 
 Do NOT create domain files for small, self-contained modules — a `file:line` reference from patterns.md is enough.
 
+If you're mid-task and find yourself reading a 4th+ file to understand an area, STOP and scaffold the domain file now. Don't wait until the task is done.
+
 ## What to Fill
 
 After scaffolding, read entry points + 2-3 key files and fill the TODOs:
