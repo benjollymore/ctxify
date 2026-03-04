@@ -47,11 +47,11 @@ Read the "Every session" files now. Load patterns.md and domain files when you r
 
 **Claude Code note:** The SessionStart hook pre-loads always-load files (index.md, overview.md, corrections.md, rules.md, workspace.md) into context automatically. If you see this content already in session context, skip to loading patterns.md and domain files as needed.
 
-**Missing domain check:** When you start a task in a specific area, check overview.md's domain index. If the area is complex but has no domain file, invoke **ctxify:domain** to create one before starting the feature.
+**Missing domain check:** BEFORE writing code in a specific area, check overview.md's domain index. If the area you're about to modify isn't listed and understanding it requires reading 3+ files, STOP and invoke **ctxify:domain** to create and fill the domain file first.
 
 If context looks stale or a `corrections.md` contradicts an overview, note it.
-When you discover wrong context during a task — invoke **ctxify:corrections**.
-**When the user states a preference ("don't do X", "always use Y", "use X instead of Y", "X is deprecated") — STOP and invoke **ctxify:rules** before continuing.** Do not defer this.
+When you discover wrong context during a task, or the user says something documented is incorrect — invoke **ctxify:corrections**.
+**When the user states a preference ("don't do X", "always use Y", "use X instead of Y", "only use X", "never X", "we switched to X", "prefer X over Y", "X is deprecated/the standard") — STOP and invoke **ctxify:rules** before continuing.** Do not defer this.
 
 ## First-time Setup
 
@@ -86,7 +86,7 @@ To refresh context:
 - **Checking context quality** → run `ctxify audit` (token budget, unfilled TODOs, prose walls, size issues)
 - **Starting work in an undocumented domain** → invoke `ctxify:domain` before coding — create the domain file first, then build the feature
 - **Logging a correction** → invoke `ctxify:corrections`
-- **User states a preference ("don't do X", "use Y instead", "X is deprecated")** → invoke `ctxify:rules` immediately, before continuing the task
+- **User states a preference ("don't do X", "always use Y", "use X instead of Y", "only use X", "never X", "we switched to X", "prefer X over Y", "X is deprecated/the standard")** → invoke `ctxify:rules` immediately, before continuing the task
 - **Cross-repo branch/commit coordination** → invoke `ctxify:multi-repo`
 
 ## Multi-repo: When to Use Git Skills
