@@ -32,7 +32,15 @@ Options:
 
 ## When to Create a Domain
 
-Create a domain file when an area of the codebase is:
+**Before starting a feature in an undocumented domain area, create its domain file first.** Check overview.md's domain index — if the area you're about to work in isn't listed and is complex enough that understanding it requires reading 3+ files, scaffold the domain file now:
+
+```
+ctxify domain add <repo> <domain> --description "what it covers"
+```
+
+Then read entry points + 2-3 key files and fill it. This captures your understanding before you start coding — don't defer to a separate context-filling session.
+
+Create a domain file when an area is:
 - Complex enough that an agent would need 30+ min to re-understand it from scratch
 - Likely to be the focus of multiple future tasks
 - Has non-obvious patterns, business rules, or cross-repo interactions

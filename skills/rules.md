@@ -9,6 +9,8 @@ description: Use when the user corrects your behavior, tells you not to do somet
 
 ALWAYS run `ctxify feedback` with `--type rule` or `--type antipattern` — never edit `rules.md` directly.
 
+**Rules are workspace-wide.** There is one `rules.md` for the entire workspace (not per-repo). In single/mono-repo mode it lives at `.ctxify/rules.md`; in multi-repo mode it lives in the primary repo's `.ctxify/`. No `<repo>` argument is needed — just `ctxify feedback --type rule --body "..."`.
+
 ## User Rules — when the user instructs behavior
 
 ```
