@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { loadConfig } from '../../core/config.js';
+import { resolveRepoCtxDir } from '../../core/paths.js';
 import {
   generateCorrectionsTemplate,
   formatCorrectionEntry,
@@ -61,7 +62,7 @@ export function registerFeedbackCommand(program: Command): void {
           process.exit(1);
         }
 
-        const repoDir = join(workspaceRoot, outputDir, 'repos', repo);
+        const repoDir = resolveRepoCtxDir(workspaceRoot, repoEntry, config.mode, outputDir);
         const timestamp = new Date().toISOString();
         let createdFile = false;
         let targetPath: string;

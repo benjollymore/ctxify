@@ -309,6 +309,111 @@ monoRepo:
     });
   });
 
+  describe('primary_repo validation', () => {
+    it('accepts valid primary_repo in multi-repo mode', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+mode: multi-repo
+primary_repo: api
+repos:
+  - path: ./api
+    name: api
+  - path: ./web
+    name: web
+`;
+      const configPath = join(tmpDir, 'ctx-primary.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.primary_repo).toBe('api');
+    });
+
+    it('rejects primary_repo not in repos list for multi-repo mode', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+mode: multi-repo
+primary_repo: missing
+repos:
+  - path: ./api
+    name: api
+`;
+      const configPath = join(tmpDir, 'ctx-primary-bad.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      expect(() => loadConfig(configPath)).toThrow(ConfigError);
+      expect(() => loadConfig(configPath)).toThrow(/primary_repo.*not found/);
+    });
+
+    it('allows primary_repo with no repos (empty repos list)', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+mode: multi-repo
+primary_repo: api
+`;
+      const configPath = join(tmpDir, 'ctx-primary-empty.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.primary_repo).toBe('api');
+    });
+
+    it('ignores primary_repo in single-repo mode (no validation error)', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+mode: single-repo
+primary_repo: myapp
+repos:
+  - path: .
+    name: myapp
+`;
+      const configPath = join(tmpDir, 'ctx-primary-single.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.primary_repo).toBe('myapp');
+    });
+
+    it('is optional — old ctx.yaml without it loads fine', () => {
+      const yaml = `
+version: "1"
+workspace: /tmp/ws
+mode: multi-repo
+repos:
+  - path: ./api
+    name: api
+`;
+      const configPath = join(tmpDir, 'ctx-no-primary.yaml');
+      writeFileSync(configPath, yaml, 'utf-8');
+      const config = loadConfig(configPath);
+      expect(config.primary_repo).toBeUndefined();
+    });
+
+    it('roundtrips through generateDefaultConfig and serialize/load', () => {
+      const repos = [
+        { path: './api', name: 'api' },
+        { path: './web', name: 'web' },
+      ];
+      const config = generateDefaultConfig(
+        '/tmp/ws',
+        repos,
+        'multi-repo',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'api',
+      );
+      expect(config.primary_repo).toBe('api');
+
+      const serialized = serializeConfig(config);
+      const configPath = join(tmpDir, 'ctx-primary-roundtrip.yaml');
+      writeFileSync(configPath, serialized, 'utf-8');
+      const loaded = loadConfig(configPath);
+      expect(loaded.primary_repo).toBe('api');
+    });
+  });
+
   describe('skills and install_method fields', () => {
     it('roundtrips skills field through serialize and load', () => {
       const repos = [{ path: '.', name: 'app' }];

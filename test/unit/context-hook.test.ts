@@ -208,4 +208,113 @@ describe('getContextHookOutput', () => {
     const output = getContextHookOutput(tmpDir);
     expect(output).toBe('');
   });
+
+  // ── Multi-repo mode ──
+
+  describe('multi-repo mode', () => {
+    function writeMultiRepoCtxYaml(
+      dir: string,
+      repos: Array<{ path: string; name: string }>,
+      primaryRepo?: string,
+    ): void {
+      const config = generateDefaultConfig(
+        dir,
+        repos,
+        'multi-repo',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        primaryRepo,
+      );
+      writeFileSync(join(dir, 'ctx.yaml'), serializeConfig(config), 'utf-8');
+    }
+
+    it('reads from per-repo .ctxify/ directories', () => {
+      const repos = [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ];
+      writeMultiRepoCtxYaml(tmpDir, repos, 'api');
+
+      // Per-repo .ctxify/ dirs
+      const apiCtx = join(tmpDir, 'api', '.ctxify');
+      const webCtx = join(tmpDir, 'web', '.ctxify');
+      mkdirSync(apiCtx, { recursive: true });
+      mkdirSync(webCtx, { recursive: true });
+
+      writeFileSync(join(apiCtx, 'overview.md'), '# API\n\nThe API service.', 'utf-8');
+      writeFileSync(join(webCtx, 'overview.md'), '# Web\n\nThe frontend.', 'utf-8');
+
+      const output = getContextHookOutput(tmpDir);
+      expect(output).toContain('# API');
+      expect(output).toContain('# Web');
+    });
+
+    it('includes workspace.md from primary repo', () => {
+      const repos = [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ];
+      writeMultiRepoCtxYaml(tmpDir, repos, 'api');
+
+      const apiCtx = join(tmpDir, 'api', '.ctxify');
+      const webCtx = join(tmpDir, 'web', '.ctxify');
+      mkdirSync(apiCtx, { recursive: true });
+      mkdirSync(webCtx, { recursive: true });
+
+      writeFileSync(join(apiCtx, 'overview.md'), '# API\n\nThe API.', 'utf-8');
+      writeFileSync(join(webCtx, 'overview.md'), '# Web\n\nThe web.', 'utf-8');
+      writeFileSync(
+        join(apiCtx, 'workspace.md'),
+        '---\ntype: workspace\n---\n\n# My Workspace\n\nWorkspace overview.',
+        'utf-8',
+      );
+
+      const output = getContextHookOutput(tmpDir);
+      expect(output).toContain('# My Workspace');
+      expect(output).toContain('Workspace overview.');
+      expect(output).not.toContain('type: workspace');
+    });
+
+    it('returns unfilled nudge when per-repo overview.md has TODOs', () => {
+      const repos = [{ path: 'api', name: 'api' }];
+      writeMultiRepoCtxYaml(tmpDir, repos, 'api');
+
+      const apiCtx = join(tmpDir, 'api', '.ctxify');
+      mkdirSync(apiCtx, { recursive: true });
+      writeFileSync(
+        join(apiCtx, 'overview.md'),
+        '# API\n\n<!-- TODO: describe architecture -->',
+        'utf-8',
+      );
+
+      const output = getContextHookOutput(tmpDir);
+      expect(output).toContain('Context is unfilled');
+    });
+
+    it('includes corrections and rules from per-repo .ctxify/', () => {
+      const repos = [{ path: 'api', name: 'api' }];
+      writeMultiRepoCtxYaml(tmpDir, repos, 'api');
+
+      const apiCtx = join(tmpDir, 'api', '.ctxify');
+      mkdirSync(apiCtx, { recursive: true });
+      writeFileSync(join(apiCtx, 'overview.md'), '# API\n\nThe API.', 'utf-8');
+      writeFileSync(
+        join(apiCtx, 'corrections.md'),
+        '<!-- correction:2025-01-01 -->\nFix it.\n<!-- /correction -->',
+        'utf-8',
+      );
+      writeFileSync(
+        join(apiCtx, 'rules.md'),
+        '<!-- rule:2025-01-01 -->\nAlways test.\n<!-- /rule -->',
+        'utf-8',
+      );
+
+      const output = getContextHookOutput(tmpDir);
+      expect(output).toContain('Fix it.');
+      expect(output).toContain('Always test.');
+    });
+  });
 });
