@@ -198,7 +198,7 @@ function detectRustFramework(cargo: string): string {
 
 function parseCargoTomlDependencies(cargo: string): Record<string, string> {
   const deps: Record<string, string> = {};
-  const depMatch = cargo.match(/\[dependencies]\s*\n((?:[^[].+\n)*)/);
+  const depMatch = cargo.match(/\[dependencies]\s*\r?\n((?:[^[\r\n][^\r\n]*\r?\n)*)/);
   if (!depMatch) return deps;
 
   const lines = depMatch[1].split('\n');
@@ -259,8 +259,8 @@ function discoverEntryPoints(repoPath: string, manifestType: string): string[] {
     const content = readFileIfExists(join(repoPath, 'pyproject.toml'));
     if (content) {
       const scriptPatterns = [
-        /\[project\.scripts\]\s*\n((?:[^[].+\n)*)/,
-        /\[tool\.poetry\.scripts\]\s*\n((?:[^[].+\n)*)/,
+        /\[project\.scripts\]\s*\r?\n((?:[^[\r\n][^\r\n]*\r?\n)*)/,
+        /\[tool\.poetry\.scripts\]\s*\r?\n((?:[^[\r\n][^\r\n]*\r?\n)*)/,
       ];
       for (const pattern of scriptPatterns) {
         const match = content.match(pattern);

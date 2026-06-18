@@ -173,6 +173,65 @@ describe('getContextHookOutput', () => {
     expect(output).toContain('use POST not PUT.');
   });
 
+  it('loads filled repo context even when a sibling repo is unfilled', () => {
+    writeCtxYaml(tmpDir, {
+      repos: [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ],
+    });
+
+    const apiDir = join(tmpDir, '.ctxify', 'repos', 'api');
+    const webDir = join(tmpDir, '.ctxify', 'repos', 'web');
+    mkdirSync(apiDir, { recursive: true });
+    mkdirSync(webDir, { recursive: true });
+
+    // api fully filled
+    writeFileSync(
+      join(apiDir, 'overview.md'),
+      '---\ntype: overview\n---\n# API\n\nThe billing API.',
+      'utf-8',
+    );
+    writeFileSync(
+      join(apiDir, 'corrections.md'),
+      '<!-- correction:2025-06-15 -->\nAuth is per-route.\n<!-- /correction -->',
+      'utf-8',
+    );
+    // web still scaffolded
+    writeFileSync(
+      join(webDir, 'overview.md'),
+      '---\ntype: overview\n---\n# Web\n\n<!-- TODO: describe architecture -->',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    // Filled context is preserved, not discarded
+    expect(output).toContain('The billing API.');
+    expect(output).toContain('Auth is per-route.');
+    // A targeted nudge names the unfilled repo
+    expect(output).toContain('web');
+    expect(output).toContain('/ctxify-filling-context');
+    // It is NOT the bare all-unfilled nudge
+    expect(output).not.toBe(
+      'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.',
+    );
+  });
+
+  it('treats overview as filled when TODO appears only inside a fenced code block', () => {
+    writeCtxYaml(tmpDir);
+    const repoDir = join(tmpDir, '.ctxify', 'repos', 'my-app');
+    mkdirSync(repoDir, { recursive: true });
+    writeFileSync(
+      join(repoDir, 'overview.md'),
+      '---\ntype: overview\n---\n# My App\n\nThe app. We annotate gaps like this:\n\n```html\n<!-- TODO: fill me -->\n```\n',
+      'utf-8',
+    );
+
+    const output = getContextHookOutput(tmpDir);
+    expect(output).toContain('# My App');
+    expect(output).not.toContain('Context is unfilled');
+  });
+
   it('handles custom outputDir from ctx.yaml', () => {
     writeCtxYaml(tmpDir, { options: { outputDir: 'custom-ctx' } });
     const repoDir = join(tmpDir, 'custom-ctx', 'repos', 'my-app');
@@ -300,6 +359,39 @@ describe('getContextHookOutput', () => {
       expect(output).toContain('# My Workspace');
       expect(output).toContain('Workspace overview.');
       expect(output).not.toContain('type: workspace');
+    });
+
+    it('loads filled per-repo context even when a sibling repo is unfilled', () => {
+      const repos = [
+        { path: 'api', name: 'api' },
+        { path: 'web', name: 'web' },
+      ];
+      writeMultiRepoCtxYaml(tmpDir, repos, 'api');
+
+      const apiCtx = join(tmpDir, 'api', '.ctxify');
+      const webCtx = join(tmpDir, 'web', '.ctxify');
+      mkdirSync(apiCtx, { recursive: true });
+      mkdirSync(webCtx, { recursive: true });
+
+      writeFileSync(join(apiCtx, 'overview.md'), '# API\n\nThe billing API.', 'utf-8');
+      writeFileSync(
+        join(apiCtx, 'corrections.md'),
+        '<!-- correction:2025-01-01 -->\nAuth is per-route.\n<!-- /correction -->',
+        'utf-8',
+      );
+      writeFileSync(
+        join(webCtx, 'overview.md'),
+        '# Web\n\n<!-- TODO: describe architecture -->',
+        'utf-8',
+      );
+
+      const output = getContextHookOutput(tmpDir);
+      expect(output).toContain('The billing API.');
+      expect(output).toContain('Auth is per-route.');
+      expect(output).toContain('web');
+      expect(output).not.toBe(
+        'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.',
+      );
     });
 
     it('returns unfilled nudge when per-repo overview.md has TODOs', () => {

@@ -137,3 +137,23 @@ totals:
     expect(fm).toBeNull();
   });
 });
+
+describe('segment extraction: tag names are matched literally', () => {
+  it('extracts a tag whose name contains regex metacharacters', () => {
+    const content = `<!-- domain[test] -->
+content here
+<!-- /domain[test] -->`;
+    const segments = extractSegments(content, 'domain[test]');
+    expect(segments).toEqual(['content here']);
+  });
+
+  it('does not let metacharacter tags match unrelated segments', () => {
+    // 'domain[test]' as an unescaped char class would match '<!-- domains -->'
+    // (d-o-m-a-i-n followed by one of t/e/s). Literal matching must not.
+    const content = `<!-- domains -->
+should not match
+<!-- /domains -->`;
+    const segments = extractSegments(content, 'domain[test]');
+    expect(segments).toEqual([]);
+  });
+});

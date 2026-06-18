@@ -1,3 +1,8 @@
+/** Escape regex metacharacters so a string can be matched literally. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Extract HTML comment segments from markdown content.
  *
@@ -15,7 +20,11 @@ export function extractSegments(
   tag: string,
   filter?: { index: number; value: string; exact?: boolean },
 ): string[] {
-  const regex = new RegExp(`<!-- ${tag}((?::[^\\s>]+)*) -->([\\s\\S]*?)<!-- \\/${tag} -->`, 'g');
+  const safeTag = escapeRegExp(tag);
+  const regex = new RegExp(
+    `<!-- ${safeTag}((?::[^\\s>]+)*) -->([\\s\\S]*?)<!-- \\/${safeTag} -->`,
+    'g',
+  );
 
   const results: string[] = [];
   let match: RegExpExecArray | null;

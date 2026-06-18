@@ -264,4 +264,51 @@ edition = "2021"
     expect(result.dependencies).toEqual({});
     expect(result.entryPoints).toContain('src/main.rs');
   });
+
+  it('should parse Cargo.toml dependencies with CRLF line endings', () => {
+    const cargoContent = [
+      '[package]',
+      'name = "crlf-app"',
+      'version = "0.1.0"',
+      'edition = "2021"',
+      '',
+      '[dependencies]',
+      'actix-web = "4.4"',
+      'tokio = { version = "1.35", features = ["full"] }',
+      '',
+    ].join('\r\n');
+    writeFileSync(join(tmpDir, 'Cargo.toml'), cargoContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'src'), { recursive: true });
+    writeFileSync(join(tmpDir, 'src', 'main.rs'), 'fn main() {}', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.manifestType).toBe('Cargo.toml');
+    expect(result.dependencies).toHaveProperty('actix-web', '4.4');
+    expect(result.dependencies).toHaveProperty('tokio');
+    expect(result.framework).toBe('actix-web');
+  });
+
+  it('should discover pyproject.toml entry points with CRLF line endings', () => {
+    const pyprojectContent = [
+      '[project]',
+      'name = "crlf-api"',
+      'version = "0.1.0"',
+      'dependencies = [',
+      '    "fastapi>=0.100.0",',
+      ']',
+      '',
+      '[project.scripts]',
+      'serve = "crlf_api.main:app"',
+      '',
+    ].join('\r\n');
+    writeFileSync(join(tmpDir, 'pyproject.toml'), pyprojectContent, 'utf-8');
+    mkdirSync(join(tmpDir, 'crlf_api'), { recursive: true });
+    writeFileSync(join(tmpDir, 'crlf_api', 'main.py'), 'app = None', 'utf-8');
+
+    const result = parseRepoManifest(tmpDir);
+
+    expect(result.manifestType).toBe('pyproject.toml');
+    expect(result.entryPoints).toContain('crlf_api/main.py');
+  });
 });

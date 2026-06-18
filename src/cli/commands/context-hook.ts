@@ -18,10 +18,28 @@ When you discover context is wrong, or the user says something documented is inc
 When the user states a preference ("don't do X", "always use Y", "use X instead of Y", "only use X", "never X", "we switched to X", "prefer X over Y", "X is deprecated/the standard") → STOP and run \`ctxify feedback --type rule --body "the rule"\` before continuing. No repo arg needed — rules are workspace-wide.
 Before working in a domain area that has no context file → STOP. Run \`ctxify domain add <repo> <domain-name> --description "..."\` and fill it before starting the feature.`;
 
+const UNFILLED_NUDGE =
+  'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.';
+
 function stripFrontmatter(content: string): string {
   const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
   if (!match) return content;
   return content.slice(match[0].length);
+}
+
+/**
+ * True if an overview still holds a scaffold TODO marker. Fenced code blocks are
+ * stripped first so a filled overview that *documents* a `<!-- TODO: -->` example
+ * isn't misread as unfilled.
+ */
+function overviewIsUnfilled(content: string): boolean {
+  const withoutFences = content.replace(/^```[^\n]*\n[\s\S]*?^```/gm, '');
+  return withoutFences.includes('<!-- TODO:');
+}
+
+/** Targeted nudge naming the repos that still need documenting, for partial fills. */
+function partialFillNudge(unfilledRepos: string[]): string {
+  return `Note: these repos are not yet documented: ${unfilledRepos.join(', ')}. Run \`/ctxify-filling-context\` for them before working in those areas.`;
 }
 
 export function getContextHookOutput(workspaceRoot: string): string {
@@ -68,22 +86,29 @@ export function getContextHookOutput(workspaceRoot: string): string {
 
   if (repoNames.length === 0) return '';
 
-  // Check if any overview.md has TODO markers → unfilled
+  // Partition repos by fill status. A repo counts as filled when its overview.md
+  // exists and no longer carries scaffold TODO markers. Loading is per-repo: a
+  // documented repo's context is never discarded because a sibling is still unfilled.
+  const filledRepos: string[] = [];
+  const unfilledRepos: string[] = [];
   for (const repo of repoNames) {
     const overviewPath = join(reposDir, repo, 'overview.md');
-    if (existsSync(overviewPath)) {
-      try {
-        const content = readFileSync(overviewPath, 'utf-8');
-        if (content.includes('<!-- TODO:')) {
-          return 'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.';
-        }
-      } catch {
-        // Skip unreadable files
-      }
+    if (!existsSync(overviewPath)) continue;
+    try {
+      const content = readFileSync(overviewPath, 'utf-8');
+      if (overviewIsUnfilled(content)) unfilledRepos.push(repo);
+      else filledRepos.push(repo);
+    } catch {
+      // Skip unreadable files
     }
   }
 
-  // Context is filled — concatenate always-load files
+  // Nothing documented yet (but something to document) → the all-unfilled nudge
+  if (filledRepos.length === 0 && unfilledRepos.length > 0) {
+    return UNFILLED_NUDGE;
+  }
+
+  // Concatenate always-load files for the documented repos
   const sections: string[] = [];
 
   // index.md
@@ -97,8 +122,8 @@ export function getContextHookOutput(workspaceRoot: string): string {
     }
   }
 
-  // Per-repo: overview.md, corrections.md
-  for (const repo of repoNames) {
+  // Per-filled-repo: overview.md, corrections.md
+  for (const repo of filledRepos) {
     for (const filename of ['overview.md', 'corrections.md']) {
       const filePath = join(reposDir, repo, filename);
       if (!existsSync(filePath)) continue;
@@ -126,7 +151,12 @@ export function getContextHookOutput(workspaceRoot: string): string {
 
   if (sections.length === 0) return '';
 
-  return sections.join('\n\n') + '\n\n' + CONTEXT_FOOTER;
+  const trailer =
+    unfilledRepos.length > 0
+      ? partialFillNudge(unfilledRepos) + '\n\n' + CONTEXT_FOOTER
+      : CONTEXT_FOOTER;
+
+  return sections.join('\n\n') + '\n\n' + trailer;
 }
 
 function getMultiRepoHookOutput(
@@ -135,20 +165,26 @@ function getMultiRepoHookOutput(
   outputRoot: string,
   outputDir: string,
 ): string {
-  // Check if any per-repo overview.md has TODO markers → unfilled
+  // Partition repos by fill status. Loading is per-repo: a documented repo's
+  // context is never discarded because a sibling repo is still unfilled.
+  const filledRepos: typeof config.repos = [];
+  const unfilledRepoNames: string[] = [];
   for (const repo of config.repos) {
     const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repo, config.mode, outputDir);
     const overviewPath = join(repoCtxDir, 'overview.md');
-    if (existsSync(overviewPath)) {
-      try {
-        const content = readFileSync(overviewPath, 'utf-8');
-        if (content.includes('<!-- TODO:')) {
-          return 'ctxify workspace detected. Context is unfilled. Invoke /ctxify-filling-context to document the codebase.';
-        }
-      } catch {
-        // Skip unreadable files
-      }
+    if (!existsSync(overviewPath)) continue;
+    try {
+      const content = readFileSync(overviewPath, 'utf-8');
+      if (overviewIsUnfilled(content)) unfilledRepoNames.push(repo.name);
+      else filledRepos.push(repo);
+    } catch {
+      // Skip unreadable files
     }
+  }
+
+  // Nothing documented yet (but something to document) → the all-unfilled nudge
+  if (filledRepos.length === 0 && unfilledRepoNames.length > 0) {
+    return UNFILLED_NUDGE;
   }
 
   const sections: string[] = [];
@@ -182,8 +218,8 @@ function getMultiRepoHookOutput(
     }
   }
 
-  // Per-repo: overview.md, corrections.md
-  for (const repo of config.repos) {
+  // Per-filled-repo: overview.md, corrections.md
+  for (const repo of filledRepos) {
     const repoCtxDir = resolveRepoCtxDir(workspaceRoot, repo, config.mode, outputDir);
 
     for (const filename of ['overview.md', 'corrections.md']) {
@@ -224,7 +260,12 @@ function getMultiRepoHookOutput(
 
   if (sections.length === 0) return '';
 
-  return sections.join('\n\n') + '\n\n' + CONTEXT_FOOTER;
+  const trailer =
+    unfilledRepoNames.length > 0
+      ? partialFillNudge(unfilledRepoNames) + '\n\n' + CONTEXT_FOOTER
+      : CONTEXT_FOOTER;
+
+  return sections.join('\n\n') + '\n\n' + trailer;
 }
 
 export function registerContextHookCommand(program: Command): void {
